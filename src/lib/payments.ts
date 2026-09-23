@@ -43,11 +43,9 @@ export function paymentAppUrl(
   note: string,
 ): string | null {
   const amount = (amountCents / 100).toFixed(2);
-  if (handle.app === "cashapp") {
-    // Cash App's format is cash.app/$tag/40; "40.00" can drop you on the home screen.
-    const cashAmount = amountCents % 100 === 0 ? String(amountCents / 100) : amount;
-    return `https://cash.app/${handle.handle}/${cashAmount}`;
-  }
+  // Cash App ignores an amount in the link (it opens the app's home screen), so
+  // open the pro's profile and the pay page tells the client what to send.
+  if (handle.app === "cashapp") return `https://cash.app/${handle.handle}`;
   if (handle.app === "venmo") {
     // Venmo shows "+" literally, so encode spaces as %20 (URLSearchParams uses "+").
     const user = encodeURIComponent(handle.handle.replace(/^@/, ""));

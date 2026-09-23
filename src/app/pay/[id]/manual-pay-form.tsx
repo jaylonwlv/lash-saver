@@ -69,6 +69,7 @@ export function ManualPayForm({
                   {o.label}
                 </span>
                 <span className="font-medium break-all select-all">{o.handle}</span>
+                <span className="text-muted text-sm">Send exactly {amount}</span>
               </span>
             </label>
             <div className="flex gap-2">
@@ -85,7 +86,7 @@ export function ManualPayForm({
                   href={o.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="border-line bg-surface inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border px-5 font-semibold sm:flex-none"
+                  className="border-line bg-surface inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border px-3 font-semibold whitespace-nowrap sm:flex-none sm:px-5"
                 >
                   Open {o.label}
                 </a>
