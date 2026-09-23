@@ -24,7 +24,7 @@ The product's job is preventing no-shows: deposit up front, a policy the client 
 
 - **Next.js 16** (App Router, React 19, TypeScript strict) on **Vercel**. See the AGENTS.md note: read `node_modules/next/dist/docs/` before using a Next API you're not sure about. `middleware.ts` is now `proxy.ts`. `params`, `searchParams`, `cookies()` and `headers()` are async.
 - **Tailwind CSS v4.** Design tokens live in `src/app/globals.css` (`bg-brand`, `text-muted`, `border-line`, …).
-- **Supabase** for auth (email magic link, techs only) and Postgres with RLS. Uses `@supabase/ssr`.
+- **Supabase** for auth (email code or link, techs only) and Postgres with RLS. Uses `@supabase/ssr`. The Magic Link and Confirm signup email templates must include `{{ .Token }}` and link to `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`: phones often open mail links in a different browser, where the default PKCE link fails.
 - **Stripe Connect** with Express accounts. Deposits are **destination charges** made on the platform with `transfer_data.destination` set to the tech's account and an `application_fee_amount`: the **processing fee**, 3.5% + 30¢ (`PROCESSING_FEE_*` in `config.ts`, `processingFeeCents` in `money.ts`). It covers Stripe's card fee, which the platform pays on destination charges. Show techs what they receive (`techPayoutCents`) wherever deposit amounts appear.
 - **Resend** for email, behind the notifications interface.
 - **zod** for validating env vars and every input from outside the app.
@@ -39,8 +39,8 @@ src/
     (marketing)/page.tsx          Landing page (static): hero, cost of no-shows, 4 steps with real app
                                   screenshots (images/), features, vs Cash App, pricing, FAQ. Pulls
                                   price, trial and fee from config.ts; keep claims true to the product.
-    (auth)/login/                 Magic-link sign-in (page, form, server action)
-    auth/callback/route.ts        Swaps the magic-link code for a session
+    (auth)/login/                 Email sign-in: 6-digit code (any browser) or link (page, form, actions)
+    auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
     (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), booking link
     (tech)/dashboard/profile/     Business name, booking link (slug), time zone, policy; sign out

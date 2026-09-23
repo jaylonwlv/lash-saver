@@ -13,12 +13,14 @@ export async function updateSession(request: NextRequest) {
   // with the auth code or error attached. Route those to the callback / login page.
   const { pathname, searchParams } = request.nextUrl;
   if (pathname !== "/auth/callback") {
-    const code = searchParams.get("code");
-    if (code) {
+    if (searchParams.has("code") || searchParams.has("token_hash")) {
       const callback = request.nextUrl.clone();
       callback.pathname = "/auth/callback";
       callback.search = "";
-      callback.searchParams.set("code", code);
+      for (const key of ["code", "token_hash", "type"]) {
+        const value = searchParams.get(key);
+        if (value) callback.searchParams.set(key, value);
+      }
       callback.searchParams.set("next", "/dashboard");
       return NextResponse.redirect(callback);
     }
