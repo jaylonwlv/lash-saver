@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { formatDuration } from "@/lib/format";
 import { formatCents } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,7 +42,7 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
           <li key={s.id} className="border-line bg-surface rounded-2xl border p-4">
             <p className="font-medium">{s.name}</p>
             <p className="text-muted text-sm">
-              {s.duration_minutes} min · {formatCents(s.price_cents)} ·{" "}
+              {formatDuration(s.duration_minutes)} · {formatCents(s.price_cents)} ·{" "}
               {formatCents(s.deposit_cents)} deposit
             </p>
           </li>

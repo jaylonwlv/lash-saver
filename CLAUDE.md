@@ -35,22 +35,27 @@ src/
     (marketing)/page.tsx          Landing page
     (auth)/login/                 Magic-link sign-in (page, form, server action)
     auth/callback/route.ts        Swaps the magic-link code for a session
-    (tech)/layout.tsx             Signed-in shell, with a server-side auth check
-    (tech)/dashboard/             Tech home
+    (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
+    (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), booking link
+    (tech)/dashboard/profile/     Business name, booking link (slug), time zone, policy; sign out
+    (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete
+    (tech)/dashboard/stripe/      Onboarding + Express dashboard actions; refresh/ and return/ routes
     b/[slug]/page.tsx             Public booking page (linked from IG DMs)
-    api/stripe/connect/           POST: create an Express account and onboarding link
     api/stripe/connect/webhook/   Connect events (account.updated)
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
     api/cron/reminders/           Vercel Cron job
-  components/ui/                  Small shared building blocks (Button, Input)
+  components/ui/                  Small shared building blocks (Button, Input, Textarea, Select)
   lib/
     config.ts                     App constants (name, hold time, reminder offsets)
     env.ts / env.public.ts        zod-checked env (server-only / browser-safe)
-    money.ts                      Cents helpers and fee math
+    money.ts                      Cents helpers, fee math, dollarsToCents for form input
+    format.ts                     Display helpers (formatDuration)
+    forms.ts                      FormState, formValues, fieldErrors for Server Action forms
     supabase/                     client.ts (browser), server.ts (RLS as user),
                                   admin.ts (secret key, bypasses RLS), proxy.ts,
                                   database.types.ts
-    stripe/                       server.ts (secret key), client.ts (Stripe.js)
+    stripe/                       server.ts (secret key), client.ts (Stripe.js),
+                                  connect.ts (connected accounts: create, onboarding link, status sync)
     notifications/                notify() + Notifier interface, Resend email, SMS stub, templates
 supabase/migrations/              SQL migrations (timestamped, append-only)
 ```
@@ -68,15 +73,26 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Read env only through `serverEnv()` / `publicEnv()`. Add every new key to the schema **and** to `.env.example`.
 - Keep changes small and focused. Before committing, run `npm run check` and `npm run build`.
 
+**Forms**
+
+- Pattern: a zod schema in `schema.ts`, a Server Action returning `FormState` in `actions.ts`, and a small client form using `useActionState`. See `dashboard/services/`.
+- On a validation error, return `{ errors, values }`. Forms use `values` as `defaultValue`, because React resets uncontrolled fields after an action. `Select` is keyed on its `defaultValue` for the same reason.
+- On success, `revalidatePath` then `redirect`. Call `redirect` outside `try/catch`.
+- Map Postgres errors to field messages where the user can fix them (e.g. `23505` unique violation on `slug`).
+
 **Data and security**
 
 - RLS is **on for every table**. Each new table needs policies in the same migration.
+- Supabase grants table-level privileges to `anon`/`authenticated` by default, so a column-level `revoke` does nothing. To limit which columns techs can write, revoke the table privilege and grant specific columns (see `20260924000000_profile_update_grants.sql`).
 - `createAdminClient()` bypasses RLS. Use it only where no tech is signed in (webhooks, cron, public booking writes after validation), and scope every query by id yourself.
 - Clients never sign in. The public booking page reads through the anon role (`public_profiles` view, active `services`). Every client write goes through server code.
 - Migrations are append-only. Never edit a migration that has been applied; add a new one. After schema changes, run `npm run db:types`.
 - Store times as `timestamptz` (UTC). Show them in the **tech's** `profiles.timezone`.
 
 **Money and Stripe**
+
+- Connected accounts are created with `controller` (Express dashboard, platform pays fees and covers losses), not the deprecated `type: "express"`.
+- Account status (`stripe_charges_enabled`, `stripe_details_submitted`) is written only by `syncAccountStatus`, from the Connect webhook or the onboarding return route.
 
 - Money is **integer cents** everywhere: DB, code, Stripe. Format only in the UI, using `formatCents`.
 - Every Stripe call that creates something passes an `idempotencyKey` built from our own ids.
