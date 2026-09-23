@@ -139,6 +139,9 @@ export async function startSubscriptionCheckout(techId: string): Promise<string>
     customer,
     client_reference_id: techId,
     payment_method_collection: "always",
+    // Cards only (Apple Pay and Google Pay count as cards): the one-trial-per-person
+    // check uses the card fingerprint, which Cash App Pay, Klarna and Amazon Pay don't have.
+    payment_method_types: ["card"],
     line_items: [
       {
         quantity: 1,
