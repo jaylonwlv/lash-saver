@@ -36,7 +36,9 @@ The product's job is preventing no-shows: deposit up front, a policy the client 
 src/
   proxy.ts                        Refreshes the Supabase session; guards /dashboard
   app/
-    (marketing)/page.tsx          Landing page
+    (marketing)/page.tsx          Landing page (static): hero, cost of no-shows, 4 steps with real app
+                                  screenshots (images/), features, vs Cash App, pricing, FAQ. Pulls
+                                  price, trial and fee from config.ts; keep claims true to the product.
     (auth)/login/                 Magic-link sign-in (page, form, server action)
     auth/callback/route.ts        Swaps the magic-link code for a session
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
