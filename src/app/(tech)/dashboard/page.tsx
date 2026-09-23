@@ -150,7 +150,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           <Link href={bookingUrl} className="text-brand underline">
             /b/{profile.slug}
           </Link>{" "}
-          once Stripe is connected.
+          once{" "}
+          {stripeStatus === "done"
+            ? "you add a service."
+            : servicesDone
+              ? "Stripe is connected."
+              : "Stripe is connected and you add a service."}
         </p>
       )}
     </div>
