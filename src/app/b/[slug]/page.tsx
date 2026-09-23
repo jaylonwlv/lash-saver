@@ -13,19 +13,24 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
   const { slug } = await params;
   const supabase = await createClient();
 
-  const { data: tech } = await supabase
+  const { data: tech, error: techError } = await supabase
     .from("public_profiles")
     .select("id, business_name, policy_text")
     .eq("slug", slug.toLowerCase())
     .maybeSingle();
+  // A query error (bad key, missing table) must surface, not look like "no such tech".
+  if (techError) throw new Error(`Booking page: loading tech failed: ${techError.message}`);
   if (!tech?.id) notFound();
 
-  const { data: services } = await supabase
+  const { data: services, error: servicesError } = await supabase
     .from("services")
     .select("id, name, duration_minutes, price_cents, deposit_cents")
     .eq("tech_id", tech.id)
     .eq("is_active", true)
     .order("price_cents");
+  if (servicesError) {
+    throw new Error(`Booking page: loading services failed: ${servicesError.message}`);
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 py-8">

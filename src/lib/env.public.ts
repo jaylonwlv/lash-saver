@@ -17,14 +17,20 @@ let cached: PublicEnv | undefined;
 
 export function publicEnv(): PublicEnv {
   if (cached) return cached;
-  const parsed = publicSchema.safeParse({
+  const raw: Record<keyof PublicEnv, string | undefined> = {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-  });
+  };
+  const parsed = publicSchema.safeParse(raw);
   if (!parsed.success) {
-    const keys = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
+    const keys = parsed.error.issues
+      .map((i) => {
+        const key = i.path.join(".") as keyof PublicEnv;
+        return `${key} (${raw[key] ? "invalid" : "missing"})`;
+      })
+      .join(", ");
     throw new Error(`Invalid or missing public env vars: ${keys}. See .env.example.`);
   }
   cached = parsed.data;
