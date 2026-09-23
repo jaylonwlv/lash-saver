@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { publicEnv } from "@/lib/env.public";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { signOut } from "./actions";
@@ -42,7 +42,12 @@ export default async function ProfilePage() {
           policy_text: profile.policy_text ?? "",
         }}
       />
-      <form action={signOut} className="border-line border-t pt-6">
+      <div className="border-line flex flex-col gap-3 border-t pt-6">
+        <ButtonLink href="/dashboard/billing" variant="secondary">
+          Billing
+        </ButtonLink>
+      </div>
+      <form action={signOut}>
         <Button type="submit" variant="secondary">
           Sign out
         </Button>

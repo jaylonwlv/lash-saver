@@ -14,6 +14,7 @@ import {
   settleDeposit,
 } from "@/lib/stripe/deposits";
 import { createClient, getUser } from "@/lib/supabase/server";
+import { canSendPayLinks } from "@/lib/subscription";
 import { formatWhen, zonedTimeToUtc } from "@/lib/time";
 import { appointmentIdSchema, appointmentSchema } from "./schema";
 
@@ -28,7 +29,11 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
 
   const supabase = await createClient();
   const [{ data: profile }, { data: service }] = await Promise.all([
-    supabase.from("profiles").select("timezone, stripe_charges_enabled").eq("id", user.id).single(),
+    supabase
+      .from("profiles")
+      .select("timezone, stripe_charges_enabled, subscription_status")
+      .eq("id", user.id)
+      .single(),
     // RLS limits this to the tech's own services.
     supabase
       .from("services")
@@ -39,6 +44,9 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
   if (!profile) throw new Error("Profile not found");
   if (!profile.stripe_charges_enabled) {
     return { message: "Connect Stripe on your dashboard before creating pay links.", values };
+  }
+  if (!canSendPayLinks(profile.subscription_status)) {
+    return { message: "Start your free trial or subscribe to send pay links.", values };
   }
   if (!service?.is_active) return { errors: { service_id: "Pick a service." }, values };
 

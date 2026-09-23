@@ -20,6 +20,12 @@ type ProfileRow = Timestamps & {
   stripe_account_id: string | null;
   stripe_charges_enabled: boolean;
   stripe_details_submitted: boolean;
+  stripe_customer_id: string | null;
+  subscription_id: string | null;
+  subscription_status: string | null;
+  trial_ends_at: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
 };
 
 type ServiceRow = Timestamps & {
@@ -76,6 +82,14 @@ type NotificationLogRow = {
   created_at: string;
 };
 
+type TrialClaimRow = {
+  id: string;
+  tech_id: string | null;
+  kind: "card" | "bank" | "email" | "instagram";
+  value: string;
+  created_at: string;
+};
+
 /** Insert type: columns with DB defaults become optional. */
 type Insertable<Row, Required extends keyof Row> = Pick<Row, Required> &
   Partial<Omit<Row, Required>>;
@@ -108,6 +122,12 @@ export type Database = {
         Row: DepositRow;
         Insert: Insertable<DepositRow, "appointment_id" | "tech_id" | "amount_cents">;
         Update: Partial<DepositRow>;
+        Relationships: [];
+      };
+      trial_claims: {
+        Row: TrialClaimRow;
+        Insert: Insertable<TrialClaimRow, "kind" | "value">;
+        Update: Partial<TrialClaimRow>;
         Relationships: [];
       };
       notification_log: {

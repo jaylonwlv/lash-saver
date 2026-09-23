@@ -6,7 +6,8 @@
 
 Lash Saver helps independent lash techs protect themselves from no-shows. Techs book clients through **Instagram DMs**, not a booking site, so the product fits that flow:
 
-1. A tech signs up, connects Stripe (Express), and adds services with prices and deposit amounts.
+1. A tech signs up, connects Stripe (Express), and adds services with prices and deposit amounts. No card needed.
+   Before their **first pay link**, they add a card in Stripe Checkout to start a **30-day free trial** (`TRIAL_DAYS`), then $29/month (`SUBSCRIPTION_PRICE_CENTS`). Without an active subscription (`trialing`, `active`, or `past_due` as a grace period) they can't create new pay links; existing links, reminders and cancellations keep working.
 2. The tech and client agree on a time in the DMs. The tech creates the appointment in Lash Saver (**New appointment**), which makes a **pay link** (`/pay/[appointmentId]`), and pastes it into the DM. The link works for `PAY_LINK_VALID_HOURS` or until the appointment starts. The booking page `/b/[slug]` is a menu for the tech's Instagram bio; clients message the tech to book.
 3. The client opens the pay link, agrees to the deposit policy (a snapshot is saved with the time they agreed), and pays through Stripe Checkout. The Stripe webhook confirms the appointment and emails the client and the tech.
 4. The daily cron sends reminders (`REMINDER_OFFSETS_HOURS`, 48h and 24h; email now, SMS later), each logged in `notification_log` as `appointment_reminder_<N>h` so it's sent once. Every email says when the client can still cancel for a refund.
@@ -43,6 +44,7 @@ src/
     (tech)/dashboard/profile/     Business name, booking link (slug), time zone, policy; sign out
     (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete
     (tech)/dashboard/stripe/      Onboarding + Express dashboard actions; refresh/ and return/ routes
+    (tech)/dashboard/billing/     Subscription status, subscribe/trial card, Stripe billing portal; return/ route after Checkout
     (tech)/dashboard/appointments/ List (needs action / upcoming / waiting / past), new, [id] detail
     b/[slug]/page.tsx             Public booking page: services, how to book (DM), policy
     pay/[id]/                     Public pay page: details, policy + agree checkbox → Stripe Checkout
@@ -64,7 +66,9 @@ src/
                                   database.types.ts
     stripe/                       server.ts (secret key), client.ts (Stripe.js),
                                   connect.ts (Accounts v2: create, onboarding link, status sync),
-                                  deposits.ts (Checkout, webhook handlers, refunds, settle)
+                                  deposits.ts (Checkout, webhook handlers, refunds, settle),
+                                  billing.ts (tech subscription: trial eligibility, Checkout, sync, portal)
+    subscription.ts               canSendPayLinks(status), normalizeEmail (no server deps)
     notifications/                notify() + Notifier interface, Resend email, SMS stub, templates,
                                   log.ts (notifyForAppointment: send + write notification_log)
 supabase/migrations/              SQL migrations (timestamped, append-only)
@@ -111,6 +115,13 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Every Stripe call that creates something passes an `idempotencyKey` built from our own ids.
 - **Webhooks are the source of truth** for payment state. Never mark a deposit paid because of a redirect or a client-side callback. Webhook handlers must be idempotent.
 - Check each webhook's signature against the matching secret (platform or Connect).
+
+**Subscriptions**
+
+- Stripe is the source of truth. `syncSubscription` copies status, trial end, period end and cancel flag onto `profiles` from `customer.subscription.*` webhooks and the Checkout return route. Techs can't write these columns (column grants).
+- One trial per person. `trial_claims` stores card and payout-bank fingerprints, normalized email (Gmail dots and +tags removed) and Instagram handle when a trial starts. A match with another tech means no trial is offered; a reused card found after Checkout ends the trial immediately (`trial_end: "now"`).
+- The daily cron emails techs `TRIAL_ENDING_NOTICE_DAYS` before the first charge, once per subscription (`notification_log` template `trial_ending:<sub id>`).
+- Enforce the pay-link gate on the server (`createAppointment`), not only in the UI.
 
 **Notifications**
 

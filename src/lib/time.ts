@@ -67,6 +67,20 @@ export function wallClockParts(date: Date, timeZone: string): { date: string; ti
   };
 }
 
+/** "Oct 23" (or "Oct 23, 2027" outside the current year) */
+export function formatDate(value: string | Date, timeZone: string): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const sameYear =
+    new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric" }).format(date) ===
+    new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric" }).format(new Date());
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  }).format(date);
+}
+
 /** "Fri, Oct 3 at 2:30 PM CDT" */
 export function formatWhen(value: string | Date, timeZone: string): string {
   const date = typeof value === "string" ? new Date(value) : value;

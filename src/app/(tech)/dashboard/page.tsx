@@ -7,6 +7,7 @@ import { PROCESSING_FEE_LABEL } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
+import { formatDate } from "@/lib/time";
 import { openStripeDashboard, startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
 
@@ -23,7 +24,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     supabase
       .from("profiles")
       .select(
-        "business_name, slug, stripe_account_id, stripe_details_submitted, stripe_charges_enabled",
+        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end",
       )
       .eq("id", user!.id)
       .single(),
@@ -62,6 +63,25 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       <h1 className="text-2xl font-bold">
         Hi{profile.business_name ? `, ${profile.business_name}` : ""}
       </h1>
+
+      {profile.subscription_status === "past_due" && (
+        <Link
+          href="/dashboard/billing"
+          className="border-danger text-danger bg-surface rounded-2xl border p-4 text-sm"
+        >
+          Your Lash Saver payment didn&apos;t go through. Tap to update your card and keep sending
+          pay links.
+        </Link>
+      )}
+      {profile.subscription_status === "trialing" && profile.trial_ends_at && (
+        <Link
+          href="/dashboard/billing"
+          className="border-line bg-surface text-muted rounded-2xl border p-4 text-sm"
+        >
+          Free trial until {formatDate(profile.trial_ends_at, profile.timezone)}
+          {profile.cancel_at_period_end ? " (cancelled)" : ""}. Manage billing →
+        </Link>
+      )}
 
       {stripeParam === "error" && (
         <p className="text-danger text-sm">

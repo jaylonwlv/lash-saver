@@ -1,10 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { cancelNote, loadAppointmentContext, payUrl } from "@/lib/appointments";
-import { REMINDER_OFFSETS_HOURS } from "@/lib/config";
+import {
+  REMINDER_OFFSETS_HOURS,
+  SUBSCRIPTION_PRICE_CENTS,
+  TRIAL_ENDING_NOTICE_DAYS,
+} from "@/lib/config";
+import { publicEnv } from "@/lib/env.public";
+import { formatCents } from "@/lib/money";
+import { notify } from "@/lib/notifications";
 import { serverEnv } from "@/lib/env";
 import { notifyForAppointment } from "@/lib/notifications/log";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatWhen } from "@/lib/time";
+import { formatDate, formatWhen } from "@/lib/time";
 import { dueReminder, reminderLogKey } from "./reminders";
 
 /**
@@ -29,7 +36,8 @@ export async function GET(request: NextRequest) {
   if (error) throw new Error(`Expiring pay links failed: ${error.message}`);
 
   const reminders = await sendReminders(now);
-  return NextResponse.json({ ok: true, expired: expired?.length ?? 0, ...reminders });
+  const trialNotices = await sendTrialEndingNotices(now);
+  return NextResponse.json({ ok: true, expired: expired?.length ?? 0, ...reminders, trialNotices });
 }
 
 async function sendReminders(now: Date) {
@@ -99,4 +107,52 @@ async function sendReminders(now: Date) {
     }
   }
   return { reminders, reminderErrors };
+}
+
+/** Tell techs a few days before their trial turns into a paid subscription. Sent once. */
+async function sendTrialEndingNotices(now: Date): Promise<number> {
+  const admin = createAdminClient();
+  const until = new Date(now.getTime() + TRIAL_ENDING_NOTICE_DAYS * 86_400_000);
+  const { data: techs, error } = await admin
+    .from("profiles")
+    .select("id, email, timezone, subscription_id, trial_ends_at")
+    .eq("subscription_status", "trialing")
+    .eq("cancel_at_period_end", false)
+    .gt("trial_ends_at", now.toISOString())
+    .lte("trial_ends_at", until.toISOString());
+  if (error) throw new Error(`Loading trials failed: ${error.message}`);
+
+  let sent = 0;
+  for (const tech of techs) {
+    if (!tech.subscription_id || !tech.trial_ends_at) continue;
+    const logKey = `trial_ending:${tech.subscription_id}`;
+    const { data: already } = await admin
+      .from("notification_log")
+      .select("id")
+      .eq("template", logKey)
+      .is("error", null)
+      .limit(1);
+    if (already?.length) continue;
+
+    const results = await notify({
+      to: { email: tech.email },
+      template: "trial_ending",
+      data: {
+        endsOn: formatDate(tech.trial_ends_at, tech.timezone),
+        amount: formatCents(SUBSCRIPTION_PRICE_CENTS),
+        billingUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard/billing`,
+      },
+    });
+    await admin.from("notification_log").insert(
+      results.map((r) => ({
+        appointment_id: null,
+        template: logKey,
+        channel: r.channel,
+        provider_message_id: r.ok ? (r.providerMessageId ?? null) : null,
+        error: r.ok ? null : r.error,
+      })),
+    );
+    if (results.some((r) => r.ok)) sent++;
+  }
+  return sent;
 }

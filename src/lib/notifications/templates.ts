@@ -54,6 +54,10 @@ export type TemplateData = {
     refunded: boolean;
     appointmentUrl: string;
   };
+  /** To the tech, a few days before the first subscription charge. */
+  trial_ending: { endsOn: string; amount: string; billingUrl: string };
+  /** To the tech, when a subscription renewal fails. */
+  subscription_payment_failed: { amount: string; billingUrl: string };
   no_show_recorded: { businessName: string; when: string; amount: string };
   deposit_refunded: { businessName: string; amount: string };
 };
@@ -90,6 +94,14 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
     text: d.refunded
       ? `${d.clientName} cancelled ${d.serviceName} on ${d.when}, early enough for a refund, so their ${d.amount} deposit was returned. That time is open again. ${d.appointmentUrl}`
       : `${d.clientName} cancelled ${d.serviceName} on ${d.when} inside your cancellation window, so you keep their ${d.amount} deposit. That time is open again. ${d.appointmentUrl}`,
+  }),
+  trial_ending: (d) => ({
+    subject: `Your Lash Saver trial ends ${d.endsOn}`,
+    text: `Your free trial ends ${d.endsOn}. After that it's ${d.amount}/month on the card you added, so your pay links and reminders keep working. Nothing to do if you're staying. To change your card or cancel: ${d.billingUrl}`,
+  }),
+  subscription_payment_failed: (d) => ({
+    subject: "Your Lash Saver payment didn't go through",
+    text: `We couldn't charge your card for your ${d.amount} Lash Saver subscription. Stripe will retry, but please update your card so you can keep sending pay links: ${d.billingUrl}`,
   }),
   no_show_recorded: (d) => ({
     subject: `Missed appointment with ${d.businessName}`,

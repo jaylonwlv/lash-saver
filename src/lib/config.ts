@@ -24,5 +24,12 @@ export const PROCESSING_FEE_BPS = 350; // 3.5%
 export const PROCESSING_FEE_FIXED_CENTS = 30;
 export const PROCESSING_FEE_LABEL = "3.5% + 30¢";
 
+/** Tech subscription. The trial starts when the tech adds a card, before their first pay link. */
+export const SUBSCRIPTION_PRICE_CENTS = 2900;
+export const TRIAL_DAYS = 30;
+export const SUBSCRIPTION_NAME = "Lash Saver";
+/** Send the "trial ending" email this many days before the first charge. */
+export const TRIAL_ENDING_NOTICE_DAYS = 3;
+
 /** Reminder offsets before an appointment, in hours. */
 export const REMINDER_OFFSETS_HOURS = [48, 24] as const;

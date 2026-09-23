@@ -3,19 +3,25 @@ import { BackLink } from "@/components/ui/back-link";
 import { ButtonLink } from "@/components/ui/button";
 import { formatDuration } from "@/lib/format";
 import { formatCents } from "@/lib/money";
+import { trialEligible } from "@/lib/stripe/billing";
+import { canSendPayLinks } from "@/lib/subscription";
 import { createClient, getUser } from "@/lib/supabase/server";
+import { SubscribeCard } from "../../billing/subscribe-card";
 import { wallClockParts } from "@/lib/time";
 import { AppointmentForm } from "./appointment-form";
 
 export const metadata: Metadata = { title: "New appointment" };
 
-export default async function NewAppointmentPage() {
+export default async function NewAppointmentPage({
+  searchParams,
+}: PageProps<"/dashboard/appointments/new">) {
+  const { billing } = await searchParams;
   const user = await getUser();
   const supabase = await createClient();
   const [{ data: profile }, { data: services, error }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("timezone, stripe_charges_enabled")
+      .select("timezone, stripe_charges_enabled, subscription_status")
       .eq("id", user!.id)
       .single(),
     supabase
@@ -28,6 +34,7 @@ export default async function NewAppointmentPage() {
   if (error || !profile) throw new Error(`Loading services failed: ${error?.message}`);
 
   const ready = profile.stripe_charges_enabled && services.length > 0;
+  const subscribed = canSendPayLinks(profile.subscription_status);
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,7 +45,21 @@ export default async function NewAppointmentPage() {
           Agree on a time in your DMs, fill this in, then send the client the pay link.
         </p>
       </div>
-      {ready ? (
+      {billing === "started" && subscribed && (
+        <p className="border-success text-success bg-surface rounded-2xl border p-4 text-sm">
+          {profile.subscription_status === "trialing"
+            ? "Your free trial has started. Create your first pay link below."
+            : "You're subscribed. Create your pay link below."}
+        </p>
+      )}
+      {billing === "no-trial" && (
+        <p className="border-line bg-surface rounded-2xl border p-4 text-sm">
+          That card was already used for a free trial, so your subscription started today.
+        </p>
+      )}
+      {ready && !subscribed ? (
+        <SubscribeCard trialEligible={await trialEligible(user!.id)} timezone={profile.timezone} />
+      ) : ready ? (
         <AppointmentForm
           today={wallClockParts(new Date(), profile.timezone).date}
           timeZoneLabel={profile.timezone.replace(/_/g, " ")}

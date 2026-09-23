@@ -2,6 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { serverEnv } from "@/lib/env";
 import {
+  completeSubscriptionCheckout,
+  notifyPaymentFailed,
+  syncSubscription,
+} from "@/lib/stripe/billing";
+import {
   handleChargeRefunded,
   handleCheckoutCompleted,
   handleCheckoutExpired,
@@ -30,8 +35,20 @@ export async function POST(request: NextRequest) {
 
   switch (event.type) {
     case "checkout.session.completed":
-      await handleCheckoutCompleted(event.data.object);
+      if (event.data.object.mode === "subscription") {
+        await completeSubscriptionCheckout(event.data.object.id);
+      } else {
+        await handleCheckoutCompleted(event.data.object);
+      }
       break;
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted": {
+      const sub = event.data.object;
+      const previous = await syncSubscription(sub);
+      if (sub.status === "past_due" && previous !== "past_due") await notifyPaymentFailed(sub);
+      break;
+    }
     case "checkout.session.expired":
       await handleCheckoutExpired(event.data.object);
       break;
