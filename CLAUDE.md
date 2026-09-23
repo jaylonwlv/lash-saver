@@ -112,4 +112,12 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 stripe listen --forward-connect-to localhost:3000/api/stripe/connect/webhook
 ```
 
+## Deploying (Vercel)
+
+- Env vars live in Vercel → Settings → Environment Variables. After changing any, redeploy.
+- `NEXT_PUBLIC_*` vars must be type **Config**, not Secret. They are inlined at build time, and Secret values arrive empty in the build (symptom: `Invalid or missing public env vars: ... (missing)`). Redeploy without the build cache after changing them.
+- Server keys (`SUPABASE_SECRET_KEY`, `STRIPE_SECRET_KEY`, webhook secrets, `RESEND_API_KEY`, `CRON_SECRET`) stay **Secret**.
+- Env errors name each key as `(missing)` or `(invalid)`; check Vercel → Logs.
+- Stripe webhook destinations point at the production domain (`https://lash-saver.vercel.app/...`), never a per-deployment URL.
+
 Apply migrations with the Supabase CLI (`npx supabase db push`) or paste them into the SQL editor.
