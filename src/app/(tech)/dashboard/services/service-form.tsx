@@ -3,10 +3,10 @@
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { DEFAULT_DEPOSIT_PERCENT } from "@/lib/config";
+import { DEFAULT_DEPOSIT_PERCENT, PROCESSING_FEE_LABEL } from "@/lib/config";
 import { formatDuration } from "@/lib/format";
 import type { FormState } from "@/lib/forms";
-import { dollarsToCents, formatCents } from "@/lib/money";
+import { dollarsToCents, formatCents, techPayoutCents } from "@/lib/money";
 
 export type ServiceValues = {
   name: string;
@@ -33,7 +33,9 @@ export function ServiceForm({
   const e = state.errors ?? {};
 
   const [price, setPrice] = useState(v.price);
+  const [deposit, setDeposit] = useState(v.deposit);
   const priceCents = dollarsToCents(price);
+  const depositCents = dollarsToCents(deposit);
   const suggested =
     priceCents && priceCents > 0 ? Math.round((priceCents * DEFAULT_DEPOSIT_PERCENT) / 100) : null;
   const durationValue = Number(v.duration_minutes);
@@ -85,11 +87,14 @@ export function ServiceForm({
         label="Deposit ($)"
         inputMode="decimal"
         defaultValue={v.deposit}
+        onChange={(event) => setDeposit(event.target.value)}
         error={e.deposit}
         hint={
-          suggested
-            ? `Clients pay this to book. Most techs ask ${DEFAULT_DEPOSIT_PERCENT}%, which is ${formatCents(suggested)}.`
-            : "Clients pay this to book. It goes toward the price."
+          depositCents && depositCents >= 50
+            ? `You receive ${formatCents(techPayoutCents(depositCents))} after the ${PROCESSING_FEE_LABEL} processing fee.`
+            : suggested
+              ? `Clients pay this to book. Most techs ask ${DEFAULT_DEPOSIT_PERCENT}%, which is ${formatCents(suggested)}.`
+              : "Clients pay this to book. It goes toward the price."
         }
         placeholder="40"
         required

@@ -9,8 +9,7 @@ import {
   policySummary,
 } from "@/lib/appointments";
 import { CHECKOUT_SESSION_MINUTES, DEFAULT_CURRENCY } from "@/lib/config";
-import { serverEnv } from "@/lib/env";
-import { formatCents, platformFeeCents } from "@/lib/money";
+import { formatCents, processingFeeCents } from "@/lib/money";
 import { notifyForAppointment } from "@/lib/notifications/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatWhen } from "@/lib/time";
@@ -73,7 +72,7 @@ export async function createDepositCheckout(appointmentId: string): Promise<stri
     .eq("status", "pending_deposit");
   if (acceptError) throw new Error(`Recording policy acceptance failed: ${acceptError.message}`);
 
-  const fee = platformFeeCents(a.deposit_cents, serverEnv().STRIPE_PLATFORM_FEE_BPS);
+  const fee = processingFeeCents(a.deposit_cents);
   const { data: deposit, error: depositError } = await admin
     .from("deposits")
     .insert({
@@ -142,10 +141,24 @@ export async function createDepositCheckout(appointmentId: string): Promise<stri
   return session.url;
 }
 
-/** Refunds a payment in full, pulling it back from the tech and returning our fee. */
-async function refundPayment(paymentIntentId: string, depositId: string) {
+/**
+ * Refunds the client in full and pulls the transfer back from the tech.
+ * Stripe keeps its own fee on refunds, so by default our processing fee isn't
+ * returned either and the tech absorbs it, like any card processor. Pass
+ * `returnFee` for refunds that aren't the tech's doing (duplicate or late
+ * payments), where Lash Saver absorbs it instead.
+ */
+async function refundPayment(
+  paymentIntentId: string,
+  depositId: string,
+  { returnFee }: { returnFee: boolean },
+) {
   await getStripe().refunds.create(
-    { payment_intent: paymentIntentId, reverse_transfer: true, refund_application_fee: true },
+    {
+      payment_intent: paymentIntentId,
+      reverse_transfer: true,
+      refund_application_fee: returnFee,
+    },
     { idempotencyKey: `refund-${depositId}` },
   );
 }
@@ -192,8 +205,9 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
 
   const paidAt = new Date().toISOString();
   if (!bookable) {
-    // Paid twice, or the tech cancelled while the client was paying: give it back.
-    await refundPayment(pi, depositId);
+    // Paid twice, or the tech cancelled while the client was paying: give it
+    // back, and don't charge the tech a fee for a payment they never kept.
+    await refundPayment(pi, depositId, { returnFee: true });
     await admin
       .from("deposits")
       .update({ status: "refunded", stripe_payment_intent_id: pi, paid_at: paidAt })
@@ -280,7 +294,7 @@ export async function refundAppointmentDeposit(appointmentId: string): Promise<n
     .maybeSingle();
   if (!deposit?.stripe_payment_intent_id) return null;
 
-  await refundPayment(deposit.stripe_payment_intent_id, deposit.id);
+  await refundPayment(deposit.stripe_payment_intent_id, deposit.id, { returnFee: false });
   const { error } = await admin
     .from("deposits")
     .update({ status: "refunded" })

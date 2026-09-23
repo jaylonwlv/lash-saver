@@ -1,4 +1,4 @@
-import { DEFAULT_CURRENCY } from "@/lib/config";
+import { DEFAULT_CURRENCY, PROCESSING_FEE_BPS, PROCESSING_FEE_FIXED_CENTS } from "@/lib/config";
 
 /** All money is stored and passed around as integer cents. Format only at the edge. */
 export function formatCents(cents: number, currency: string = DEFAULT_CURRENCY): string {
@@ -8,9 +8,18 @@ export function formatCents(cents: number, currency: string = DEFAULT_CURRENCY):
   }).format(cents / 100);
 }
 
-/** Platform fee for a charge, rounded down so the tech never pays a fraction of a cent extra. */
-export function platformFeeCents(amountCents: number, feeBps: number): number {
-  return Math.floor((amountCents * feeBps) / 10_000);
+/**
+ * Lash Saver's processing fee on a deposit (3.5% + 30¢), never more than the
+ * deposit itself. $40.00 → $1.70.
+ */
+export function processingFeeCents(amountCents: number): number {
+  const fee = Math.round((amountCents * PROCESSING_FEE_BPS) / 10_000) + PROCESSING_FEE_FIXED_CENTS;
+  return Math.min(fee, amountCents);
+}
+
+/** What the tech receives from a deposit after the processing fee. */
+export function techPayoutCents(amountCents: number): number {
+  return amountCents - processingFeeCents(amountCents);
 }
 
 /**

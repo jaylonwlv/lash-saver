@@ -12,8 +12,6 @@ const serverSchema = z.object({
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
   STRIPE_CONNECT_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
-  /** Platform fee on each deposit, in basis points (100 = 1%). */
-  STRIPE_PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(10_000).default(0),
 
   RESEND_API_KEY: z.string().startsWith("re_"),
   EMAIL_FROM: z.string().min(1),

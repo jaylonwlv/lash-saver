@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
+import { PROCESSING_FEE_LABEL } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -118,7 +119,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               ? "Deposits are paid out to your bank account."
               : stripeStatus === "waiting"
                 ? "Stripe is checking your details. This usually takes a few minutes; if Stripe needs anything else, tap below."
-                : "Stripe handles payments and sends deposits to your bank account. Takes about 5 minutes."
+                : `Stripe handles payments and sends deposits to your bank account. Takes about 5 minutes. Processing fee: ${PROCESSING_FEE_LABEL} per deposit.`
           }
         >
           {stripeStatus === "done" ? (

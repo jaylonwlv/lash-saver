@@ -24,7 +24,7 @@ The product's job is preventing no-shows: deposit up front, a policy the client 
 - **Next.js 16** (App Router, React 19, TypeScript strict) on **Vercel**. See the AGENTS.md note: read `node_modules/next/dist/docs/` before using a Next API you're not sure about. `middleware.ts` is now `proxy.ts`. `params`, `searchParams`, `cookies()` and `headers()` are async.
 - **Tailwind CSS v4.** Design tokens live in `src/app/globals.css` (`bg-brand`, `text-muted`, `border-line`, …).
 - **Supabase** for auth (email magic link, techs only) and Postgres with RLS. Uses `@supabase/ssr`.
-- **Stripe Connect** with Express accounts. Deposits are **destination charges** made on the platform with `transfer_data.destination` set to the tech's account and an `application_fee_amount` (`STRIPE_PLATFORM_FEE_BPS`).
+- **Stripe Connect** with Express accounts. Deposits are **destination charges** made on the platform with `transfer_data.destination` set to the tech's account and an `application_fee_amount`: the **processing fee**, 3.5% + 30¢ (`PROCESSING_FEE_*` in `config.ts`, `processingFeeCents` in `money.ts`). It covers Stripe's card fee, which the platform pays on destination charges. Show techs what they receive (`techPayoutCents`) wherever deposit amounts appear.
 - **Resend** for email, behind the notifications interface.
 - **zod** for validating env vars and every input from outside the app.
 - **Vercel Cron** for reminders and expiring unpaid holds (`vercel.json`). It runs daily (14:00 UTC) because the Vercel Hobby plan allows only daily crons. On Pro, switch to hourly (`0 * * * *`) for tighter reminder timing.
@@ -105,6 +105,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Account status is written only by `syncAccountStatus(accountId)`, which re-reads the v2 account. It runs from the Connect webhook, the onboarding return route, and the dashboard while onboarding is unfinished. `stripe_charges_enabled` means "transfers capability active" (the tech can receive deposits).
 
 - Deposit lifecycle (`deposits.status`): `pending` (checkout open) → `paid` (webhook) → `applied` (completed) / `forfeited` (no-show) / `refunded`. `failed` = that checkout expired. At most one deposit per appointment can hold money (partial unique index); a second payment is refunded automatically, as is a payment for an appointment cancelled meanwhile.
+- Refunds use `reverse_transfer: true`. Tech or client cancellations keep the processing fee (`refund_application_fee: false`), because Stripe keeps its fee too; the client still gets the full deposit back and the tech absorbs the fee. System refunds (duplicate or late payments) return the fee.
 - Appointments store `price_cents`/`deposit_cents` at creation, so editing a service doesn't change existing bookings.
 - Money is **integer cents** everywhere: DB, code, Stripe. Format only in the UI, using `formatCents`.
 - Every Stripe call that creates something passes an `idempotencyKey` built from our own ids.

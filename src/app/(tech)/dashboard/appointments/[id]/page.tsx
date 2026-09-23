@@ -5,7 +5,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { CopyLink } from "@/components/ui/copy-link";
 import { STATUS_LABEL, payability, payUrl } from "@/lib/appointments";
 import { formatDuration } from "@/lib/format";
-import { formatCents } from "@/lib/money";
+import { formatCents, processingFeeCents, techPayoutCents } from "@/lib/money";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatWhen } from "@/lib/time";
 import { cancelAppointment, markCompleted, markNoShow } from "../actions";
@@ -94,7 +94,9 @@ export default async function AppointmentPage({
         )}
         <Detail label="Deposit">
           {deposit
-            ? `${DEPOSIT_LABEL[deposit.status]}: ${formatCents(deposit.amount_cents)}`
+            ? deposit.status === "refunded"
+              ? `Refunded to the client: ${formatCents(deposit.amount_cents)}`
+              : `${DEPOSIT_LABEL[deposit.status]}: ${formatCents(deposit.amount_cents)} · you receive ${formatCents(techPayoutCents(deposit.amount_cents))}`
             : "Not paid yet"}
         </Detail>
         {a.policy_accepted_at && (
@@ -145,7 +147,7 @@ export default async function AppointmentPage({
         <ActionButton
           action={cancelAppointment.bind(null, a.id)}
           label="Cancel and refund deposit"
-          confirmText={`Cancel ${a.client_name}'s appointment and refund their deposit in full?`}
+          confirmText={`Cancel ${a.client_name}'s appointment and refund their ${formatCents(a.deposit_cents ?? 0)} deposit in full? The ${formatCents(processingFeeCents(a.deposit_cents ?? 0))} processing fee isn't refundable.`}
         />
       )}
       {a.status === "pending_deposit" && (
