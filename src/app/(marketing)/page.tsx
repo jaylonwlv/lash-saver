@@ -276,9 +276,17 @@ export default function HomePage() {
 
       <footer className="text-muted mx-auto flex w-full max-w-5xl flex-col gap-2 px-5 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-sm sm:flex-row sm:justify-between">
         <span>© {APP_NAME}</span>
-        <Link href="/login" className="underline">
-          Sign in
-        </Link>
+        <div className="flex gap-4">
+          <Link href="/terms" className="underline">
+            Terms
+          </Link>
+          <Link href="/privacy" className="underline">
+            Privacy
+          </Link>
+          <Link href="/login" className="underline">
+            Sign in
+          </Link>
+        </div>
       </footer>
     </div>
   );

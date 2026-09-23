@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LegalLinks } from "@/components/ui/legal-links";
 import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/ui/button";
 import { policySummary } from "@/lib/appointments";
@@ -68,6 +69,7 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
           {policySummary(tech.cancellation_window_hours ?? 0, tech.policy_text)}
         </p>
       </section>
+      <LegalLinks className="mt-auto pt-4" />
     </main>
   );
 }

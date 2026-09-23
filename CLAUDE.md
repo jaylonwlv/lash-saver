@@ -39,6 +39,10 @@ src/
     (marketing)/page.tsx          Landing page (static): hero, cost of no-shows, 4 steps with real app
                                   screenshots (images/), features, vs Cash App, pricing, FAQ. Pulls
                                   price, trial and fee from config.ts; keep claims true to the product.
+    (marketing)/terms/, privacy/  Terms of Service and Privacy Policy (legal-page.tsx layout). Keep them true to
+                                  the product: update them, and LEGAL_UPDATED in config.ts, when data, fees,
+                                  providers or billing change. No ad trackers on pay links or booking pages
+                                  (the Privacy Policy says so); a Meta Pixel belongs on marketing pages only.
     (auth)/login/                 Email sign-in: 6-digit code (any browser) or link (page, form, actions)
     auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)

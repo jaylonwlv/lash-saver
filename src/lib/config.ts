@@ -33,3 +33,8 @@ export const TRIAL_ENDING_NOTICE_DAYS = 3;
 
 /** Reminder offsets before an appointment, in hours. */
 export const REMINDER_OFFSETS_HOURS = [48, 24] as const;
+
+/** Shown on the Terms and Privacy pages. Update LEGAL_UPDATED whenever either page changes. */
+export const LEGAL_CONTACT_EMAIL = "jaylonw.lv@gmail.com";
+export const GOVERNING_STATE = "Nevada";
+export const LEGAL_UPDATED = "September 23, 2026";

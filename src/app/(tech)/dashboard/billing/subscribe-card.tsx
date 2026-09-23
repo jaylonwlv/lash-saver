@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
 import { formatCents } from "@/lib/money";
 import { formatDate } from "@/lib/time";
@@ -40,7 +41,13 @@ export function SubscribeCard({
           <BillingButton action={startSubscription} label={`Subscribe for ${price}/month`} />
         </>
       )}
-      <p className="text-muted text-center text-xs">Secure checkout by Stripe.</p>
+      <p className="text-muted text-center text-xs">
+        Renews monthly until you cancel. By continuing you agree to the{" "}
+        <Link href="/terms" className="underline">
+          Terms
+        </Link>
+        . Secure checkout by Stripe.
+      </p>
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LegalLinks } from "@/components/ui/legal-links";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { z } from "zod";
@@ -168,6 +169,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
           for a new one.
         </Notice>
       )}
+      <LegalLinks className="mt-auto pt-4" />
     </main>
   );
 }
