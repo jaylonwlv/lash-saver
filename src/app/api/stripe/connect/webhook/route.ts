@@ -4,7 +4,11 @@ import { serverEnv } from "@/lib/env";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { getStripe } from "@/lib/stripe/server";
 
-/** Connect webhook: events from techs' connected accounts (onboarding status). */
+/**
+ * Connect webhook: events from techs' connected accounts (onboarding status).
+ * The payload is only a trigger; status is re-read from Stripe (Accounts v2)
+ * so the stored values never depend on the event's API version.
+ */
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("stripe-signature");
   if (!signature) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
@@ -22,7 +26,7 @@ export async function POST(request: NextRequest) {
 
   switch (event.type) {
     case "account.updated":
-      await syncAccountStatus(event.data.object);
+      await syncAccountStatus(event.data.object.id);
       break;
     default:
       break;

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { publicEnv } from "@/lib/env.public";
+import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { CopyLink } from "./copy-link";
 import { openStripeDashboard, startStripeOnboarding } from "./stripe/actions";
@@ -32,6 +33,18 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       .eq("is_active", true),
   ]);
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
+
+  // While onboarding is unfinished, refresh status from Stripe on each visit so the
+  // checklist doesn't depend on webhook timing. Once ready, the webhook keeps it current.
+  if (profile.stripe_account_id && !profile.stripe_charges_enabled) {
+    try {
+      const status = await syncAccountStatus(profile.stripe_account_id);
+      profile.stripe_charges_enabled = status.ready;
+      profile.stripe_details_submitted = status.detailsSubmitted;
+    } catch (err) {
+      console.error("Stripe status refresh failed", err);
+    }
+  }
 
   const profileDone = Boolean(profile.business_name && profile.slug);
   const stripeStatus: StepStatus = profile.stripe_charges_enabled

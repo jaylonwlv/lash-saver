@@ -55,7 +55,7 @@ src/
                                   admin.ts (secret key, bypasses RLS), proxy.ts,
                                   database.types.ts
     stripe/                       server.ts (secret key), client.ts (Stripe.js),
-                                  connect.ts (connected accounts: create, onboarding link, status sync)
+                                  connect.ts (Accounts v2: create, onboarding link, status sync)
     notifications/                notify() + Notifier interface, Resend email, SMS stub, templates
 supabase/migrations/              SQL migrations (timestamped, append-only)
 ```
@@ -91,8 +91,8 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 
 **Money and Stripe**
 
-- Connected accounts are created with `controller` (Express dashboard, platform pays fees and covers losses), not the deprecated `type: "express"`.
-- Account status (`stripe_charges_enabled`, `stripe_details_submitted`) is written only by `syncAccountStatus`, from the Connect webhook or the onboarding return route.
+- Connected accounts use **Accounts v2** (`stripe.v2.core.accounts`, `stripe.v2.core.accountLinks`). Stripe blocks v1 account creation for new platforms. Each tech's account has the `recipient` configuration with `stripe_balance.stripe_transfers` (what destination charges need), Express dashboard, and `fees_collector`/`losses_collector: "application"`.
+- Account status is written only by `syncAccountStatus(accountId)`, which re-reads the v2 account. It runs from the Connect webhook, the onboarding return route, and the dashboard while onboarding is unfinished. `stripe_charges_enabled` means "transfers capability active" (the tech can receive deposits).
 
 - Money is **integer cents** everywhere: DB, code, Stripe. Format only in the UI, using `formatCents`.
 - Every Stripe call that creates something passes an `idempotencyKey` built from our own ids.

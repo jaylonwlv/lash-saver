@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { syncAccountStatus } from "@/lib/stripe/connect";
-import { getStripe } from "@/lib/stripe/server";
 import { createClient, getUser } from "@/lib/supabase/server";
 
 /**
  * Stripe sends techs here after onboarding. Pull the account status now so the
- * dashboard is current; the account.updated webhook keeps it in sync later.
+ * dashboard is current; the Connect webhook keeps it in sync later.
  */
 export async function GET(request: NextRequest) {
   const user = await getUser();
@@ -20,9 +19,9 @@ export async function GET(request: NextRequest) {
 
   if (profile?.stripe_account_id) {
     try {
-      await syncAccountStatus(await getStripe().accounts.retrieve(profile.stripe_account_id));
+      await syncAccountStatus(profile.stripe_account_id);
     } catch (err) {
-      // Not fatal: the webhook will catch up.
+      // Not fatal: the dashboard and webhook will catch up.
       console.error("Stripe return sync failed", err);
     }
   }
