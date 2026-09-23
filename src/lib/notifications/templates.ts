@@ -18,6 +18,7 @@ export type TemplateData = {
     serviceName: string;
     when: string;
     amount: string;
+    cancelNote: string;
     detailsUrl: string;
   };
   /** To the tech, when a client pays. */
@@ -32,7 +33,26 @@ export type TemplateData = {
     businessName: string;
     serviceName: string;
     when: string;
+    cancelNote: string;
     manageUrl: string;
+  };
+  /** To the client, after they cancel. */
+  cancellation_confirmed: {
+    businessName: string;
+    serviceName: string;
+    when: string;
+    amount: string;
+    refunded: boolean;
+    windowHours: number;
+  };
+  /** To the tech, when a client cancels. */
+  client_cancelled: {
+    clientName: string;
+    serviceName: string;
+    when: string;
+    amount: string;
+    refunded: boolean;
+    appointmentUrl: string;
   };
   no_show_recorded: { businessName: string; when: string; amount: string };
   deposit_refunded: { businessName: string; amount: string };
@@ -49,7 +69,7 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   }),
   booking_confirmed: (d) => ({
     subject: `You're booked with ${d.businessName}`,
-    text: `You're booked! ${d.serviceName} with ${d.businessName} on ${d.when}. Your ${d.amount} deposit is paid. Details and policy: ${d.detailsUrl}`,
+    text: `You're booked! ${d.serviceName} with ${d.businessName} on ${d.when}. Your ${d.amount} deposit is paid. ${d.cancelNote} Details, policy or cancel: ${d.detailsUrl}`,
   }),
   tech_deposit_paid: (d) => ({
     subject: `${d.clientName} paid their ${d.amount} deposit`,
@@ -57,7 +77,19 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   }),
   appointment_reminder: (d) => ({
     subject: `Reminder: ${d.serviceName} on ${d.when}`,
-    text: `Reminder from ${d.businessName}: ${d.serviceName} on ${d.when}. Need to change it? ${d.manageUrl}`,
+    text: `Reminder from ${d.businessName}: ${d.serviceName} on ${d.when}. ${d.cancelNote} Details or cancel: ${d.manageUrl}`,
+  }),
+  cancellation_confirmed: (d) => ({
+    subject: `Your appointment with ${d.businessName} is cancelled`,
+    text: d.refunded
+      ? `Your ${d.serviceName} with ${d.businessName} on ${d.when} is cancelled. Your ${d.amount} deposit is being refunded; it can take 5 to 10 business days to show up.`
+      : `Your ${d.serviceName} with ${d.businessName} on ${d.when} is cancelled. Because it was less than ${d.windowHours} hours before, your ${d.amount} deposit was kept per the policy.`,
+  }),
+  client_cancelled: (d) => ({
+    subject: `${d.clientName} cancelled ${d.when}`,
+    text: d.refunded
+      ? `${d.clientName} cancelled ${d.serviceName} on ${d.when}, early enough for a refund, so their ${d.amount} deposit was returned. That time is open again. ${d.appointmentUrl}`
+      : `${d.clientName} cancelled ${d.serviceName} on ${d.when} inside your cancellation window, so you keep their ${d.amount} deposit. That time is open again. ${d.appointmentUrl}`,
   }),
   no_show_recorded: (d) => ({
     subject: `Missed appointment with ${d.businessName}`,

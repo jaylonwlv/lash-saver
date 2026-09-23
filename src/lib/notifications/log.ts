@@ -13,6 +13,8 @@ export async function notifyForAppointment<T extends TemplateId>(args: {
   to: Recipient;
   template: T;
   data: TemplateData[T];
+  /** Name recorded in notification_log, when one template is sent at several times. */
+  logAs?: string;
 }): Promise<void> {
   const results = await notify({ to: args.to, template: args.template, data: args.data });
   if (results.length === 0) return;
@@ -22,7 +24,7 @@ export async function notifyForAppointment<T extends TemplateId>(args: {
     .insert(
       results.map((r) => ({
         appointment_id: args.appointmentId,
-        template: args.template,
+        template: args.logAs ?? args.template,
         channel: r.channel,
         provider_message_id: r.ok ? (r.providerMessageId ?? null) : null,
         error: r.ok ? null : r.error,

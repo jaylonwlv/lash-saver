@@ -1,5 +1,6 @@
 import "server-only";
 import { publicEnv } from "@/lib/env.public";
+import { formatWhen } from "@/lib/time";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Enums, Tables } from "@/lib/supabase/database.types";
 
@@ -89,4 +90,47 @@ export function policySummary(windowHours: number, policyText: string | null): s
       ? `Cancel or reschedule at least ${windowHours} hours before your appointment to get your deposit back. Later cancellations and no-shows lose the deposit.`
       : "Your deposit is refundable if you cancel before your appointment. No-shows lose the deposit.";
   return policyText ? `${rule}\n\n${policyText}` : rule;
+}
+
+export type CancellationTerms = {
+  /** Hours before the start a client must cancel by to get the deposit back. */
+  windowHours: number;
+  /** Last moment a cancellation is refunded. */
+  refundDeadline: Date;
+  /** Cancelling right now would be refunded. */
+  refundable: boolean;
+};
+
+/** Refund rule for a client cancelling, using the policy they agreed to when they paid. */
+export function cancellationTerms(
+  appointment: Pick<Tables<"appointments">, "starts_at" | "cancellation_window_hours_snapshot">,
+  techWindowHours: number,
+  now = new Date(),
+): CancellationTerms {
+  const windowHours = appointment.cancellation_window_hours_snapshot ?? techWindowHours;
+  const refundDeadline = new Date(
+    new Date(appointment.starts_at).getTime() - windowHours * 3_600_000,
+  );
+  return { windowHours, refundDeadline, refundable: now <= refundDeadline };
+}
+
+/** One line for emails: when the client can still cancel for a refund. */
+export function cancelNote(ctx: AppointmentContext, now = new Date()): string {
+  const terms = cancellationTerms(ctx.appointment, ctx.tech.cancellation_window_hours, now);
+  return terms.refundable
+    ? `Can't make it? Cancel by ${formatWhen(terms.refundDeadline, ctx.tech.timezone)} to get your deposit back.`
+    : "Can't make it? Please let us know. Cancelling now means the deposit is kept, per the policy.";
+}
+
+/** The deposit that holds (or held) money for an appointment, if any. */
+export async function loadSettledDeposit(appointmentId: string) {
+  const { data } = await createAdminClient()
+    .from("deposits")
+    .select("status, amount_cents")
+    .eq("appointment_id", appointmentId)
+    .in("status", ["paid", "applied", "forfeited", "refunded"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data;
 }

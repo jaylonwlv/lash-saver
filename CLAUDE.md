@@ -9,8 +9,9 @@ Lash Saver helps independent lash techs protect themselves from no-shows. Techs 
 1. A tech signs up, connects Stripe (Express), and adds services with prices and deposit amounts.
 2. The tech and client agree on a time in the DMs. The tech creates the appointment in Lash Saver (**New appointment**), which makes a **pay link** (`/pay/[appointmentId]`), and pastes it into the DM. The link works for `PAY_LINK_VALID_HOURS` or until the appointment starts. The booking page `/b/[slug]` is a menu for the tech's Instagram bio; clients message the tech to book.
 3. The client opens the pay link, agrees to the deposit policy (a snapshot is saved with the time they agreed), and pays through Stripe Checkout. The Stripe webhook confirms the appointment and emails the client and the tech.
-4. The client gets reminders before the appointment (email now, SMS later). _Not built yet._
-5. After the appointment, the tech marks it **completed** (the deposit goes toward the price) or **no-show** (the tech keeps the deposit). A tech cancellation refunds the deposit in full. _Client self-cancel with refund inside/outside the window is not built yet._
+4. The daily cron sends reminders (`REMINDER_OFFSETS_HOURS`, 48h and 24h; email now, SMS later), each logged in `notification_log` as `appointment_reminder_<N>h` so it's sent once. Every email says when the client can still cancel for a refund.
+5. The client can cancel from the same link (reschedules happen in the DMs). Before the refund deadline (start minus the cancellation window they agreed to) the deposit is refunded; after it, the deposit is kept. The server decides at submit time and refuses if the page showed different terms. The tech is emailed either way.
+6. After the appointment, the tech marks it **completed** (the deposit goes toward the price) or **no-show** (the tech keeps the deposit). A tech cancellation refunds the deposit in full.
 
 The product's job is preventing no-shows: deposit up front, a policy the client agrees to, reminders, easy cancel instead of ghosting, and one tap to keep the deposit. Judge new features against that. Self-serve time slots are a convenience, not the core.
 
@@ -47,12 +48,13 @@ src/
     pay/[id]/                     Public pay page: details, policy + agree checkbox → Stripe Checkout
     api/stripe/connect/webhook/   Connect events (account.updated)
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
-    api/cron/reminders/           Vercel Cron job
+    api/cron/reminders/           Vercel Cron: expire unpaid pay links, send reminders (reminders.ts: due rule)
   components/ui/                  Small shared building blocks (Button, Input, Textarea, Select, BackLink)
   lib/
     config.ts                     App constants (name, pay link validity, checkout lifetime, reminders)
     time.ts                       Time zones: zonedTimeToUtc, wallClockParts, formatWhen (Intl only)
-    appointments.ts               Status labels, payability, policySummary, loadAppointmentContext
+    appointments.ts               Status labels, payability, policySummary, cancellationTerms,
+                                  cancelNote, loadAppointmentContext, loadSettledDeposit
     env.ts / env.public.ts        zod-checked env (server-only / browser-safe)
     money.ts                      Cents helpers, fee math, dollarsToCents for form input
     format.ts                     Display helpers (formatDuration)

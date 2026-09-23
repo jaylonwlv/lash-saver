@@ -2,6 +2,7 @@ import "server-only";
 import type Stripe from "stripe";
 import {
   appointmentUrl,
+  cancelNote,
   loadAppointmentContext,
   payability,
   payUrl,
@@ -228,6 +229,7 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
       serviceName,
       when,
       amount,
+      cancelNote: cancelNote(ctx),
       detailsUrl: payUrl(appointmentId),
     },
   });

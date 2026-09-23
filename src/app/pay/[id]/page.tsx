@@ -2,10 +2,17 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { z } from "zod";
-import { loadAppointmentContext, payability, policySummary } from "@/lib/appointments";
+import {
+  cancellationTerms,
+  loadAppointmentContext,
+  loadSettledDeposit,
+  payability,
+  policySummary,
+} from "@/lib/appointments";
 import { formatCents } from "@/lib/money";
 import { formatWhen } from "@/lib/time";
-import { payDeposit } from "./actions";
+import { cancelByClient, payDeposit } from "./actions";
+import { CancelForm } from "./cancel-form";
 import { PayForm } from "./pay-form";
 
 export const metadata: Metadata = {
@@ -35,6 +42,16 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
   const policy =
     a.policy_text_snapshot ?? policySummary(tech.cancellation_window_hours, tech.policy_text);
   const dm = tech.instagram_handle ? `https://ig.me/m/${tech.instagram_handle}` : null;
+  const upcoming = a.status === "confirmed" && new Date(a.starts_at) > new Date();
+  const terms = cancellationTerms(a, tech.cancellation_window_hours);
+  const settled = a.status === "cancelled_by_client" ? await loadSettledDeposit(a.id) : null;
+  const messageTech = dm ? (
+    <a href={dm} className="text-brand underline">
+      message {business}
+    </a>
+  ) : (
+    `message ${business}`
+  );
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -57,8 +74,37 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
       </dl>
 
       {booked ? (
-        <Notice tone="success">
-          Your {formatCents(deposit)} deposit is paid. We emailed your confirmation. See you then!
+        <>
+          <Notice tone="success">
+            Your {formatCents(deposit)} deposit is paid. We emailed your confirmation. See you then!
+          </Notice>
+          {upcoming && (
+            <section className="flex flex-col gap-3">
+              <h2 className="font-semibold">Can&apos;t make it?</h2>
+              <p className="text-muted text-sm">
+                To reschedule, {messageTech}.{" "}
+                {terms.refundable
+                  ? `If you need to cancel, do it by ${formatWhen(terms.refundDeadline, tech.timezone)} to get your ${formatCents(deposit)} deposit back.`
+                  : `It's less than ${terms.windowHours} hours before your appointment, so if you cancel now your ${formatCents(deposit)} deposit is kept, per the policy.`}
+              </p>
+              <CancelForm
+                action={cancelByClient.bind(null, a.id)}
+                expectRefund={terms.refundable}
+                confirmText={
+                  terms.refundable
+                    ? `Cancel your appointment? Your ${formatCents(deposit)} deposit will be refunded.`
+                    : `Cancel your appointment? Your ${formatCents(deposit)} deposit will NOT be refunded.`
+                }
+              />
+            </section>
+          )}
+        </>
+      ) : a.status === "cancelled_by_client" ? (
+        <Notice>
+          You cancelled this appointment.{" "}
+          {settled?.status === "refunded"
+            ? `Your ${formatCents(settled.amount_cents)} deposit is being refunded; it can take 5 to 10 business days.`
+            : `Your ${formatCents(settled?.amount_cents ?? deposit)} deposit was kept, per the policy.`}
         </Notice>
       ) : paid && a.status === "pending_deposit" ? (
         <Notice tone="success">
@@ -72,7 +118,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
           </section>
           <PayForm action={payDeposit.bind(null, a.id)} amount={formatCents(deposit)} />
         </>
-      ) : a.status === "cancelled_by_tech" || a.status === "cancelled_by_client" ? (
+      ) : a.status === "cancelled_by_tech" ? (
         <Notice>This appointment was cancelled.</Notice>
       ) : a.status === "no_show" ? (
         <Notice>This appointment is closed.</Notice>
