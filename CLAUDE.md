@@ -24,7 +24,7 @@ Lash Saver helps independent lash techs protect themselves from no-shows. Techs 
 - **Stripe Connect** with Express accounts. Deposits are **destination charges** made on the platform with `transfer_data.destination` set to the tech's account and an `application_fee_amount` (`STRIPE_PLATFORM_FEE_BPS`).
 - **Resend** for email, behind the notifications interface.
 - **zod** for validating env vars and every input from outside the app.
-- **Vercel Cron** for reminders and expiring unpaid holds (`vercel.json`). An hourly schedule needs Vercel Pro. On Hobby, change it to daily.
+- **Vercel Cron** for reminders and expiring unpaid holds (`vercel.json`). It runs daily (14:00 UTC) because the Vercel Hobby plan allows only daily crons. On Pro, switch to hourly (`0 * * * *`) for tighter reminder timing.
 
 ## Folder structure
 
