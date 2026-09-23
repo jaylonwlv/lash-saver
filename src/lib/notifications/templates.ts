@@ -83,6 +83,17 @@ export type TemplateData = {
   subscription_payment_failed: { amount: string; billingUrl: string };
   no_show_recorded: { businessName: string; when: string; amount: string };
   deposit_refunded: { businessName: string; amount: string; fromProvider: boolean };
+  /** To the tech, when a client disputes a card deposit with their bank. */
+  deposit_disputed: { clientName: string; amount: string; when: string; appointmentUrl: string };
+  /** To the tech, when the bank decides. */
+  deposit_dispute_closed: {
+    clientName: string;
+    amount: string;
+    won: boolean;
+    appointmentUrl: string;
+  };
+  /** To the owner of Dibs, for any dispute on the platform account. */
+  dispute_alert: { summary: string; amount: string; dueBy: string; disputeUrl: string };
 };
 
 export type TemplateId = keyof TemplateData;
@@ -143,6 +154,22 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   no_show_recorded: (d) => ({
     subject: `Missed appointment with ${d.businessName}`,
     text: `${d.businessName} marked your ${d.when} appointment as a no-show. Your ${d.amount} deposit was kept per their policy.`,
+  }),
+  deposit_disputed: (d) => ({
+    subject: `${d.clientName} disputed their ${d.amount} deposit`,
+    text: `${d.clientName} disputed their ${d.amount} deposit for ${d.when} with their bank. We sent the bank the policy they agreed to before paying. While the bank reviews it, the deposit is held back from your Stripe balance; if the bank sides with you, it comes back. Details: ${d.appointmentUrl}`,
+  }),
+  deposit_dispute_closed: (d) => ({
+    subject: d.won
+      ? `You won the dispute over ${d.clientName}'s deposit`
+      : `The bank sided with ${d.clientName} on their deposit`,
+    text: d.won
+      ? `The bank ruled in your favor on ${d.clientName}'s ${d.amount} deposit. The money is back in your Stripe balance. ${d.appointmentUrl}`
+      : `The bank ruled for ${d.clientName} on their ${d.amount} deposit, so it went back to them. ${d.appointmentUrl}`,
+  }),
+  dispute_alert: (d) => ({
+    subject: `Dispute: ${d.amount}`,
+    text: `${d.summary} Evidence was submitted automatically where Dibs had it. Response due by ${d.dueBy}: ${d.disputeUrl}`,
   }),
   deposit_refunded: (d) => ({
     subject: `Your ${d.amount} deposit is being refunded`,

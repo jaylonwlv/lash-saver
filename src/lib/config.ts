@@ -37,6 +37,8 @@ export const REMINDER_OFFSETS_HOURS = [48, 24] as const;
 /** Shown on the Terms and Privacy pages. Update LEGAL_UPDATED whenever either page changes. */
 export const LEGAL_CONTACT_EMAIL = "jaylonw.lv@gmail.com";
 export const GOVERNING_STATE = "Nevada";
+/** Where Dibs sends alerts meant for the business owner (disputes). */
+export const OWNER_ALERT_EMAIL = LEGAL_CONTACT_EMAIL;
 export const LEGAL_UPDATED = "September 23, 2026";
 
 /** Graph API version for the Meta Conversions API. Meta supports each for about two years. */

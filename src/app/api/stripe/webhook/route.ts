@@ -11,6 +11,12 @@ import {
   handleCheckoutCompleted,
   handleCheckoutExpired,
 } from "@/lib/stripe/deposits";
+import {
+  handleDisputeClosed,
+  handleDisputeCreated,
+  handleDisputeFundsReinstated,
+  handleDisputeFundsWithdrawn,
+} from "@/lib/stripe/disputes";
 import { getStripe } from "@/lib/stripe/server";
 import { trackSubscription } from "@/lib/meta";
 
@@ -59,6 +65,18 @@ export async function POST(request: NextRequest) {
       break;
     case "charge.refunded":
       await handleChargeRefunded(event.data.object);
+      break;
+    case "charge.dispute.created":
+      await handleDisputeCreated(event.data.object);
+      break;
+    case "charge.dispute.funds_withdrawn":
+      await handleDisputeFundsWithdrawn(event.data.object);
+      break;
+    case "charge.dispute.funds_reinstated":
+      await handleDisputeFundsReinstated(event.data.object);
+      break;
+    case "charge.dispute.closed":
+      await handleDisputeClosed(event.data.object);
       break;
     default:
       break;

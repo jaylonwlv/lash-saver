@@ -46,7 +46,7 @@ export default async function AppointmentPage({
     supabase.from("profiles").select("timezone").eq("id", user!.id).single(),
     supabase
       .from("deposits")
-      .select("status, amount_cents, paid_at, method, manual_app, created_at")
+      .select("status, amount_cents, paid_at, method, manual_app, dispute_status, created_at")
       .eq("appointment_id", id)
       .in("status", ["paid", "applied", "forfeited", "refunded", "refund_due", "pending"])
       .order("created_at", { ascending: false }),
@@ -156,6 +156,15 @@ export default async function AppointmentPage({
                 : `${DEPOSIT_LABEL[deposit.status]}: ${formatCents(deposit.amount_cents)} · you receive ${formatCents(techPayoutCents(deposit.amount_cents))}`
             : "Not paid yet"}
         </Detail>
+        {deposit?.dispute_status && (
+          <Detail label="Dispute">
+            {deposit.dispute_status === "open"
+              ? `${a.client_name} disputed this deposit with their bank. We sent the bank the policy they agreed to; the deposit is held back while the bank reviews it.`
+              : deposit.dispute_status === "won"
+                ? "The bank ruled in your favor. The deposit is back in your Stripe balance."
+                : `The bank ruled for ${a.client_name}, so the deposit went back to them.`}
+          </Detail>
+        )}
         {a.policy_accepted_at && (
           <Detail label="Policy">
             Client agreed to your deposit policy on {formatWhen(a.policy_accepted_at, tz)}

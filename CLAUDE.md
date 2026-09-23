@@ -75,6 +75,7 @@ src/
     stripe/                       server.ts (secret key), client.ts (Stripe.js),
                                   connect.ts (Accounts v2: create, onboarding link, status sync),
                                   deposits.ts (Checkout, webhook handlers, refunds, settle),
+                                  disputes.ts (chargebacks: evidence, transfer reversal, return if won),
                                   billing.ts (tech subscription: trial eligibility, Checkout, sync, portal)
     subscription.ts               canSendPayLinks(status), normalizeEmail (no server deps)
     payments.ts                   Manual deposits: manualHandles, canTakeDeposits, paymentAppUrl (no server deps)
@@ -126,6 +127,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Every Stripe call that creates something passes an `idempotencyKey` built from our own ids.
 - **Webhooks are the source of truth** for payment state. Never mark a deposit paid because of a redirect or a client-side callback. Webhook handlers must be idempotent.
 - Check each webhook's signature against the matching secret (platform or Connect).
+- **Chargebacks** (`charge.dispute.*`, `lib/stripe/disputes.ts`): the platform is liable, so on `funds_withdrawn` Dibs reverses the pro's transfer (up to what's left of it) and on `funds_reinstated` sends it back. `created` auto-submits the agreed policy as evidence and emails the pro and `OWNER_ALERT_EMAIL`; `closed` records `deposits.dispute_status` and tells the pro. Each step is idempotent across retries (reversal metadata, transfer_group, conditional updates). Stripe's dispute fee stays with the platform.
 
 **Subscriptions**
 

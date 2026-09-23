@@ -80,6 +80,8 @@ type DepositRow = Timestamps & {
   paid_at: string | null;
   method: "stripe" | "manual";
   manual_app: ManualApp | null;
+  dispute_id: string | null;
+  dispute_status: "open" | "won" | "lost" | null;
 };
 
 type NotificationLogRow = {
