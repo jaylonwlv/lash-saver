@@ -44,7 +44,7 @@ src/
     api/stripe/connect/webhook/   Connect events (account.updated)
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
     api/cron/reminders/           Vercel Cron job
-  components/ui/                  Small shared building blocks (Button, Input, Textarea, Select)
+  components/ui/                  Small shared building blocks (Button, Input, Textarea, Select, BackLink)
   lib/
     config.ts                     App constants (name, hold time, reminder offsets)
     env.ts / env.public.ts        zod-checked env (server-only / browser-safe)
@@ -113,6 +113,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Use single-column layouts, primary actions at the bottom within thumb reach, and respect `env(safe-area-inset-*)`.
 - Use the right `type`, `inputMode` and `autoComplete` on inputs (`email`, `tel`, `name`).
 - Use the design tokens, not raw hex colors.
+- Every inner tech page starts with `<BackLink>` to its parent (Services → Dashboard, Edit service → Services). Don't rely on the bottom tab bar alone.
 
 ## Commands
 

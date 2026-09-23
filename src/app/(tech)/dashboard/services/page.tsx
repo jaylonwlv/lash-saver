@@ -4,6 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { formatDuration } from "@/lib/format";
 import { formatCents } from "@/lib/money";
 import { createClient, getUser } from "@/lib/supabase/server";
+import { BackLink } from "@/components/ui/back-link";
 
 export const metadata: Metadata = { title: "Services" };
 
@@ -20,6 +21,7 @@ export default async function ServicesPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/dashboard" label="Dashboard" />
       <h1 className="text-2xl font-bold">Services</h1>
 
       {services.length === 0 ? (

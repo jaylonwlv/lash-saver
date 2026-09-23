@@ -4,6 +4,7 @@ import { publicEnv } from "@/lib/env.public";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 import { ProfileForm } from "./profile-form";
+import { BackLink } from "@/components/ui/back-link";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -23,6 +24,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/dashboard" label="Dashboard" />
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold">Profile</h1>
         <p className="text-muted text-sm">Signed in as {profile.email}</p>

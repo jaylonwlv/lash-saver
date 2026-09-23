@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { setServiceActive, updateService } from "../actions";
 import { serviceIdSchema } from "../schema";
 import { ServiceForm } from "../service-form";
+import { BackLink } from "@/components/ui/back-link";
 
 export const metadata: Metadata = { title: "Edit service" };
 
@@ -25,6 +26,7 @@ export default async function EditServicePage({ params }: PageProps<"/dashboard/
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/dashboard/services" label="Services" />
       <h1 className="text-2xl font-bold">Edit service</h1>
       <ServiceForm
         action={updateService.bind(null, service.id)}
