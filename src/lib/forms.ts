@@ -36,3 +36,14 @@ export const optionalText = (max: number) =>
     .trim()
     .max(max, `Keep this under ${max} characters.`)
     .transform((v) => (v === "" ? null : v));
+
+/** Optional Instagram handle: strips a leading "@", validates, empty becomes null. */
+export const instagramHandle = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/^@/, ""))
+  .refine(
+    (v) => v === "" || /^[A-Za-z0-9._]{1,30}$/.test(v),
+    "That isn't a valid Instagram handle.",
+  )
+  .transform((v) => (v === "" ? null : v));

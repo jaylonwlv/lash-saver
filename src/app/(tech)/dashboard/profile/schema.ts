@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalText } from "@/lib/forms";
+import { instagramHandle, optionalText } from "@/lib/forms";
 
 export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
 
@@ -18,15 +18,7 @@ export const profileSchema = z.object({
       SLUG_PATTERN,
       "Use 3–40 lowercase letters, numbers or dashes, starting and ending with a letter or number.",
     ),
-  instagram_handle: z
-    .string()
-    .trim()
-    .transform((v) => v.replace(/^@/, ""))
-    .refine(
-      (v) => v === "" || /^[A-Za-z0-9._]{1,30}$/.test(v),
-      "That isn't a valid Instagram handle.",
-    )
-    .transform((v) => (v === "" ? null : v)),
+  instagram_handle: instagramHandle,
   phone: optionalText(30),
   timezone: z
     .string()

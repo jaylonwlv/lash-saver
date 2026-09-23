@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-/** Copies the booking link so the tech can paste it into an Instagram DM. */
-export function CopyLink({ url }: { url: string }) {
+/** Shows a link with a copy button, for pasting into an Instagram DM. */
+export function CopyLink({ url, label = "Copy link" }: { url: string; label?: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -23,7 +23,7 @@ export function CopyLink({ url }: { url: string }) {
         {url}
       </p>
       <Button type="button" onClick={copy}>
-        {copied ? "Copied!" : "Copy booking link"}
+        {copied ? "Copied!" : label}
       </Button>
     </div>
   );

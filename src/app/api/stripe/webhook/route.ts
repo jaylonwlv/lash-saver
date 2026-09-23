@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { serverEnv } from "@/lib/env";
+import {
+  handleChargeRefunded,
+  handleCheckoutCompleted,
+  handleCheckoutExpired,
+} from "@/lib/stripe/deposits";
 import { getStripe } from "@/lib/stripe/server";
 
 /**
@@ -25,13 +30,13 @@ export async function POST(request: NextRequest) {
 
   switch (event.type) {
     case "checkout.session.completed":
-      // TODO: mark deposit paid, confirm appointment, notify({ template: "booking_confirmed" }).
+      await handleCheckoutCompleted(event.data.object);
       break;
     case "checkout.session.expired":
-      // TODO: mark deposit failed, expire appointment hold.
+      await handleCheckoutExpired(event.data.object);
       break;
     case "charge.refunded":
-      // TODO: mark deposit refunded, notify({ template: "deposit_refunded" }).
+      await handleChargeRefunded(event.data.object);
       break;
     default:
       break;

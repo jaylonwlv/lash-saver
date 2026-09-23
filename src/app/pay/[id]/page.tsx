@@ -1,0 +1,115 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
+import { z } from "zod";
+import { loadAppointmentContext, payability, policySummary } from "@/lib/appointments";
+import { formatCents } from "@/lib/money";
+import { formatWhen } from "@/lib/time";
+import { payDeposit } from "./actions";
+import { PayForm } from "./pay-form";
+
+export const metadata: Metadata = {
+  title: "Pay your deposit",
+  robots: { index: false, follow: false },
+};
+
+/**
+ * Public pay page, sent to the client in an Instagram DM. The unguessable
+ * appointment id in the URL is what grants access, so show only what the
+ * client needs.
+ */
+export default async function PayPage({ params, searchParams }: PageProps<"/pay/[id]">) {
+  const { id } = await params;
+  const { paid } = await searchParams;
+  if (!z.uuid().safeParse(id).success) notFound();
+  const ctx = await loadAppointmentContext(id);
+  if (!ctx) notFound();
+
+  const { appointment: a, tech, serviceName } = ctx;
+  const business = tech.business_name ?? "Your lash tech";
+  const when = formatWhen(a.starts_at, tech.timezone);
+  const deposit = a.deposit_cents ?? 0;
+  const rest = Math.max((a.price_cents ?? 0) - deposit, 0);
+  const state = payability(a);
+  const booked = a.status === "confirmed" || a.status === "completed";
+  const policy =
+    a.policy_text_snapshot ?? policySummary(tech.cancellation_window_hours, tech.policy_text);
+  const dm = tech.instagram_handle ? `https://ig.me/m/${tech.instagram_handle}` : null;
+
+  return (
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <div className="flex flex-col gap-1">
+        <p className="text-brand text-sm font-semibold">{business}</p>
+        <h1 className="text-2xl font-bold">
+          {booked ? "You're booked" : `Hi ${a.client_name.split(" ")[0]}, secure your spot`}
+        </h1>
+      </div>
+
+      <dl className="border-line bg-surface flex flex-col gap-4 rounded-2xl border p-5">
+        <Row label="Appointment">{serviceName}</Row>
+        <Row label="When">{when}</Row>
+        <Row label="Deposit">
+          {formatCents(deposit)}
+          {rest > 0 && (
+            <span className="text-muted"> · {formatCents(rest)} due at your appointment</span>
+          )}
+        </Row>
+      </dl>
+
+      {booked ? (
+        <Notice tone="success">
+          Your {formatCents(deposit)} deposit is paid. We emailed your confirmation. See you then!
+        </Notice>
+      ) : paid && a.status === "pending_deposit" ? (
+        <Notice tone="success">
+          Payment received. Your booking is being confirmed, and you&apos;ll get an email shortly.
+        </Notice>
+      ) : state === "ok" ? (
+        <>
+          <section className="flex flex-col gap-2">
+            <h2 className="font-semibold">Deposit policy</h2>
+            <p className="text-muted text-sm whitespace-pre-line">{policy}</p>
+          </section>
+          <PayForm action={payDeposit.bind(null, a.id)} amount={formatCents(deposit)} />
+        </>
+      ) : a.status === "cancelled_by_tech" || a.status === "cancelled_by_client" ? (
+        <Notice>This appointment was cancelled.</Notice>
+      ) : a.status === "no_show" ? (
+        <Notice>This appointment is closed.</Notice>
+      ) : (
+        <Notice>
+          This pay link has expired.{" "}
+          {dm ? (
+            <a href={dm} className="text-brand underline">
+              Message {business}
+            </a>
+          ) : (
+            `Message ${business}`
+          )}{" "}
+          for a new one.
+        </Notice>
+      )}
+    </main>
+  );
+}
+
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="text-muted text-xs font-medium tracking-wide uppercase">{label}</dt>
+      <dd className="font-medium">{children}</dd>
+    </div>
+  );
+}
+
+function Notice({ tone, children }: { tone?: "success"; children: ReactNode }) {
+  return (
+    <p
+      className={`rounded-2xl border p-5 ${
+        tone === "success" ? "border-success text-success bg-surface" : "border-line bg-surface"
+      }`}
+    >
+      {children}
+    </p>
+  );
+}

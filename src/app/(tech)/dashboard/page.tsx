@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
+import { CopyLink } from "@/components/ui/copy-link";
 import { publicEnv } from "@/lib/env.public";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
-import { CopyLink } from "./copy-link";
 import { openStripeDashboard, startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
 
@@ -69,14 +69,26 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       )}
 
       {allDone && bookingUrl ? (
-        <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
-          <h2 className="font-semibold">You&apos;re ready to take deposits</h2>
-          <p className="text-muted text-sm">
-            Send this link to clients in your Instagram DMs. They pick a service and pay the deposit
-            to lock in their spot.
-          </p>
-          <CopyLink url={bookingUrl} />
-        </section>
+        <>
+          <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
+            <h2 className="font-semibold">Book a client</h2>
+            <p className="text-muted text-sm">
+              Agree on a time in your DMs, then create a pay link. The client pays the deposit to
+              lock in their spot.
+            </p>
+            <ButtonLink href="/dashboard/appointments/new">New appointment</ButtonLink>
+            <ButtonLink href="/dashboard/appointments" variant="secondary">
+              See appointments
+            </ButtonLink>
+          </section>
+          <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
+            <h2 className="font-semibold">Your booking page</h2>
+            <p className="text-muted text-sm">
+              Your services and prices, for your Instagram bio. Clients message you to book.
+            </p>
+            <CopyLink url={bookingUrl} label="Copy booking page link" />
+          </section>
+        </>
       ) : (
         <p className="text-muted">Finish these steps to start taking deposits.</p>
       )}

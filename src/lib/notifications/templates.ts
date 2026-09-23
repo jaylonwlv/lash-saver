@@ -13,7 +13,21 @@ export type TemplateData = {
     amount: string;
     payUrl: string;
   };
-  booking_confirmed: { businessName: string; serviceName: string; when: string; policyUrl: string };
+  booking_confirmed: {
+    businessName: string;
+    serviceName: string;
+    when: string;
+    amount: string;
+    detailsUrl: string;
+  };
+  /** To the tech, when a client pays. */
+  tech_deposit_paid: {
+    clientName: string;
+    serviceName: string;
+    when: string;
+    amount: string;
+    appointmentUrl: string;
+  };
   appointment_reminder: {
     businessName: string;
     serviceName: string;
@@ -35,7 +49,11 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   }),
   booking_confirmed: (d) => ({
     subject: `You're booked with ${d.businessName}`,
-    text: `You're booked! ${d.serviceName} with ${d.businessName} on ${d.when}. Policy: ${d.policyUrl}`,
+    text: `You're booked! ${d.serviceName} with ${d.businessName} on ${d.when}. Your ${d.amount} deposit is paid. Details and policy: ${d.detailsUrl}`,
+  }),
+  tech_deposit_paid: (d) => ({
+    subject: `${d.clientName} paid their ${d.amount} deposit`,
+    text: `${d.clientName} paid their ${d.amount} deposit for ${d.serviceName} on ${d.when}. ${d.appointmentUrl}`,
   }),
   appointment_reminder: (d) => ({
     subject: `Reminder: ${d.serviceName} on ${d.when}`,

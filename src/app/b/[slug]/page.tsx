@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ButtonLink } from "@/components/ui/button";
+import { policySummary } from "@/lib/appointments";
 import { formatDuration } from "@/lib/format";
 import { formatCents } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +18,7 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
 
   const { data: tech, error: techError } = await supabase
     .from("public_profiles")
-    .select("id, business_name, policy_text")
+    .select("id, business_name, policy_text, instagram_handle, cancellation_window_hours")
     .eq("slug", slug.toLowerCase())
     .maybeSingle();
   // A query error (bad key, missing table) must surface, not look like "no such tech".
@@ -48,7 +50,24 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
           </li>
         ))}
       </ul>
-      {tech.policy_text && <p className="text-muted text-sm">{tech.policy_text}</p>}
+      <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
+        <h2 className="font-semibold">How to book</h2>
+        <p className="text-muted text-sm">
+          Message {tech.business_name ?? "me"} to pick a time. You&apos;ll get a link to pay the
+          deposit, which locks in your spot.
+        </p>
+        {tech.instagram_handle && (
+          <ButtonLink href={`https://ig.me/m/${tech.instagram_handle}`}>
+            Message @{tech.instagram_handle}
+          </ButtonLink>
+        )}
+      </section>
+      <section className="flex flex-col gap-2">
+        <h2 className="font-semibold">Deposit policy</h2>
+        <p className="text-muted text-sm whitespace-pre-line">
+          {policySummary(tech.cancellation_window_hours ?? 0, tech.policy_text)}
+        </p>
+      </section>
     </main>
   );
 }

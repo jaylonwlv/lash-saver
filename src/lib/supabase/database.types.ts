@@ -46,6 +46,11 @@ type AppointmentRow = Timestamps & {
   status: Database["public"]["Enums"]["appointment_status"];
   hold_expires_at: string | null;
   notes: string | null;
+  price_cents: number | null;
+  deposit_cents: number | null;
+  policy_accepted_at: string | null;
+  policy_text_snapshot: string | null;
+  cancellation_window_hours_snapshot: number | null;
 };
 
 type DepositRow = Timestamps & {

@@ -7,10 +7,12 @@
 Lash Saver helps independent lash techs protect themselves from no-shows. Techs book clients through **Instagram DMs**, not a booking site, so the product fits that flow:
 
 1. A tech signs up, connects Stripe (Express), and adds services with prices and deposit amounts.
-2. In a DM, the tech sends the client a link: their booking page `/b/[slug]`, or a pay link for one appointment.
-3. The client picks a time, enters their name and email/phone, and pays the deposit through Stripe Checkout. The slot is held for `DEPOSIT_HOLD_MINUTES` until the deposit is paid.
-4. The client gets a confirmation and reminders (email now, SMS later).
-5. After the appointment, the tech marks it **completed** (the deposit goes toward the price) or **no-show** (the tech keeps the deposit). A cancellation inside the tech's window forfeits the deposit. An earlier cancellation gets a refund.
+2. The tech and client agree on a time in the DMs. The tech creates the appointment in Lash Saver (**New appointment**), which makes a **pay link** (`/pay/[appointmentId]`), and pastes it into the DM. The link works for `PAY_LINK_VALID_HOURS` or until the appointment starts. The booking page `/b/[slug]` is a menu for the tech's Instagram bio; clients message the tech to book.
+3. The client opens the pay link, agrees to the deposit policy (a snapshot is saved with the time they agreed), and pays through Stripe Checkout. The Stripe webhook confirms the appointment and emails the client and the tech.
+4. The client gets reminders before the appointment (email now, SMS later). _Not built yet._
+5. After the appointment, the tech marks it **completed** (the deposit goes toward the price) or **no-show** (the tech keeps the deposit). A tech cancellation refunds the deposit in full. _Client self-cancel with refund inside/outside the window is not built yet._
+
+The product's job is preventing no-shows: deposit up front, a policy the client agrees to, reminders, easy cancel instead of ghosting, and one tap to keep the deposit. Judge new features against that. Self-serve time slots are a convenience, not the core.
 
 **Words to use.** Say _tech_ (the business user, who signs in) and _client_ (the end customer, who never has an account). Say _deposit_, _no-show_ and _booking page_. Don't say "customer", "user" or "stylist" in UI text.
 
@@ -40,13 +42,17 @@ src/
     (tech)/dashboard/profile/     Business name, booking link (slug), time zone, policy; sign out
     (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete
     (tech)/dashboard/stripe/      Onboarding + Express dashboard actions; refresh/ and return/ routes
-    b/[slug]/page.tsx             Public booking page (linked from IG DMs)
+    (tech)/dashboard/appointments/ List (needs action / upcoming / waiting / past), new, [id] detail
+    b/[slug]/page.tsx             Public booking page: services, how to book (DM), policy
+    pay/[id]/                     Public pay page: details, policy + agree checkbox → Stripe Checkout
     api/stripe/connect/webhook/   Connect events (account.updated)
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
     api/cron/reminders/           Vercel Cron job
   components/ui/                  Small shared building blocks (Button, Input, Textarea, Select, BackLink)
   lib/
-    config.ts                     App constants (name, hold time, reminder offsets)
+    config.ts                     App constants (name, pay link validity, checkout lifetime, reminders)
+    time.ts                       Time zones: zonedTimeToUtc, wallClockParts, formatWhen (Intl only)
+    appointments.ts               Status labels, payability, policySummary, loadAppointmentContext
     env.ts / env.public.ts        zod-checked env (server-only / browser-safe)
     money.ts                      Cents helpers, fee math, dollarsToCents for form input
     format.ts                     Display helpers (formatDuration)
@@ -55,8 +61,10 @@ src/
                                   admin.ts (secret key, bypasses RLS), proxy.ts,
                                   database.types.ts
     stripe/                       server.ts (secret key), client.ts (Stripe.js),
-                                  connect.ts (Accounts v2: create, onboarding link, status sync)
-    notifications/                notify() + Notifier interface, Resend email, SMS stub, templates
+                                  connect.ts (Accounts v2: create, onboarding link, status sync),
+                                  deposits.ts (Checkout, webhook handlers, refunds, settle)
+    notifications/                notify() + Notifier interface, Resend email, SMS stub, templates,
+                                  log.ts (notifyForAppointment: send + write notification_log)
 supabase/migrations/              SQL migrations (timestamped, append-only)
 ```
 
@@ -94,6 +102,8 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Connected accounts use **Accounts v2** (`stripe.v2.core.accounts`, `stripe.v2.core.accountLinks`). Stripe blocks v1 account creation for new platforms. Each tech's account has the `recipient` configuration with `stripe_balance.stripe_transfers` (what destination charges need), Express dashboard, and `fees_collector`/`losses_collector: "application"`.
 - Account status is written only by `syncAccountStatus(accountId)`, which re-reads the v2 account. It runs from the Connect webhook, the onboarding return route, and the dashboard while onboarding is unfinished. `stripe_charges_enabled` means "transfers capability active" (the tech can receive deposits).
 
+- Deposit lifecycle (`deposits.status`): `pending` (checkout open) → `paid` (webhook) → `applied` (completed) / `forfeited` (no-show) / `refunded`. `failed` = that checkout expired. At most one deposit per appointment can hold money (partial unique index); a second payment is refunded automatically, as is a payment for an appointment cancelled meanwhile.
+- Appointments store `price_cents`/`deposit_cents` at creation, so editing a service doesn't change existing bookings.
 - Money is **integer cents** everywhere: DB, code, Stripe. Format only in the UI, using `formatCents`.
 - Every Stripe call that creates something passes an `idempotencyKey` built from our own ids.
 - **Webhooks are the source of truth** for payment state. Never mark a deposit paid because of a redirect or a client-side callback. Webhook handlers must be idempotent.
