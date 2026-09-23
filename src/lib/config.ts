@@ -1,7 +1,7 @@
 /**
  * App-wide constants. Anything a tech can change lives in the database, not here.
  */
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "Lash Saver";
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Lash Saver";
 
 export const DEFAULT_CURRENCY = "usd";
 
