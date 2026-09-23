@@ -43,6 +43,9 @@ export default async function ProfilePage() {
         }}
       />
       <div className="border-line flex flex-col gap-3 border-t pt-6">
+        <ButtonLink href="/dashboard/payments" variant="secondary">
+          Deposits
+        </ButtonLink>
         <ButtonLink href="/dashboard/billing" variant="secondary">
           Billing
         </ButtonLink>

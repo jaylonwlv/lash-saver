@@ -43,7 +43,30 @@ export type TemplateData = {
     when: string;
     amount: string;
     refunded: boolean;
+    /** The pro sends the refund themselves (Cash App, Zelle, Venmo). */
+    refundFromProvider: boolean;
     windowHours: number;
+  };
+  /** To the pro: the client says they sent a Cash App / Zelle / Venmo deposit. */
+  manual_deposit_sent: {
+    clientName: string;
+    amount: string;
+    app: string;
+    when: string;
+    appointmentUrl: string;
+  };
+  /** To the client: the pro didn't find their deposit. */
+  manual_deposit_not_received: {
+    businessName: string;
+    amount: string;
+    payUrl: string;
+  };
+  /** To the pro: they owe a client a refund they send themselves. */
+  manual_refund_due: {
+    clientName: string;
+    amount: string;
+    reason: string;
+    appointmentUrl: string;
   };
   /** To the tech, when a client cancels. */
   client_cancelled: {
@@ -59,7 +82,7 @@ export type TemplateData = {
   /** To the tech, when a subscription renewal fails. */
   subscription_payment_failed: { amount: string; billingUrl: string };
   no_show_recorded: { businessName: string; when: string; amount: string };
-  deposit_refunded: { businessName: string; amount: string };
+  deposit_refunded: { businessName: string; amount: string; fromProvider: boolean };
 };
 
 export type TemplateId = keyof TemplateData;
@@ -86,7 +109,9 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   cancellation_confirmed: (d) => ({
     subject: `Your appointment with ${d.businessName} is cancelled`,
     text: d.refunded
-      ? `Your ${d.serviceName} with ${d.businessName} on ${d.when} is cancelled. Your ${d.amount} deposit is being refunded; it can take 5 to 10 business days to show up.`
+      ? d.refundFromProvider
+        ? `Your ${d.serviceName} with ${d.businessName} on ${d.when} is cancelled. ${d.businessName} will send your ${d.amount} deposit back the same way you paid it.`
+        : `Your ${d.serviceName} with ${d.businessName} on ${d.when} is cancelled. Your ${d.amount} deposit is being refunded; it can take 5 to 10 business days to show up.`
       : `Your ${d.serviceName} with ${d.businessName} on ${d.when} is cancelled. Because it was less than ${d.windowHours} hours before, your ${d.amount} deposit was kept per the policy.`,
   }),
   client_cancelled: (d) => ({
@@ -103,13 +128,27 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
     subject: `Your ${APP_NAME} payment didn't go through`,
     text: `We couldn't charge your card for your ${d.amount} ${APP_NAME} subscription. Stripe will retry, but please update your card so you can keep sending pay links: ${d.billingUrl}`,
   }),
+  manual_deposit_sent: (d) => ({
+    subject: `${d.clientName} says they sent their ${d.amount} deposit`,
+    text: `${d.clientName} says they sent ${d.amount} by ${d.app} for ${d.when}. Check your ${d.app}, then tap Received to confirm the booking: ${d.appointmentUrl}`,
+  }),
+  manual_deposit_not_received: (d) => ({
+    subject: `${d.businessName} hasn't received your deposit yet`,
+    text: `${d.businessName} hasn't received your ${d.amount} deposit yet, so your spot isn't confirmed. Please check that it went through, or message them. Your link: ${d.payUrl}`,
+  }),
+  manual_refund_due: (d) => ({
+    subject: `Send ${d.clientName} their ${d.amount} refund`,
+    text: `${d.reason} Send ${d.clientName} their ${d.amount} deposit back the way they paid, then tap "I sent the refund": ${d.appointmentUrl}`,
+  }),
   no_show_recorded: (d) => ({
     subject: `Missed appointment with ${d.businessName}`,
     text: `${d.businessName} marked your ${d.when} appointment as a no-show. Your ${d.amount} deposit was kept per their policy.`,
   }),
   deposit_refunded: (d) => ({
-    subject: `Your ${d.amount} deposit was refunded`,
-    text: `${d.businessName} refunded your ${d.amount} deposit. It can take 5 to 10 business days to show up.`,
+    subject: `Your ${d.amount} deposit is being refunded`,
+    text: d.fromProvider
+      ? `${d.businessName} cancelled your appointment and will send your ${d.amount} deposit back the same way you paid it.`
+      : `${d.businessName} refunded your ${d.amount} deposit. It can take 5 to 10 business days to show up.`,
   }),
 };
 

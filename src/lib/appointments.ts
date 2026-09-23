@@ -35,6 +35,10 @@ export type AppointmentContext = {
     | "policy_text"
     | "stripe_account_id"
     | "stripe_charges_enabled"
+    | "deposit_method"
+    | "cashapp_tag"
+    | "zelle_contact"
+    | "venmo_handle"
   >;
 };
 
@@ -59,7 +63,7 @@ export async function loadAppointmentContext(
     admin
       .from("profiles")
       .select(
-        "id, email, business_name, instagram_handle, timezone, cancellation_window_hours, policy_text, stripe_account_id, stripe_charges_enabled",
+        "id, email, business_name, instagram_handle, timezone, cancellation_window_hours, policy_text, stripe_account_id, stripe_charges_enabled, deposit_method, cashapp_tag, zelle_contact, venmo_handle",
       )
       .eq("id", appointment.tech_id)
       .single(),
@@ -126,9 +130,9 @@ export function cancelNote(ctx: AppointmentContext, now = new Date()): string {
 export async function loadSettledDeposit(appointmentId: string) {
   const { data } = await createAdminClient()
     .from("deposits")
-    .select("status, amount_cents")
+    .select("status, amount_cents, method")
     .eq("appointment_id", appointmentId)
-    .in("status", ["paid", "applied", "forfeited", "refunded"])
+    .in("status", ["paid", "applied", "forfeited", "refunded", "refund_due"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();

@@ -6,12 +6,12 @@
 
 **Dibs** helps independent service pros protect themselves from no-shows: the client "calls dibs" on a slot by paying a deposit. It's for anyone who books clients through **Instagram DMs** rather than a booking site (lash techs, nail techs, braiders, tattoo artists, and so on). The product copy stays general ("pros", "your provider"); marketing targets one niche at a time, starting with lash techs, so niche-specific wording belongs in ads, not in the app. The product fits the DM flow:
 
-1. A tech signs up, connects Stripe (Express), and adds services with prices and deposit amounts. No card needed.
+1. A tech signs up, sets up deposits (**Collect it yourself** with their own Cash App / Zelle / Venmo handles, or **Stripe** Express for cards), and adds services with prices and deposit amounts. No card needed.
    Before their **first pay link**, they add a card in Stripe Checkout to start a **30-day free trial** (`TRIAL_DAYS`), then $29/month (`SUBSCRIPTION_PRICE_CENTS`). Without an active subscription (`trialing`, `active`, or `past_due` as a grace period) they can't create new pay links; existing links, reminders and cancellations keep working.
 2. The tech and client agree on a time in the DMs. The tech creates the appointment in Lash Saver (**New appointment**), which makes a **pay link** (`/pay/[appointmentId]`), and pastes it into the DM. The link works for `PAY_LINK_VALID_HOURS` or until the appointment starts. The booking page `/b/[slug]` is a menu for the tech's Instagram bio; clients message the tech to book.
-3. The client opens the pay link, agrees to the deposit policy (a snapshot is saved with the time they agreed), and pays through Stripe Checkout. The Stripe webhook confirms the appointment and emails the client and the tech.
+3. The client opens the pay link, agrees to the deposit policy (a snapshot is saved with the time they agreed), and pays. **Stripe:** through Stripe Checkout; the webhook confirms the appointment and emails the client and the tech. **Manual:** the client sends the deposit in their own app and taps "I've sent my deposit"; the tech is emailed and taps **Received** (confirms and emails the client) or **Not received**. The tech can also mark a deposit received without the client tapping.
 4. The daily cron sends reminders (`REMINDER_OFFSETS_HOURS`, 48h and 24h; email now, SMS later), each logged in `notification_log` as `appointment_reminder_<N>h` so it's sent once. Every email says when the client can still cancel for a refund.
-5. The client can cancel from the same link (reschedules happen in the DMs). Before the refund deadline (start minus the cancellation window they agreed to) the deposit is refunded; after it, the deposit is kept. The server decides at submit time and refuses if the page showed different terms. The tech is emailed either way.
+5. The client can cancel from the same link (reschedules happen in the DMs). Before the refund deadline (start minus the cancellation window they agreed to) the deposit is refunded; after it, the deposit is kept. Stripe deposits are refunded automatically; manual ones become `refund_due` and the tech sends the money back themselves, then taps **I sent the refund**. The server decides at submit time and refuses if the page showed different terms. The tech is emailed either way.
 6. After the appointment, the tech marks it **completed** (the deposit goes toward the price) or **no-show** (the tech keeps the deposit). A tech cancellation refunds the deposit in full.
 
 The product's job is preventing no-shows: deposit up front, a policy the client agrees to, reminders, easy cancel instead of ghosting, and one tap to keep the deposit. Judge new features against that. Self-serve time slots are a convenience, not the core.
@@ -45,6 +45,7 @@ src/
     (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), booking link
     (tech)/dashboard/profile/     Business name, booking link (slug), time zone, policy; sign out
     (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete
+    (tech)/dashboard/payments/    Deposit method: Cash App / Zelle / Venmo handles, or switch to Stripe
     (tech)/dashboard/stripe/      Onboarding + Express dashboard actions; refresh/ and return/ routes
     (tech)/dashboard/billing/     Subscription status, subscribe/trial card, Stripe billing portal; return/ route after Checkout
     (tech)/dashboard/appointments/ List (needs action / upcoming / waiting / past), new, [id] detail
@@ -71,6 +72,7 @@ src/
                                   deposits.ts (Checkout, webhook handlers, refunds, settle),
                                   billing.ts (tech subscription: trial eligibility, Checkout, sync, portal)
     subscription.ts               canSendPayLinks(status), normalizeEmail (no server deps)
+    payments.ts                   Manual deposits: manualHandles, canTakeDeposits, paymentAppUrl (no server deps)
     notifications/                notify() + Notifier interface, Resend email, SMS stub, templates,
                                   log.ts (notifyForAppointment: send + write notification_log)
 supabase/migrations/              SQL migrations (timestamped, append-only)
@@ -111,6 +113,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Account status is written only by `syncAccountStatus(accountId)`, which re-reads the v2 account. It runs from the Connect webhook, the onboarding return route, and the dashboard while onboarding is unfinished. `stripe_charges_enabled` means "transfers capability active" (the tech can receive deposits).
 
 - Deposit lifecycle (`deposits.status`): `pending` (checkout open) → `paid` (webhook) → `applied` (completed) / `forfeited` (no-show) / `refunded`. `failed` = that checkout expired. At most one deposit per appointment can hold money (partial unique index); a second payment is refunded automatically, as is a payment for an appointment cancelled meanwhile.
+- **Manual deposits** (`profiles.deposit_method = 'manual'`): no Stripe and no fee. `appointments.payment_method` snapshots the method at creation. `deposits.method = 'manual'` with `manual_app`; `pending` = the client says they sent it (`appointments.client_marked_sent_at`), `paid` = the tech tapped Received. Refunds go `paid` → `refund_due` → `refunded` when the tech confirms they sent it. The cron doesn't expire links the client marked as sent. Use `canTakeDeposits(profile)` to decide if a tech can take deposits, never `stripe_charges_enabled` alone.
 - Refunds use `reverse_transfer: true`. Tech or client cancellations keep the processing fee (`refund_application_fee: false`), because Stripe keeps its fee too; the client still gets the full deposit back and the tech absorbs the fee. System refunds (duplicate or late payments) return the fee.
 - Appointments store `price_cents`/`deposit_cents` at creation, so editing a service doesn't change existing bookings.
 - Money is **integer cents** everywhere: DB, code, Stripe. Format only in the UI, using `formatCents`.
@@ -121,7 +124,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 **Subscriptions**
 
 - Stripe is the source of truth. `syncSubscription` copies status, trial end, period end and cancel flag onto `profiles` from `customer.subscription.*` webhooks and the Checkout return route. Techs can't write these columns (column grants).
-- One trial per person. `trial_claims` stores card and payout-bank fingerprints, normalized email (Gmail dots and +tags removed) and Instagram handle when a trial starts. A match with another tech means no trial is offered; a reused card found after Checkout ends the trial immediately (`trial_end: "now"`).
+- One trial per person. `trial_claims` stores card and payout-bank fingerprints, normalized email (Gmail dots and +tags removed), Instagram handle and Cash App / Zelle / Venmo handles when a trial starts. A match with another tech means no trial is offered; a reused card found after Checkout ends the trial immediately (`trial_end: "now"`).
 - The daily cron emails techs `TRIAL_ENDING_NOTICE_DAYS` before the first charge, once per subscription (`notification_log` template `trial_ending:<sub id>`).
 - Enforce the pay-link gate on the server (`createAppointment`), not only in the UI.
 

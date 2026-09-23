@@ -3,6 +3,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { ButtonLink } from "@/components/ui/button";
 import { formatDuration } from "@/lib/format";
 import { formatCents } from "@/lib/money";
+import { canTakeDeposits } from "@/lib/payments";
 import { trialEligible } from "@/lib/stripe/billing";
 import { canSendPayLinks } from "@/lib/subscription";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -21,7 +22,9 @@ export default async function NewAppointmentPage({
   const [{ data: profile }, { data: services, error }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("timezone, stripe_charges_enabled, subscription_status")
+      .select(
+        "timezone, subscription_status, deposit_method, stripe_charges_enabled, cashapp_tag, zelle_contact, venmo_handle",
+      )
       .eq("id", user!.id)
       .single(),
     supabase
@@ -33,7 +36,8 @@ export default async function NewAppointmentPage({
   ]);
   if (error || !profile) throw new Error(`Loading services failed: ${error?.message}`);
 
-  const ready = profile.stripe_charges_enabled && services.length > 0;
+  const depositsReady = canTakeDeposits(profile);
+  const ready = depositsReady && services.length > 0;
   const subscribed = canSendPayLinks(profile.subscription_status);
 
   return (
@@ -71,9 +75,9 @@ export default async function NewAppointmentPage({
       ) : (
         <div className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
           <p className="text-muted">
-            {profile.stripe_charges_enabled
+            {depositsReady
               ? "Add a service first, so the pay link knows the price and deposit."
-              : "Finish connecting Stripe first, so clients can pay."}
+              : "Set up deposits first (Cash App, Zelle, Venmo or Stripe), so clients can pay."}
           </p>
           <ButtonLink href="/dashboard">Go to dashboard</ButtonLink>
         </div>

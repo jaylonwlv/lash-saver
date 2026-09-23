@@ -8,13 +8,23 @@ import { formatDuration } from "@/lib/format";
 import { formatCents, processingFeeCents, techPayoutCents } from "@/lib/money";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatWhen } from "@/lib/time";
-import { cancelAppointment, markCompleted, markNoShow } from "../actions";
+import { MANUAL_APP_LABEL } from "@/lib/payments";
+import type { ManualApp } from "@/lib/supabase/database.types";
+import {
+  cancelAppointment,
+  confirmManualDeposit,
+  markCompleted,
+  markNoShow,
+  markRefundSent,
+  rejectManualDeposit,
+} from "../actions";
 import { appointmentIdSchema } from "../schema";
 import { ActionButton } from "./appointment-actions";
 
 export const metadata: Metadata = { title: "Appointment" };
 
 const DEPOSIT_LABEL: Record<string, string> = {
+  refund_due: "Refund owed",
   paid: "Paid",
   applied: "Applied to the service",
   forfeited: "Kept (no-show)",
@@ -36,9 +46,9 @@ export default async function AppointmentPage({
     supabase.from("profiles").select("timezone").eq("id", user!.id).single(),
     supabase
       .from("deposits")
-      .select("status, amount_cents, paid_at")
+      .select("status, amount_cents, paid_at, method, manual_app, created_at")
       .eq("appointment_id", id)
-      .in("status", ["paid", "applied", "forfeited", "refunded"])
+      .in("status", ["paid", "applied", "forfeited", "refunded", "refund_due", "pending"])
       .order("created_at", { ascending: false }),
   ]);
   if (!a || !profile) notFound();
@@ -53,7 +63,10 @@ export default async function AppointmentPage({
   const tz = profile.timezone;
   const payState = payability(a);
   const started = new Date(a.starts_at) <= new Date();
-  const deposit = deposits?.[0];
+  const deposit = deposits?.find((d) => d.status !== "pending");
+  const claimed = deposits?.find((d) => d.status === "pending" && d.method === "manual");
+  const manual = a.payment_method === "manual";
+  const via = (app: string | null) => (app ? ` via ${MANUAL_APP_LABEL[app as ManualApp]}` : "");
   const statusText =
     a.status === "pending_deposit" && payState !== "ok"
       ? STATUS_LABEL.expired
@@ -67,7 +80,49 @@ export default async function AppointmentPage({
         <p className="text-muted">{statusText}</p>
       </div>
 
-      {a.status === "pending_deposit" && payState === "ok" && (
+      {manual && a.status === "pending_deposit" && a.client_marked_sent_at && (
+        <section className="border-brand bg-surface flex flex-col gap-3 rounded-2xl border-2 p-5">
+          <h2 className="font-semibold">
+            {a.client_name} says they sent {formatCents(a.deposit_cents ?? 0)}
+            {via(claimed?.manual_app ?? null)}
+          </h2>
+          <p className="text-muted text-sm">
+            Check your app. Once you see it, tap Received to confirm the booking. {a.client_name}{" "}
+            gets a confirmation email and reminders.
+          </p>
+          <ActionButton
+            action={confirmManualDeposit.bind(null, a.id)}
+            label="Received, confirm booking"
+            variant="primary"
+            confirmText={`Confirm you received ${formatCents(a.deposit_cents ?? 0)} from ${a.client_name}?`}
+          />
+          <ActionButton
+            action={rejectManualDeposit.bind(null, a.id)}
+            label="Not received"
+            confirmText={`Tell ${a.client_name} you haven't received their deposit yet?`}
+          />
+        </section>
+      )}
+
+      {deposit?.status === "refund_due" && (
+        <section className="border-danger bg-surface flex flex-col gap-3 rounded-2xl border-2 p-5">
+          <h2 className="font-semibold">
+            Send {a.client_name} their {formatCents(deposit.amount_cents)} back
+          </h2>
+          <p className="text-muted text-sm">
+            They cancelled early enough for a refund (or you cancelled). Send it the way they paid
+            {via(deposit.manual_app)}, then tap below.
+          </p>
+          <ActionButton
+            action={markRefundSent.bind(null, a.id)}
+            label="I sent the refund"
+            variant="primary"
+            confirmText={`Confirm you sent ${a.client_name} their ${formatCents(deposit.amount_cents)} refund?`}
+          />
+        </section>
+      )}
+
+      {a.status === "pending_deposit" && payState === "ok" && !a.client_marked_sent_at && (
         <section className="border-brand bg-surface flex flex-col gap-3 rounded-2xl border-2 p-5">
           <h2 className="font-semibold">
             {isNew ? "Appointment created. Send the pay link" : "Pay link"}
@@ -96,7 +151,9 @@ export default async function AppointmentPage({
           {deposit
             ? deposit.status === "refunded"
               ? `Refunded to the client: ${formatCents(deposit.amount_cents)}`
-              : `${DEPOSIT_LABEL[deposit.status]}: ${formatCents(deposit.amount_cents)} · you receive ${formatCents(techPayoutCents(deposit.amount_cents))}`
+              : deposit.method === "manual"
+                ? `${DEPOSIT_LABEL[deposit.status]}: ${formatCents(deposit.amount_cents)}${via(deposit.manual_app)}`
+                : `${DEPOSIT_LABEL[deposit.status]}: ${formatCents(deposit.amount_cents)} · you receive ${formatCents(techPayoutCents(deposit.amount_cents))}`
             : "Not paid yet"}
         </Detail>
         {a.policy_accepted_at && (
@@ -147,7 +204,18 @@ export default async function AppointmentPage({
         <ActionButton
           action={cancelAppointment.bind(null, a.id)}
           label="Cancel and refund deposit"
-          confirmText={`Cancel ${a.client_name}'s appointment and refund their ${formatCents(a.deposit_cents ?? 0)} deposit in full? The ${formatCents(processingFeeCents(a.deposit_cents ?? 0))} processing fee isn't refundable.`}
+          confirmText={
+            manual
+              ? `Cancel ${a.client_name}'s appointment? You'll need to send their ${formatCents(a.deposit_cents ?? 0)} deposit back yourself.`
+              : `Cancel ${a.client_name}'s appointment and refund their ${formatCents(a.deposit_cents ?? 0)} deposit in full? The ${formatCents(processingFeeCents(a.deposit_cents ?? 0))} processing fee isn't refundable.`
+          }
+        />
+      )}
+      {manual && a.status === "pending_deposit" && !a.client_marked_sent_at && (
+        <ActionButton
+          action={confirmManualDeposit.bind(null, a.id)}
+          label="Mark deposit received"
+          confirmText={`Confirm you received ${formatCents(a.deposit_cents ?? 0)} from ${a.client_name}? This books the appointment.`}
         />
       )}
       {a.status === "pending_deposit" && (

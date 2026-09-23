@@ -17,7 +17,13 @@ function daysAgo(days: number): Date {
 
 type Row = Pick<
   Tables<"appointments">,
-  "id" | "client_name" | "starts_at" | "status" | "hold_expires_at" | "service_id"
+  | "id"
+  | "client_name"
+  | "starts_at"
+  | "status"
+  | "hold_expires_at"
+  | "service_id"
+  | "client_marked_sent_at"
 >;
 
 export default async function AppointmentsPage() {
@@ -25,16 +31,24 @@ export default async function AppointmentsPage() {
   const supabase = await createClient();
   const since = daysAgo(PAST_DAYS).toISOString();
 
-  const [{ data: profile }, { data: rows, error }, { data: services }] = await Promise.all([
-    supabase.from("profiles").select("timezone").eq("id", user!.id).single(),
-    supabase
-      .from("appointments")
-      .select("id, client_name, starts_at, status, hold_expires_at, service_id")
-      .eq("tech_id", user!.id)
-      .gte("starts_at", since)
-      .order("starts_at"),
-    supabase.from("services").select("id, name").eq("tech_id", user!.id),
-  ]);
+  const [{ data: profile }, { data: rows, error }, { data: services }, { data: owed }] =
+    await Promise.all([
+      supabase.from("profiles").select("timezone").eq("id", user!.id).single(),
+      supabase
+        .from("appointments")
+        .select(
+          "id, client_name, starts_at, status, hold_expires_at, service_id, client_marked_sent_at",
+        )
+        .eq("tech_id", user!.id)
+        .gte("starts_at", since)
+        .order("starts_at"),
+      supabase.from("services").select("id, name").eq("tech_id", user!.id),
+      supabase
+        .from("deposits")
+        .select("appointment_id")
+        .eq("tech_id", user!.id)
+        .eq("status", "refund_due"),
+    ]);
   if (error || !profile) throw new Error(`Loading appointments failed: ${error?.message}`);
 
   const tz = profile.timezone;
@@ -42,11 +56,16 @@ export default async function AppointmentsPage() {
   const now = new Date();
   const started = (r: Row) => new Date(r.starts_at) <= now;
 
+  const refundIds = new Set((owed ?? []).map((d) => d.appointment_id));
+  const toConfirm = rows.filter((r) => r.status === "pending_deposit" && r.client_marked_sent_at);
+  const refunds = rows.filter((r) => refundIds.has(r.id));
   const needsAction = rows.filter((r) => r.status === "confirmed" && started(r));
   const upcoming = rows.filter((r) => r.status === "confirmed" && !started(r));
-  const waiting = rows.filter((r) => payability(r, now) === "ok");
+  const waiting = rows.filter((r) => payability(r, now) === "ok" && !toConfirm.includes(r));
   const past = rows
-    .filter((r) => !needsAction.includes(r) && !upcoming.includes(r) && !waiting.includes(r))
+    .filter(
+      (r) => ![needsAction, upcoming, waiting, toConfirm, refunds].some((list) => list.includes(r)),
+    )
     .reverse();
 
   return (
@@ -62,6 +81,20 @@ export default async function AppointmentsPage() {
         </p>
       )}
 
+      <Section
+        title="Check these deposits"
+        hint="The client says they sent it. Confirm once you see it in your app."
+        rows={toConfirm}
+        tz={tz}
+        serviceName={serviceName}
+      />
+      <Section
+        title="Refunds to send"
+        hint="Send these back the way the client paid, then mark them sent."
+        rows={refunds}
+        tz={tz}
+        serviceName={serviceName}
+      />
       <Section
         title="Did they show up?"
         hint="Mark each one so the deposit is applied or kept."

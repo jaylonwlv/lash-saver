@@ -22,7 +22,7 @@ import { getStripe } from "./server";
  * fingerprints, normalized email and Instagram handle.
  */
 
-type ClaimKind = "card" | "bank" | "email" | "instagram";
+type ClaimKind = "card" | "bank" | "email" | "instagram" | "cashapp" | "zelle" | "venmo";
 type Claim = { kind: ClaimKind; value: string };
 
 const billingUrl = () => `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard/billing`;
@@ -31,7 +31,7 @@ async function loadProfile(techId: string) {
   const { data, error } = await createAdminClient()
     .from("profiles")
     .select(
-      "id, email, business_name, instagram_handle, stripe_account_id, stripe_customer_id, subscription_id, subscription_status",
+      "id, email, business_name, instagram_handle, stripe_account_id, stripe_customer_id, subscription_id, subscription_status, cashapp_tag, zelle_contact, venmo_handle",
     )
     .eq("id", techId)
     .single();
@@ -81,6 +81,16 @@ async function signals(profile: Awaited<ReturnType<typeof loadProfile>>): Promis
   if (profile.instagram_handle) {
     claims.push({ kind: "instagram", value: profile.instagram_handle.toLowerCase() });
   }
+  if (profile.cashapp_tag)
+    claims.push({ kind: "cashapp", value: profile.cashapp_tag.toLowerCase() });
+  if (profile.zelle_contact) {
+    const z = profile.zelle_contact.includes("@")
+      ? normalizeEmail(profile.zelle_contact)
+      : profile.zelle_contact.replace(/\D/g, "").slice(-10);
+    claims.push({ kind: "zelle", value: z });
+  }
+  if (profile.venmo_handle)
+    claims.push({ kind: "venmo", value: profile.venmo_handle.toLowerCase() });
   for (const fp of await bankFingerprints(profile.stripe_account_id)) {
     claims.push({ kind: "bank", value: fp });
   }

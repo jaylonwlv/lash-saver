@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
     .from("appointments")
     .update({ status: "expired" })
     .eq("status", "pending_deposit")
+    // Client says they sent a Cash App / Zelle / Venmo deposit: wait for the pro.
+    .is("client_marked_sent_at", null)
     .lt("hold_expires_at", now.toISOString())
     .select("id");
   if (error) throw new Error(`Expiring pay links failed: ${error.message}`);

@@ -3,12 +3,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
-import { APP_NAME, PROCESSING_FEE_LABEL } from "@/lib/config";
+import { APP_NAME } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
-import { openStripeDashboard, startStripeOnboarding } from "./stripe/actions";
+import { canTakeDeposits, manualHandles } from "@/lib/payments";
+import { startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -24,7 +25,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     supabase
       .from("profiles")
       .select(
-        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end",
+        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle",
       )
       .eq("id", user!.id)
       .single(),
@@ -38,7 +39,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
   // While onboarding is unfinished, refresh status from Stripe on each visit so the
   // checklist doesn't depend on webhook timing. Once ready, the webhook keeps it current.
-  if (profile.stripe_account_id && !profile.stripe_charges_enabled) {
+  const manual = profile.deposit_method === "manual";
+  if (!manual && profile.stripe_account_id && !profile.stripe_charges_enabled) {
     try {
       const status = await syncAccountStatus(profile.stripe_account_id);
       profile.stripe_charges_enabled = status.ready;
@@ -49,11 +51,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   }
 
   const profileDone = Boolean(profile.business_name && profile.slug);
-  const stripeStatus: StepStatus = profile.stripe_charges_enabled
+  const stripeStatus: StepStatus = canTakeDeposits(profile)
     ? "done"
-    : profile.stripe_details_submitted
+    : !manual && profile.stripe_details_submitted
       ? "waiting"
       : "todo";
+  const handles = manualHandles(profile);
   const servicesDone = (activeServices ?? 0) > 0;
   const allDone = profileDone && stripeStatus === "done" && servicesDone;
   const bookingUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
@@ -132,29 +135,31 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
         <Step
           number={2}
-          title="Connect Stripe"
+          title="Set up deposits"
           status={stripeStatus}
           description={
             stripeStatus === "done"
-              ? "Deposits are paid out to your bank account."
+              ? manual
+                ? `Clients pay you with ${handles.map((h) => h.label).join(", ")}. You confirm each deposit.`
+                : "Clients pay by card or Apple Pay, and deposits go to your bank automatically."
               : stripeStatus === "waiting"
                 ? "Stripe is checking your details. This usually takes a few minutes; if Stripe needs anything else, tap below."
-                : `Stripe handles payments and sends deposits to your bank account. Takes about 5 minutes. Processing fee: ${PROCESSING_FEE_LABEL} per deposit.`
+                : "Choose how clients pay you. Keep your Cash App, Zelle or Venmo (2 minutes), or take cards automatically with Stripe."
           }
         >
           {stripeStatus === "done" ? (
-            <StripeButton action={openStripeDashboard} label="View payouts" variant="secondary" />
+            <ButtonLink href="/dashboard/payments" variant="secondary">
+              Deposit settings
+            </ButtonLink>
+          ) : stripeStatus === "waiting" ? (
+            <StripeButton action={startStripeOnboarding} label="Check Stripe details" />
           ) : (
-            <StripeButton
-              action={startStripeOnboarding}
-              label={
-                stripeStatus === "waiting"
-                  ? "Check Stripe details"
-                  : profile.stripe_account_id
-                    ? "Continue Stripe setup"
-                    : "Connect Stripe"
-              }
-            />
+            <>
+              <ButtonLink href="/dashboard/payments">Use Cash App, Zelle or Venmo</ButtonLink>
+              <ButtonLink href="/dashboard/payments" variant="secondary">
+                Take cards with Stripe
+              </ButtonLink>
+            </>
           )}
         </Step>
 
@@ -187,8 +192,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           {stripeStatus === "done"
             ? "you add a service."
             : servicesDone
-              ? "Stripe is connected."
-              : "Stripe is connected and you add a service."}
+              ? "deposits are set up."
+              : "deposits are set up and you add a service."}
         </p>
       )}
     </div>

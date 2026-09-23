@@ -7,6 +7,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 type Timestamps = { created_at: string; updated_at: string };
 
+export type ManualApp = "cashapp" | "zelle" | "venmo";
+
 type ProfileRow = Timestamps & {
   id: string;
   email: string;
@@ -26,6 +28,10 @@ type ProfileRow = Timestamps & {
   trial_ends_at: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+  deposit_method: "stripe" | "manual";
+  cashapp_tag: string | null;
+  zelle_contact: string | null;
+  venmo_handle: string | null;
 };
 
 type ServiceRow = Timestamps & {
@@ -57,6 +63,8 @@ type AppointmentRow = Timestamps & {
   policy_accepted_at: string | null;
   policy_text_snapshot: string | null;
   cancellation_window_hours_snapshot: number | null;
+  payment_method: "stripe" | "manual";
+  client_marked_sent_at: string | null;
 };
 
 type DepositRow = Timestamps & {
@@ -70,6 +78,8 @@ type DepositRow = Timestamps & {
   stripe_checkout_session_id: string | null;
   stripe_payment_intent_id: string | null;
   paid_at: string | null;
+  method: "stripe" | "manual";
+  manual_app: ManualApp | null;
 };
 
 type NotificationLogRow = {
@@ -85,7 +95,7 @@ type NotificationLogRow = {
 type TrialClaimRow = {
   id: string;
   tech_id: string | null;
-  kind: "card" | "bank" | "email" | "instagram";
+  kind: "card" | "bank" | "email" | "instagram" | "cashapp" | "zelle" | "venmo";
   value: string;
   created_at: string;
 };
@@ -162,7 +172,8 @@ export type Database = {
         | "cancelled_by_client"
         | "cancelled_by_tech"
         | "expired";
-      deposit_status: "pending" | "paid" | "applied" | "forfeited" | "refunded" | "failed";
+      deposit_status:
+        "pending" | "paid" | "applied" | "forfeited" | "refunded" | "failed" | "refund_due";
     };
     CompositeTypes: Record<string, never>;
   };

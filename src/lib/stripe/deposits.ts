@@ -283,16 +283,32 @@ export async function handleChargeRefunded(charge: Stripe.Charge): Promise<void>
     .neq("status", "refunded");
 }
 
-/** Refunds the appointment's paid deposit (tech cancelled). Returns the amount refunded. */
-export async function refundAppointmentDeposit(appointmentId: string): Promise<number | null> {
+/**
+ * Refunds the appointment's paid deposit. Stripe deposits are refunded now;
+ * manual ones (Cash App, Zelle, Venmo) become `refund_due` for the pro to send.
+ * Returns the amount and whether the pro has to send it, or null if nothing was paid.
+ */
+export async function refundAppointmentDeposit(
+  appointmentId: string,
+): Promise<{ amountCents: number; manual: boolean } | null> {
   const admin = createAdminClient();
   const { data: deposit } = await admin
     .from("deposits")
-    .select("id, amount_cents, stripe_payment_intent_id")
+    .select("id, amount_cents, stripe_payment_intent_id, method")
     .eq("appointment_id", appointmentId)
     .eq("status", "paid")
     .maybeSingle();
-  if (!deposit?.stripe_payment_intent_id) return null;
+  if (!deposit) return null;
+
+  if (deposit.method === "manual") {
+    const { error } = await admin
+      .from("deposits")
+      .update({ status: "refund_due" })
+      .eq("id", deposit.id);
+    if (error) throw new Error(`Marking refund due failed: ${error.message}`);
+    return { amountCents: deposit.amount_cents, manual: true };
+  }
+  if (!deposit.stripe_payment_intent_id) return null;
 
   await refundPayment(deposit.stripe_payment_intent_id, deposit.id, { returnFee: false });
   const { error } = await admin
@@ -300,7 +316,7 @@ export async function refundAppointmentDeposit(appointmentId: string): Promise<n
     .update({ status: "refunded" })
     .eq("id", deposit.id);
   if (error) throw new Error(`Marking deposit refunded failed: ${error.message}`);
-  return deposit.amount_cents;
+  return { amountCents: deposit.amount_cents, manual: false };
 }
 
 /** Stops any open checkout for the appointment, so a cancelled booking can't be paid. */

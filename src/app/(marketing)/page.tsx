@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     absolute: `${APP_NAME}: deposits and no-show protection for pros who book in their DMs`,
   },
   description:
-    "Send a deposit link from your Instagram DMs. Clients agree to your policy and pay to lock in their spot. Automatic reminders. No-show? Keep the deposit.",
+    "Send a deposit link from your Instagram DMs. Clients agree to your policy and pay with Cash App, Zelle, Venmo or card to lock in their spot. Automatic reminders. No-show? Keep the deposit.",
   openGraph: {
     title: "Stop losing money to no-shows",
     description:
@@ -53,8 +53,8 @@ export default function HomePage() {
             </h1>
             <p className="text-muted text-lg">
               Send a deposit link right from your Instagram DMs. Clients agree to your policy and
-              pay to lock in their spot. They get reminders. And if they don&apos;t show, you keep
-              the deposit.
+              pay with your Cash App, Zelle, Venmo or a card to call dibs on their spot. They get
+              reminders. And if they don&apos;t show, you keep the deposit.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/login">{START}</ButtonLink>
@@ -63,7 +63,7 @@ export default function HomePage() {
               </ButtonLink>
             </div>
             <p className="text-muted text-sm">
-              No card to sign up. Set up in about 5 minutes, right from your phone.
+              No card to sign up. Set up in about 2 minutes, right from your phone.
             </p>
           </div>
           <Phone
@@ -105,7 +105,7 @@ export default function HomePage() {
             <Step
               n={2}
               title="Your client agrees to your policy and pays"
-              body="They see the details and your cancellation policy, tick “I agree”, and pay by card or Apple Pay. No account, no app to download."
+              body="They see the details and your cancellation policy, tick “I agree”, and pay with your Cash App, Zelle or Venmo, or by card. No account, no app to download."
               image={clientPays}
               alt="The client's pay page with the deposit policy and an agree checkbox"
             />
@@ -147,9 +147,9 @@ export default function HomePage() {
                 Mark it and you keep the deposit. The client gets a polite email, so you don&apos;t
                 have to write one.
               </Feature>
-              <Feature title="Paid to your bank">
-                Deposits go straight to your bank account through Stripe, the payment company behind
-                millions of businesses.
+              <Feature title="Get paid your way">
+                Keep your Cash App, Zelle or Venmo: clients pay you directly and you tap Received.
+                Or take cards through Stripe and deposits land in your bank automatically.
               </Feature>
               <Feature title="Built for your phone">
                 Everything works from your phone, and the pay link opens right inside Instagram.
@@ -160,19 +160,19 @@ export default function HomePage() {
 
         {/* Comparison */}
         <section className="mx-auto w-full max-w-5xl px-5 py-14">
-          <h2 className="text-3xl font-bold">Still taking deposits over Cash App?</h2>
+          <h2 className="text-3xl font-bold">Keep your Cash App. Add what it&apos;s missing.</h2>
           <p className="text-muted mt-2 max-w-2xl">
-            It works, until a client asks for their money back, forgets, or ghosts. Big booking apps
-            are built around online calendars and marketplaces. {APP_NAME} adds real deposit
-            protection to the way you already book: in your DMs.
+            Cash App works, until a client asks for their money back, forgets, or ghosts. Big
+            booking apps are built around online calendars and marketplaces. {APP_NAME} adds real
+            deposit protection to the way you already book and get paid: in your DMs.
           </p>
           <div className="border-line bg-surface mt-8 overflow-hidden rounded-2xl border">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-line border-b">
                   <th className="p-4 font-medium">&nbsp;</th>
-                  <th className="p-4 text-center font-medium">Cash App or Zelle</th>
-                  <th className="text-brand p-4 text-center font-semibold">{APP_NAME}</th>
+                  <th className="p-4 text-center font-medium">Cash App or Zelle alone</th>
+                  <th className="text-brand p-4 text-center font-semibold">With {APP_NAME}</th>
                 </tr>
               </thead>
               <tbody>
@@ -182,6 +182,7 @@ export default function HomePage() {
                 <Row label="One tap to keep a no-show's deposit" them={false} />
                 <Row label="Proof if a client disputes" them={false} />
                 <Row label="Works from your DMs" them />
+                <Row label="Clients pay with Cash App, Zelle or Venmo" them />
               </tbody>
             </table>
           </div>
@@ -205,8 +206,8 @@ export default function HomePage() {
                 <li>✓ Your own booking page for your Instagram bio</li>
               </ul>
               <p className="text-muted text-sm">
-                Card processing is {PROCESSING_FEE_LABEL} per deposit. On a{" "}
-                {formatCents(SAMPLE_DEPOSIT)} deposit you receive{" "}
+                No fees on deposits paid with Cash App, Zelle or Venmo. Card deposits are{" "}
+                {PROCESSING_FEE_LABEL}: on a {formatCents(SAMPLE_DEPOSIT)} deposit you receive{" "}
                 {formatCents(techPayoutCents(SAMPLE_DEPOSIT))}.
               </p>
               <ButtonLink href="/login">{START}</ButtonLink>
@@ -223,17 +224,19 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold">Questions</h2>
           <div className="mt-6 flex flex-col">
             <Faq q="Do my clients need to download anything or make an account?">
-              No. They tap the link you send, read your policy, and pay by card, Apple Pay or Google
-              Pay. That&apos;s it.
+              No. They tap the link you send, read your policy, and pay with your Cash App, Zelle or
+              Venmo, or by card, Apple Pay or Google Pay if you take cards. That&apos;s it.
             </Faq>
             <Faq q="How do I get paid?">
-              Deposits go to your bank account through Stripe. You connect it once when you sign up;
-              it takes about 5 minutes.
+              Your choice. Clients can send the deposit straight to your Cash App, Zelle or Venmo,
+              and you tap Received when it lands. Or connect Stripe (about 5 minutes) and card
+              deposits go to your bank automatically.
             </Faq>
             <Faq q="What happens when a client cancels?">
               If they cancel before your cancellation window (for example, 48 hours before), their
-              deposit is refunded automatically. If it&apos;s later than that, you keep it. Either
-              way, you get a notification so you can fill the spot.
+              deposit is refunded: automatically for card deposits, or we remind you to send it back
+              on Cash App, Zelle or Venmo. If it&apos;s later than that, you keep it. Either way,
+              you get a notification so you can fill the spot.
             </Faq>
             <Faq q="What if a client doesn't show up?">
               After the appointment time, tap &ldquo;No-show, keep deposit.&rdquo; The client gets
@@ -245,8 +248,9 @@ export default function HomePage() {
               policy on top.
             </Faq>
             <Faq q="What does it cost?">
-              {price}/month after a {TRIAL_DAYS}-day free trial, plus {PROCESSING_FEE_LABEL} card
-              processing per deposit. No contract. Cancel anytime from your billing page.
+              {price}/month after a {TRIAL_DAYS}-day free trial. No fees on Cash App, Zelle or Venmo
+              deposits; card deposits are {PROCESSING_FEE_LABEL}. No contract. Cancel anytime from
+              your billing page.
             </Faq>
             <Faq q="Do I need a card to try it?">
               Not to sign up. You add a card when you&apos;re ready to send your first pay link, and
@@ -259,7 +263,7 @@ export default function HomePage() {
         <section className="bg-brand text-brand-foreground">
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-5 px-5 py-14 text-center">
             <h2 className="text-3xl font-bold">Your time is worth protecting.</h2>
-            <p className="opacity-90">Set up in 5 minutes. Send your first deposit link today.</p>
+            <p className="opacity-90">Set up in 2 minutes. Send your first deposit link today.</p>
             <Link
               href="/login"
               className="bg-surface text-brand inline-flex min-h-12 w-full items-center justify-center rounded-xl px-5 font-semibold sm:w-auto"

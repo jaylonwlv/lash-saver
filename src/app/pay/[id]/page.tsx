@@ -11,8 +11,10 @@ import {
 } from "@/lib/appointments";
 import { formatCents } from "@/lib/money";
 import { formatWhen } from "@/lib/time";
-import { cancelByClient, payDeposit } from "./actions";
+import { MANUAL_APP_LABEL, manualHandles, paymentAppUrl } from "@/lib/payments";
+import { cancelByClient, clientSentDeposit, payDeposit } from "./actions";
 import { CancelForm } from "./cancel-form";
+import { ManualPayForm } from "./manual-pay-form";
 import { PayForm } from "./pay-form";
 
 export const metadata: Metadata = {
@@ -45,6 +47,9 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
   const upcoming = a.status === "confirmed" && new Date(a.starts_at) > new Date();
   const terms = cancellationTerms(a, tech.cancellation_window_hours);
   const settled = a.status === "cancelled_by_client" ? await loadSettledDeposit(a.id) : null;
+  const manual = a.payment_method === "manual";
+  const waitingOnPro = manual && a.status === "pending_deposit" && a.client_marked_sent_at;
+  const note = `Deposit ${serviceName} ${when}`.slice(0, 60);
   const messageTech = dm ? (
     <a href={dm} className="text-brand underline">
       message {business}
@@ -58,7 +63,15 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
       <div className="flex flex-col gap-1">
         <p className="text-brand text-sm font-semibold">{business}</p>
         <h1 className="text-2xl font-bold">
-          {booked ? "You're booked" : `Hi ${a.client_name.split(" ")[0]}, secure your spot`}
+          {booked
+            ? "You're booked"
+            : a.status === "pending_deposit"
+              ? `Hi ${a.client_name.split(" ")[0]}, ${waitingOnPro ? "thanks!" : "secure your spot"}`
+              : a.status === "no_show"
+                ? "Missed appointment"
+                : a.status === "expired"
+                  ? "This link has expired"
+                  : "Appointment cancelled"}
         </h1>
       </div>
 
@@ -102,9 +115,17 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
       ) : a.status === "cancelled_by_client" ? (
         <Notice>
           You cancelled this appointment.{" "}
-          {settled?.status === "refunded"
-            ? `Your ${formatCents(settled.amount_cents)} deposit is being refunded; it can take 5 to 10 business days.`
-            : `Your ${formatCents(settled?.amount_cents ?? deposit)} deposit was kept, per the policy.`}
+          {settled?.status === "refund_due" ||
+          (settled?.status === "refunded" && settled.method === "manual")
+            ? `${business} will send your ${formatCents(settled.amount_cents)} deposit back the same way you paid it.`
+            : settled?.status === "refunded"
+              ? `Your ${formatCents(settled.amount_cents)} deposit is being refunded; it can take 5 to 10 business days.`
+              : `Your ${formatCents(settled?.amount_cents ?? deposit)} deposit was kept, per the policy.`}
+        </Notice>
+      ) : waitingOnPro ? (
+        <Notice tone="success">
+          Thanks! {business} will check for your {formatCents(deposit)} deposit and confirm your
+          spot. You&apos;ll get an email when you&apos;re booked.
         </Notice>
       ) : paid && a.status === "pending_deposit" ? (
         <Notice tone="success">
@@ -116,7 +137,19 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
             <h2 className="font-semibold">Deposit policy</h2>
             <p className="text-muted text-sm whitespace-pre-line">{policy}</p>
           </section>
-          <PayForm action={payDeposit.bind(null, a.id)} amount={formatCents(deposit)} />
+          {manual ? (
+            <ManualPayForm
+              action={clientSentDeposit.bind(null, a.id)}
+              amount={formatCents(deposit)}
+              options={manualHandles(tech).map((h) => ({
+                ...h,
+                label: MANUAL_APP_LABEL[h.app],
+                url: paymentAppUrl(h, deposit, note),
+              }))}
+            />
+          ) : (
+            <PayForm action={payDeposit.bind(null, a.id)} amount={formatCents(deposit)} />
+          )}
         </>
       ) : a.status === "cancelled_by_tech" ? (
         <Notice>This appointment was cancelled.</Notice>
