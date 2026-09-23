@@ -9,6 +9,27 @@ const PROTECTED_PREFIXES = ["/dashboard"];
  * redirects signed-out users away from tech-only routes.
  */
 export async function updateSession(request: NextRequest) {
+  // If Supabase rejects the redirect URL it falls back to the Site URL (usually "/"),
+  // with the auth code or error attached. Route those to the callback / login page.
+  const { pathname, searchParams } = request.nextUrl;
+  if (pathname !== "/auth/callback") {
+    const code = searchParams.get("code");
+    if (code) {
+      const callback = request.nextUrl.clone();
+      callback.pathname = "/auth/callback";
+      callback.search = "";
+      callback.searchParams.set("code", code);
+      callback.searchParams.set("next", "/dashboard");
+      return NextResponse.redirect(callback);
+    }
+    if (searchParams.has("error_description") && pathname !== "/login") {
+      const login = request.nextUrl.clone();
+      login.pathname = "/login";
+      login.search = "?error=link";
+      return NextResponse.redirect(login);
+    }
+  }
+
   let response = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -35,7 +56,6 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims);
 
-  const { pathname } = request.nextUrl;
   if (!signedIn && PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
