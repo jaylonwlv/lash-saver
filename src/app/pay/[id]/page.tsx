@@ -33,7 +33,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
   if (!ctx) notFound();
 
   const { appointment: a, tech, serviceName } = ctx;
-  const business = tech.business_name ?? "Your lash tech";
+  const business = tech.business_name ?? "Your provider";
   const when = formatWhen(a.starts_at, tech.timezone);
   const deposit = a.deposit_cents ?? 0;
   const rest = Math.max((a.price_cents ?? 0) - deposit, 0);

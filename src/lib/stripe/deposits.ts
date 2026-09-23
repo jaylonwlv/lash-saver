@@ -87,7 +87,7 @@ export async function createDepositCheckout(appointmentId: string): Promise<stri
   if (depositError || !deposit)
     throw new Error(`Creating deposit failed: ${depositError?.message}`);
 
-  const businessName = tech.business_name ?? "your lash tech";
+  const businessName = tech.business_name ?? "your provider";
   const when = formatWhen(a.starts_at, tech.timezone);
   const metadata = { appointment_id: a.id, deposit_id: deposit.id, tech_id: tech.id };
 
@@ -146,7 +146,7 @@ export async function createDepositCheckout(appointmentId: string): Promise<stri
  * Stripe keeps its own fee on refunds, so by default our processing fee isn't
  * returned either and the tech absorbs it, like any card processor. Pass
  * `returnFee` for refunds that aren't the tech's doing (duplicate or late
- * payments), where Lash Saver absorbs it instead.
+ * payments), where Dibs absorbs it instead.
  */
 async function refundPayment(
   paymentIntentId: string,
@@ -239,7 +239,7 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
     to: { name: a.client_name, email: a.client_email, phone: a.client_phone },
     template: "booking_confirmed",
     data: {
-      businessName: tech.business_name ?? "your lash tech",
+      businessName: tech.business_name ?? "your provider",
       serviceName,
       when,
       amount,

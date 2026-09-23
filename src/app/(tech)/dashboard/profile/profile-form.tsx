@@ -74,7 +74,7 @@ export function ProfileForm({
         autoCapitalize="none"
         autoCorrect="off"
         spellCheck={false}
-        placeholder="lashes-by-jay"
+        placeholder="your-business"
         required
       />
       <Input

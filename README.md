@@ -1,6 +1,6 @@
-# Lash Saver
+# Dibs
 
-Deposits and no-show protection for independent lash techs who book clients through Instagram DMs.
+Deposits and no-show protection for independent pros who book clients through Instagram DMs. Clients call dibs on a slot by paying a deposit.
 
 Built with Next.js 16, Supabase, Stripe Connect (Express), and Resend, deployed on Vercel. See [CLAUDE.md](./CLAUDE.md) for the product overview, architecture, and coding rules.
 

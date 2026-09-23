@@ -1,6 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
 import {
+  APP_NAME,
   DEFAULT_CURRENCY,
   SUBSCRIPTION_NAME,
   SUBSCRIPTION_PRICE_CENTS,
@@ -267,7 +268,7 @@ async function portalConfigurationId(): Promise<string> {
 
   const created = await stripe.billingPortal.configurations.create({
     metadata: { app: "lash-saver" },
-    business_profile: { headline: "Lash Saver: manage your subscription" },
+    business_profile: { headline: `${APP_NAME}: manage your subscription` },
     features: {
       customer_update: { enabled: true, allowed_updates: ["email"] },
       invoice_history: { enabled: true },

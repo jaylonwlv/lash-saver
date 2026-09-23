@@ -47,7 +47,7 @@ export function ServiceForm({
         label="Service name"
         defaultValue={v.name}
         error={e.name}
-        placeholder="Classic full set"
+        placeholder="e.g. Signature service"
         required
       />
       <Textarea
@@ -55,7 +55,7 @@ export function ServiceForm({
         label="Description (optional)"
         defaultValue={v.description}
         error={e.description}
-        placeholder="e.g. Natural look, one extension per lash."
+        placeholder="e.g. What's included and how to prepare."
       />
       <Select
         id="duration_minutes"
@@ -93,7 +93,7 @@ export function ServiceForm({
           depositCents && depositCents >= 50
             ? `You receive ${formatCents(techPayoutCents(depositCents))} after the ${PROCESSING_FEE_LABEL} processing fee.`
             : suggested
-              ? `Clients pay this to book. Most techs ask ${DEFAULT_DEPOSIT_PERCENT}%, which is ${formatCents(suggested)}.`
+              ? `Clients pay this to book. Most pros ask ${DEFAULT_DEPOSIT_PERCENT}%, which is ${formatCents(suggested)}.`
               : "Clients pay this to book. It goes toward the price."
         }
         placeholder="40"

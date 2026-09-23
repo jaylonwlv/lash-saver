@@ -1,7 +1,7 @@
 /**
  * App-wide constants. Anything a tech can change lives in the database, not here.
  */
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Lash Saver";
+export const APP_NAME = "Dibs";
 
 export const DEFAULT_CURRENCY = "usd";
 
@@ -15,7 +15,7 @@ export const PAY_LINK_VALID_HOURS = 24;
 export const CHECKOUT_SESSION_MINUTES = 35;
 
 /**
- * Processing fee on each deposit, kept by Lash Saver as the Stripe application
+ * Processing fee on each deposit, kept by Dibs as the Stripe application
  * fee. It covers Stripe's card fee (which the platform pays on destination
  * charges) with a small margin. Not refunded when a deposit is refunded,
  * because Stripe doesn't return its fee either.
@@ -27,7 +27,7 @@ export const PROCESSING_FEE_LABEL = "3.5% + 30¢";
 /** Tech subscription. The trial starts when the tech adds a card, before their first pay link. */
 export const SUBSCRIPTION_PRICE_CENTS = 2900;
 export const TRIAL_DAYS = 30;
-export const SUBSCRIPTION_NAME = "Lash Saver";
+export const SUBSCRIPTION_NAME = APP_NAME;
 /** Send the "trial ending" email this many days before the first charge. */
 export const TRIAL_ENDING_NOTICE_DAYS = 3;
 

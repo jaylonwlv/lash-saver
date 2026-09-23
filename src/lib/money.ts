@@ -9,7 +9,7 @@ export function formatCents(cents: number, currency: string = DEFAULT_CURRENCY):
 }
 
 /**
- * Lash Saver's processing fee on a deposit (3.5% + 30¢), never more than the
+ * Dibs's processing fee on a deposit (3.5% + 30¢), never more than the
  * deposit itself. $40.00 → $1.70.
  */
 export function processingFeeCents(amountCents: number): number {

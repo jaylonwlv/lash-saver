@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
-  description: "Deposits and no-show protection for lash techs who book through Instagram DMs.",
+  description: "Deposits and no-show protection for pros who book through Instagram DMs.",
 };
 
 export const viewport: Viewport = {

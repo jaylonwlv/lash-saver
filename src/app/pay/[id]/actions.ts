@@ -19,8 +19,8 @@ import { formatWhen } from "@/lib/time";
 
 const PAY_ERROR_MESSAGE: Record<PayError["reason"], string> = {
   closed: "This appointment can't be paid anymore. Refresh the page to see its status.",
-  expired: "This pay link has expired. Message your lash tech for a new one.",
-  tech_not_ready: "Your lash tech can't take payments yet. Please let them know.",
+  expired: "This pay link has expired. Message your provider for a new one.",
+  tech_not_ready: "Your provider can't take payments yet. Please let them know.",
 };
 
 /** Client agreed to the policy: send them to Stripe Checkout for the deposit. */
@@ -62,7 +62,7 @@ export async function cancelByClient(
   const { appointment: a, tech, serviceName } = ctx;
   if (a.status !== "confirmed" || new Date(a.starts_at) <= new Date()) {
     return {
-      message: "This appointment can't be cancelled online. Please message your lash tech.",
+      message: "This appointment can't be cancelled online. Please message your provider.",
     };
   }
 
@@ -99,7 +99,7 @@ export async function cancelByClient(
 
   const when = formatWhen(a.starts_at, tech.timezone);
   const amountText = formatCents(amount ?? a.deposit_cents ?? 0);
-  const businessName = tech.business_name ?? "your lash tech";
+  const businessName = tech.business_name ?? "your provider";
   await notifyForAppointment({
     appointmentId: a.id,
     to: { name: a.client_name, email: a.client_email, phone: a.client_phone },

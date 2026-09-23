@@ -1,10 +1,10 @@
 @AGENTS.md
 
-# Lash Saver
+# Dibs
 
 ## Product
 
-Lash Saver helps independent lash techs protect themselves from no-shows. Techs book clients through **Instagram DMs**, not a booking site, so the product fits that flow:
+**Dibs** helps independent service pros protect themselves from no-shows: the client "calls dibs" on a slot by paying a deposit. It's for anyone who books clients through **Instagram DMs** rather than a booking site (lash techs, nail techs, braiders, tattoo artists, and so on). The product copy stays general ("pros", "your provider"); marketing targets one niche at a time, starting with lash techs, so niche-specific wording belongs in ads, not in the app. The product fits the DM flow:
 
 1. A tech signs up, connects Stripe (Express), and adds services with prices and deposit amounts. No card needed.
    Before their **first pay link**, they add a card in Stripe Checkout to start a **30-day free trial** (`TRIAL_DAYS`), then $29/month (`SUBSCRIPTION_PRICE_CENTS`). Without an active subscription (`trialing`, `active`, or `past_due` as a grace period) they can't create new pay links; existing links, reminders and cancellations keep working.
@@ -16,7 +16,7 @@ Lash Saver helps independent lash techs protect themselves from no-shows. Techs 
 
 The product's job is preventing no-shows: deposit up front, a policy the client agrees to, reminders, easy cancel instead of ghosting, and one tap to keep the deposit. Judge new features against that. Self-serve time slots are a convenience, not the core.
 
-**Words to use.** Say _tech_ (the business user, who signs in) and _client_ (the end customer, who never has an account). Say _deposit_, _no-show_ and _booking page_. Don't say "customer", "user" or "stylist" in UI text.
+**Words to use.** In code, the business user is the _tech_ (`tech_id`, `(tech)` routes); in UI text call them a _pro_, or "your provider" when talking to their clients, and never name a trade (no "lash tech", "full set"). The end customer is the _client_ (never has an account). Say _deposit_, _no-show_ and _booking page_. Don't say "customer", "user" or "stylist" in UI text. The app name comes from `APP_NAME` in `config.ts`; never hard-code it.
 
 **Users are on phones.** Techs run their business from their phone, and clients open links inside Instagram's in-app browser. Design and test at 375px first.
 
@@ -161,6 +161,6 @@ stripe listen --forward-connect-to localhost:3000/api/stripe/connect/webhook
 - `NEXT_PUBLIC_*` vars must be type **Config**, not Secret. They are inlined at build time, and Secret values arrive empty in the build (symptom: `Invalid or missing public env vars: ... (missing)`). Redeploy without the build cache after changing them.
 - Server keys (`SUPABASE_SECRET_KEY`, `STRIPE_SECRET_KEY`, webhook secrets, `RESEND_API_KEY`, `CRON_SECRET`) stay **Secret**.
 - Env errors name each key as `(missing)` or `(invalid)`; check Vercel → Logs.
-- Stripe webhook destinations point at the production domain (`https://lash-saver.vercel.app/...`), never a per-deployment URL.
+- Stripe webhook destinations point at the production domain (currently `https://lash-saver.vercel.app/...`; the repo and Vercel project keep the old name until a Dibs domain is set up), never a per-deployment URL.
 
 Apply migrations with the Supabase CLI (`npx supabase db push`) or paste them into the SQL editor.

@@ -165,7 +165,7 @@ export async function markNoShow(appointmentId: string): Promise<FormState> {
       to: { email: ctx.appointment.client_email, phone: ctx.appointment.client_phone },
       template: "no_show_recorded",
       data: {
-        businessName: ctx.tech.business_name ?? "Your lash tech",
+        businessName: ctx.tech.business_name ?? "Your provider",
         when: formatWhen(ctx.appointment.starts_at, ctx.tech.timezone),
         amount: formatCents(kept),
       },
@@ -209,7 +209,7 @@ export async function cancelAppointment(appointmentId: string): Promise<FormStat
         to: { email: ctx.appointment.client_email, phone: ctx.appointment.client_phone },
         template: "deposit_refunded",
         data: {
-          businessName: ctx.tech.business_name ?? "Your lash tech",
+          businessName: ctx.tech.business_name ?? "Your provider",
           amount: formatCents(refunded),
         },
       });

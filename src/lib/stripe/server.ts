@@ -1,5 +1,6 @@
 import "server-only";
 import Stripe from "stripe";
+import { APP_NAME } from "@/lib/config";
 import { serverEnv } from "@/lib/env";
 
 let stripe: Stripe | undefined;
@@ -10,7 +11,7 @@ let stripe: Stripe | undefined;
  */
 export function getStripe(): Stripe {
   stripe ??= new Stripe(serverEnv().STRIPE_SECRET_KEY, {
-    appInfo: { name: "Lash Saver" },
+    appInfo: { name: APP_NAME },
   });
   return stripe;
 }

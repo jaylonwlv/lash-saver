@@ -93,7 +93,7 @@ async function sendReminders(now: Date) {
         template: "appointment_reminder",
         logAs: logKey,
         data: {
-          businessName: ctx.tech.business_name ?? "Your lash tech",
+          businessName: ctx.tech.business_name ?? "Your provider",
           serviceName: ctx.serviceName,
           when: formatWhen(ctx.appointment.starts_at, ctx.tech.timezone),
           cancelNote: cancelNote(ctx, now),

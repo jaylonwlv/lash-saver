@@ -11,13 +11,15 @@ import noShow from "./images/step-no-show.jpg";
 import payLink from "./images/step-pay-link.jpg";
 
 export const metadata: Metadata = {
-  title: { absolute: `${APP_NAME}: deposits and no-show protection for lash techs` },
+  title: {
+    absolute: `${APP_NAME}: deposits and no-show protection for pros who book in their DMs`,
+  },
   description:
     "Send a deposit link from your Instagram DMs. Clients agree to your policy and pay to lock in their spot. Automatic reminders. No-show? Keep the deposit.",
   openGraph: {
     title: "Stop losing money to no-shows",
     description:
-      "Deposit links for lash techs who book in their DMs. Clients agree to your policy, get reminders, and you keep the deposit on a no-show.",
+      "Deposit links for pros who book in their DMs. Clients agree to your policy, get reminders, and you keep the deposit on a no-show.",
     images: [clientPays.src],
   },
 };
@@ -44,7 +46,7 @@ export default function HomePage() {
         <section className="mx-auto grid w-full max-w-5xl items-center gap-10 px-5 pt-6 pb-14 md:grid-cols-2 md:pt-12">
           <div className="flex flex-col gap-5">
             <p className="text-brand text-sm font-semibold tracking-wide uppercase">
-              For lash techs who book in their DMs
+              For pros who book in their DMs
             </p>
             <h1 className="text-4xl leading-tight font-bold md:text-5xl">
               Stop losing money to no-shows.
@@ -76,7 +78,7 @@ export default function HomePage() {
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-5 py-14">
             <h2 className="text-3xl font-bold">One no-show costs more than the set.</h2>
             <div className="grid gap-4 sm:grid-cols-3">
-              <Stat value="$150" label="gone when a full set doesn't show" />
+              <Stat value="$150" label="gone when a $150 appointment doesn't show" />
               <Stat value="2+ hrs" label="of your day blocked for nothing" />
               <Stat value="$5,400" label="a year, at just 3 no-shows a month" />
             </div>
@@ -98,7 +100,7 @@ export default function HomePage() {
               title="Agree on a time in your DMs, then create a pay link"
               body="Pick the service, date and time. Copy the link and paste it into the chat."
               image={payLink}
-              alt="The tech's screen after creating an appointment, with a Copy pay link button"
+              alt="The pro's screen after creating an appointment, with a Copy pay link button"
             />
             <Step
               n={2}
@@ -119,7 +121,7 @@ export default function HomePage() {
               title="No-show? One tap, you keep the deposit"
               body="After the appointment, mark it completed or no-show. No chasing, no arguing."
               image={noShow}
-              alt="The tech's appointment page asking Did Jada show up, with No-show, keep deposit"
+              alt="The pro's appointment page asking Did Jada show up, with No-show, keep deposit"
             />
           </ol>
         </section>

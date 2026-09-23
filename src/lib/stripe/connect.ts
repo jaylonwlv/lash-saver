@@ -46,7 +46,8 @@ export async function ensureConnectedAccount(techId: string): Promise<string> {
         currency: "usd",
         responsibilities: { fees_collector: "application", losses_collector: "application" },
         profile: {
-          product_description: "Lash extension appointments. Clients pay a deposit to book.",
+          product_description:
+            "Appointments booked through Instagram. Clients pay a deposit to book.",
           // Stripe rejects non-public URLs such as localhost.
           business_url:
             profile.slug && appUrl.startsWith("https://")

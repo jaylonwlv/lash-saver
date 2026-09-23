@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
-import { PROCESSING_FEE_LABEL } from "@/lib/config";
+import { APP_NAME, PROCESSING_FEE_LABEL } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -69,7 +69,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           href="/dashboard/billing"
           className="border-danger text-danger bg-surface rounded-2xl border p-4 text-sm"
         >
-          Your Lash Saver payment didn&apos;t go through. Tap to update your card and keep sending
+          Your {APP_NAME} payment didn&apos;t go through. Tap to update your card and keep sending
           pay links.
         </Link>
       )}

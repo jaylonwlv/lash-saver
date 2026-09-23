@@ -100,7 +100,7 @@ export function AppointmentForm({
         defaultValue={v.notes}
         error={e.notes}
         hint="Only you see these."
-        placeholder="e.g. Wants a wispy look, sensitive eyes."
+        placeholder="e.g. Preferences, allergies, anything to remember."
       />
       {state.message && <p className="text-danger text-sm">{state.message}</p>}
       <Button type="submit" disabled={pending}>
