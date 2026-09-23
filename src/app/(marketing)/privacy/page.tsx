@@ -75,8 +75,15 @@ export default function PrivacyPage() {
         <p>
           Pros stay signed in with cookies that are needed for the account to work. Our hosting and
           service providers keep standard logs (such as IP address, browser type and the pages
-          requested) for security and troubleshooting. We don&apos;t use advertising cookies or
-          trackers on pay links or booking pages.
+          requested) for security and troubleshooting.
+        </p>
+        <p>
+          To measure our own ads, our marketing pages and sign-in page use the Meta Pixel, which
+          sets a cookie and tells Meta (Facebook and Instagram) which pages were visited. When a pro
+          signs up, starts a trial or subscribes, we also tell Meta, using a scrambled (hashed)
+          email address, so we can see which ads work. We don&apos;t use advertising cookies or
+          trackers on pay links, booking pages or the pro dashboard, and we never share
+          clients&apos; information with advertisers.
         </p>
       </Section>
 
@@ -106,7 +113,8 @@ export default function PrivacyPage() {
           <li>
             <strong>Service providers</strong> who run parts of {APP_NAME} for us, under their own
             privacy and security commitments: Supabase (database and sign-in), Vercel (hosting),
-            Stripe (payments and billing) and Resend (email).
+            Stripe (payments and billing), Resend (email) and Meta (ad measurement for our own
+            marketing, described above).
           </li>
           <li>
             <strong>When required:</strong> to comply with the law or a valid legal request, or to
@@ -118,8 +126,9 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          We don&apos;t sell personal information, and we don&apos;t share it for targeted
-          advertising.
+          We don&apos;t sell personal information. The only information we share for advertising is
+          the pro sign-up and trial measurement described above, and you can opt out of it by
+          emailing {email}.
         </p>
       </Section>
 

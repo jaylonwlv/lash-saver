@@ -59,6 +59,7 @@ src/
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
     api/cron/reminders/           Vercel Cron: expire unpaid pay links, send reminders (reminders.ts: due rule)
   components/ui/                  Small shared building blocks (Button, Input, Textarea, Select, BackLink)
+  components/meta-pixel.tsx       Meta Pixel; rendered by (marketing)/layout.tsx and the login page only
   lib/
     config.ts                     App constants (name, pay link validity, checkout lifetime, reminders)
     time.ts                       Time zones: zonedTimeToUtc, wallClockParts, formatWhen (Intl only)
@@ -77,6 +78,7 @@ src/
                                   billing.ts (tech subscription: trial eligibility, Checkout, sync, portal)
     subscription.ts               canSendPayLinks(status), normalizeEmail (no server deps)
     payments.ts                   Manual deposits: manualHandles, canTakeDeposits, paymentAppUrl (no server deps)
+    meta.ts                       Meta Conversions API: trackSignUp, trackSubscription (StartTrial, Subscribe)
     notifications/                notify() + Notifier interface, Resend email, SMS stub, templates,
                                   log.ts (notifyForAppointment: send + write notification_log)
 supabase/migrations/              SQL migrations (timestamped, append-only)
@@ -131,6 +133,12 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - One trial per person. `trial_claims` stores card and payout-bank fingerprints, normalized email (Gmail dots and +tags removed), Instagram handle and Cash App / Zelle / Venmo handles when a trial starts. A match with another tech means no trial is offered; a reused card found after Checkout ends the trial immediately (`trial_end: "now"`).
 - The daily cron emails techs `TRIAL_ENDING_NOTICE_DAYS` before the first charge, once per subscription (`notification_log` template `trial_ending:<sub id>`).
 - Enforce the pay-link gate on the server (`createAppointment`), not only in the UI.
+
+**Ads measurement (Meta)**
+
+- Off unless `NEXT_PUBLIC_META_PIXEL_ID` and `META_CAPI_TOKEN` are set. The browser Pixel runs on marketing pages and sign-in only; never add it to pay links, booking pages or the dashboard.
+- Conversions go server-side through `lib/meta.ts`, for pros only (never client data): `CompleteRegistration` on a new pro's first sign-in, `StartTrial` when a trial starts, `Subscribe` on the first paid period. Each has a stable `event_id` so Meta drops duplicates. Tracking failures are logged, never thrown.
+- If this changes what's shared with Meta, update the Privacy Policy.
 
 **Notifications**
 

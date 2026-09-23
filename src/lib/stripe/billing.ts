@@ -13,6 +13,7 @@ import { notify } from "@/lib/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeEmail } from "@/lib/subscription";
 import { getStripe } from "./server";
+import { trackSubscription } from "@/lib/meta";
 
 /*
  * Tech subscriptions on the platform account: $29/month via Stripe Checkout
@@ -250,6 +251,8 @@ export async function completeSubscriptionCheckout(
           claims.map((c) => ({ tech_id: techId, kind: c.kind, value: c.value })),
           { onConflict: "tech_id,kind,value", ignoreDuplicates: true },
         );
+      // The return route runs in the pro's browser; the webhook doesn't.
+      await trackSubscription("StartTrial", techId, sub.id, { browser: !!expectedTechId });
     }
   }
 

@@ -12,6 +12,7 @@ import {
   handleCheckoutExpired,
 } from "@/lib/stripe/deposits";
 import { getStripe } from "@/lib/stripe/server";
+import { trackSubscription } from "@/lib/meta";
 
 /**
  * Platform webhook. This is the source of truth for deposit status:
@@ -47,6 +48,10 @@ export async function POST(request: NextRequest) {
       const sub = event.data.object;
       const previous = await syncSubscription(sub);
       if (sub.status === "past_due" && previous !== "past_due") await notifyPaymentFailed(sub);
+      // First paid period after the trial: the conversion ads should optimize for.
+      if (sub.status === "active" && previous === "trialing" && sub.metadata?.tech_id) {
+        await trackSubscription("Subscribe", sub.metadata.tech_id, sub.id, { browser: false });
+      }
       break;
     }
     case "checkout.session.expired":

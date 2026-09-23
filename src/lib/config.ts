@@ -38,3 +38,6 @@ export const REMINDER_OFFSETS_HOURS = [48, 24] as const;
 export const LEGAL_CONTACT_EMAIL = "jaylonw.lv@gmail.com";
 export const GOVERNING_STATE = "Nevada";
 export const LEGAL_UPDATED = "September 23, 2026";
+
+/** Graph API version for the Meta Conversions API. Meta supports each for about two years. */
+export const META_GRAPH_API_VERSION = "v23.0";

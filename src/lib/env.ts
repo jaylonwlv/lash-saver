@@ -20,6 +20,11 @@ const serverSchema = z.object({
 
   CRON_SECRET: z.string().min(16),
 
+  // Meta Conversions API (optional; empty counts as unset). Needs NEXT_PUBLIC_META_PIXEL_ID too.
+  META_CAPI_TOKEN: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(20).optional()),
+  // Set while testing in Events Manager → Test events; remove afterwards.
+  META_TEST_EVENT_CODE: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+
   /** Texting provider. "none" disables SMS; "log" prints messages (dev). */
   SMS_PROVIDER: z.enum(["none", "log"]).default("none"),
 });

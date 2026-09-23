@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { publicEnv } from "@/lib/env.public";
+import { trackSignUp } from "@/lib/meta";
 import { createClient } from "@/lib/supabase/server";
 
 const nextPath = z
@@ -49,12 +50,13 @@ export async function verifyCode(_prev: LoginState, formData: FormData): Promise
   if (!parsed.success) return { error: "Enter the code from the email." };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     email: parsed.data.email,
     token: parsed.data.code,
     type: "email",
   });
   if (error) return { error: "That code didn't work or has expired. Check it, or send a new one." };
+  if (data.user) await trackSignUp(data.user);
 
   redirect(parsed.data.next);
 }

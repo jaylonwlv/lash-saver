@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { MetaPixel } from "@/components/meta-pixel";
+import { publicEnv } from "@/lib/env.public";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -16,6 +18,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </p>
       )}
       <LoginForm next={typeof next === "string" ? next : undefined} />
+      <MetaPixel pixelId={publicEnv().NEXT_PUBLIC_META_PIXEL_ID} />
       <p className="text-muted text-xs">
         By continuing, you agree to the{" "}
         <Link href="/terms" className="underline">
