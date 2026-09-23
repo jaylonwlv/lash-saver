@@ -45,8 +45,9 @@ export function paymentAppUrl(
   const amount = (amountCents / 100).toFixed(2);
   if (handle.app === "cashapp") return `https://cash.app/${handle.handle}/${amount}`;
   if (handle.app === "venmo") {
-    const params = new URLSearchParams({ txn: "pay", amount, note });
-    return `https://venmo.com/${handle.handle.replace(/^@/, "")}?${params}`;
+    // Venmo shows "+" literally, so encode spaces as %20 (URLSearchParams uses "+").
+    const user = encodeURIComponent(handle.handle.replace(/^@/, ""));
+    return `https://venmo.com/${user}?txn=pay&amount=${amount}&note=${encodeURIComponent(note)}`;
   }
   return null;
 }
