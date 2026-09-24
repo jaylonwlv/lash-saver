@@ -67,9 +67,12 @@ export default async function NewAppointmentPage({
         <AppointmentForm
           today={wallClockParts(new Date(), profile.timezone).date}
           timeZoneLabel={profile.timezone.replace(/_/g, " ")}
+          cardFees={profile.deposit_method === "stripe"}
           services={services.map((s) => ({
             id: s.id,
-            label: `${s.name} · ${formatDuration(s.duration_minutes)} · ${formatCents(s.deposit_cents)} deposit`,
+            label: `${s.name} · ${formatDuration(s.duration_minutes)} · ${formatCents(s.price_cents)}`,
+            priceCents: s.price_cents,
+            depositCents: s.deposit_cents,
           }))}
         />
       ) : (

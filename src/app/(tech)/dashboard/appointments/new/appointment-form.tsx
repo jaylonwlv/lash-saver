@@ -1,25 +1,52 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
+import { centsToDollarsInput, dollarsToCents, formatCents, techPayoutCents } from "@/lib/money";
+
+/** "40" for whole dollars, "40.50" otherwise: easier to read and edit on a phone. */
+const depositInput = (cents: number) =>
+  cents % 100 === 0 ? String(cents / 100) : centsToDollarsInput(cents);
 import { createAppointment } from "../actions";
 
-export type ServiceOption = { id: string; label: string };
+export type ServiceOption = { id: string; label: string; priceCents: number; depositCents: number };
 
 export function AppointmentForm({
   services,
   today,
   timeZoneLabel,
+  cardFees,
 }: {
   services: ServiceOption[];
   today: string;
   timeZoneLabel: string;
+  /** Deposits go through Stripe, so show what the pro receives after the card fee. */
+  cardFees: boolean;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createAppointment, {});
   const v = state.values ?? {};
   const e = state.errors ?? {};
+
+  // The deposit starts at the service's default and follows the service picker,
+  // but the pro can change it for this one client (a regular, a holiday slot).
+  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
+  const service = services.find((s) => s.id === serviceId) ?? services[0];
+  const [deposit, setDeposit] = useState(service ? depositInput(service.depositCents) : "");
+  const depositCents = dollarsToCents(deposit);
+  const depositHint = !service
+    ? undefined
+    : [
+        depositCents !== null && depositCents !== service.depositCents
+          ? `Just for this client. Your usual deposit for this service is ${formatCents(service.depositCents)}.`
+          : `Your usual deposit for this service. Change it for this client if you like.`,
+        cardFees && depositCents !== null && depositCents > 0
+          ? `You receive ${formatCents(techPayoutCents(depositCents))} after the card fee.`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" ");
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -28,6 +55,11 @@ export function AppointmentForm({
         label="Service"
         defaultValue={v.service_id ?? services[0]?.id}
         error={e.service_id}
+        onChange={(event) => {
+          const next = services.find((s) => s.id === event.target.value);
+          setServiceId(event.target.value);
+          if (next) setDeposit(depositInput(next.depositCents));
+        }}
       >
         {services.map((s) => (
           <option key={s.id} value={s.id}>
@@ -35,6 +67,17 @@ export function AppointmentForm({
           </option>
         ))}
       </Select>
+      <Input
+        id="deposit"
+        label={service ? `Deposit (price ${formatCents(service.priceCents)})` : "Deposit"}
+        inputMode="decimal"
+        autoComplete="off"
+        value={deposit}
+        onChange={(event) => setDeposit(event.target.value)}
+        error={e.deposit}
+        hint={depositHint}
+        required
+      />
       <div className="grid grid-cols-2 gap-3">
         <Input
           id="date"

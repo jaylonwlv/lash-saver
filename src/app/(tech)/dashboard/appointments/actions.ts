@@ -53,6 +53,14 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     return { message: "Start your free trial or subscribe to send pay links.", values };
   }
   if (!service?.is_active) return { errors: { service_id: "Pick a service." }, values };
+  if (input.deposit > service.price_cents) {
+    return {
+      errors: {
+        deposit: `The deposit can't be more than the ${formatCents(service.price_cents)} price.`,
+      },
+      values,
+    };
+  }
 
   const startsAt = zonedTimeToUtc(input.date, input.time, profile.timezone);
   if (!startsAt) {
@@ -99,7 +107,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       status: "pending_deposit",
       hold_expires_at: new Date(holdUntil).toISOString(),
       price_cents: service.price_cents,
-      deposit_cents: service.deposit_cents,
+      deposit_cents: input.deposit,
       payment_method: profile.deposit_method,
     })
     .select("id")
