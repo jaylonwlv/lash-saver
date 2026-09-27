@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 const price = formatCents(SUBSCRIPTION_PRICE_CENTS).replace(".00", "");
 const SAMPLE_DEPOSIT = 4000;
 const START = `Start free for ${TRIAL_DAYS} days`;
+const SIGN_UP = "/login?start=1";
 
 export default function HomePage() {
   return (
@@ -57,7 +58,7 @@ export default function HomePage() {
               reminders. And if they don&apos;t show, you keep the deposit.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/login">{START}</ButtonLink>
+              <ButtonLink href={SIGN_UP}>{START}</ButtonLink>
               <ButtonLink href="#how-it-works" variant="secondary">
                 See how it works
               </ButtonLink>
@@ -210,7 +211,7 @@ export default function HomePage() {
                 {PROCESSING_FEE_LABEL}: on a {formatCents(SAMPLE_DEPOSIT)} deposit you receive{" "}
                 {formatCents(techPayoutCents(SAMPLE_DEPOSIT))}.
               </p>
-              <ButtonLink href="/login">{START}</ButtonLink>
+              <ButtonLink href={SIGN_UP}>{START}</ButtonLink>
               <p className="text-muted text-xs">
                 No card to sign up. You add one when you send your first pay link.
               </p>
@@ -265,7 +266,7 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold">Your time is worth protecting.</h2>
             <p className="opacity-90">Set up in 2 minutes. Send your first deposit link today.</p>
             <Link
-              href="/login"
+              href={SIGN_UP}
               className="bg-surface text-brand inline-flex min-h-12 w-full items-center justify-center rounded-xl px-5 font-semibold sm:w-auto"
             >
               {START}

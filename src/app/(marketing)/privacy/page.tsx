@@ -79,11 +79,12 @@ export default function PrivacyPage() {
         </p>
         <p>
           To measure our own ads, our marketing pages and sign-in page use the Meta Pixel, which
-          sets a cookie and tells Meta (Facebook and Instagram) which pages were visited. When a pro
-          signs up, starts a trial or subscribes, we also tell Meta, using a scrambled (hashed)
-          email address, so we can see which ads work. We don&apos;t use advertising cookies or
-          trackers on pay links, booking pages or the pro dashboard, and we never share
-          clients&apos; information with advertisers.
+          sets a cookie and tells Meta (Facebook and Instagram) which pages were visited and whether
+          someone started signing up (without their email address). When a pro signs up, starts a
+          trial or subscribes, we also tell Meta, using a scrambled (hashed) email address, so we
+          can see which ads work. We don&apos;t use advertising cookies or trackers on pay links,
+          booking pages or the pro dashboard, and we never share clients&apos; information with
+          advertisers.
         </p>
       </Section>
 
