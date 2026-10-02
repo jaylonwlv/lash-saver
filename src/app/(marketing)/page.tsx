@@ -59,8 +59,8 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <ButtonLink href={SIGN_UP}>{START}</ButtonLink>
-              <ButtonLink href="#how-it-works" variant="secondary">
-                See how it works
+              <ButtonLink href="/demo" variant="secondary">
+                Try a demo pay link
               </ButtonLink>
             </div>
             <p className="text-muted text-sm">
