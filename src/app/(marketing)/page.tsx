@@ -12,10 +12,11 @@ import {
   TRIAL_ENDING_NOTICE_DAYS,
 } from "@/lib/config";
 import { formatCents, techPayoutCents } from "@/lib/money";
-import booked from "./images/step-booked.jpg";
 import clientPays from "./images/step-client-pays.jpg";
-import noShow from "./images/step-no-show.jpg";
-import payLink from "./images/step-pay-link.jpg";
+import zoomBooked from "./images/zoom-booked.png";
+import zoomClientPays from "./images/zoom-client-pays.png";
+import zoomNoShow from "./images/zoom-no-show.png";
+import zoomPayLink from "./images/zoom-pay-link.png";
 import { NoShowCalculator } from "./no-show-calculator";
 import { StickyCta } from "./sticky-cta";
 
@@ -115,50 +116,48 @@ export default function HomePage() {
         </section>
 
         {/* How it works */}
-        <div data-theme="light">
-          <section id="how-it-works" className="mx-auto w-full max-w-5xl scroll-mt-4 px-5 py-14">
-            <h2 className="text-3xl font-bold tracking-tight">From DM to deposit in 30 seconds</h2>
-            <p className="text-muted mt-2 text-lg">
-              Keep booking the way you already do. {APP_NAME} adds the deposit.
-            </p>
-            <ol className="mt-10 grid gap-12 md:grid-cols-2">
-              <Step
-                n={1}
-                title="Agree on a time, then create a pay link"
-                body="Pick the service, date and time, and paste the link into the chat. You can change the deposit for any client."
-                image={payLink}
-                alt="The pro's screen after creating an appointment, with a Copy pay link button"
-              />
-              <Step
-                n={2}
-                title="Your client agrees to your policy and pays"
-                body="They see the details and your cancellation policy, tick “I agree”, and pay with your Cash App, Zelle or Venmo, or by card. No account, no app to download."
-                image={clientPays}
-                alt="The client's pay page with the deposit policy and an agree checkbox"
-              />
-              <Step
-                n={3}
-                title="They're booked, and reminded"
-                body="Confirmation right away, reminders 48 and 24 hours before. Can't make it? They cancel from the link instead of ghosting: early enough gets a refund, too late and you keep the deposit."
-                image={booked}
-                alt="The client's confirmation page with a Can't make it section"
-              />
-              <Step
-                n={4}
-                title="No-show? One tap, you keep the deposit"
-                body="After the appointment, mark it completed or no-show. No chasing, no arguing. The client gets a polite email so you don't have to write one."
-                image={noShow}
-                alt="The pro's appointment page asking Did Jordan show up, with No-show, keep deposit"
-              />
-            </ol>
-            <div className="mt-12 flex flex-col items-center gap-3 text-center">
-              <p className="text-muted">See it the way your client will, no sign-up needed.</p>
-              <ButtonLink href="/demo" variant="secondary">
-                Try a demo pay link
-              </ButtonLink>
-            </div>
-          </section>
-        </div>
+        <section id="how-it-works" className="mx-auto w-full max-w-5xl scroll-mt-4 px-5 py-14">
+          <h2 className="text-3xl font-bold tracking-tight">From DM to deposit in 30 seconds</h2>
+          <p className="text-muted mt-2 text-lg">
+            Keep booking the way you already do. {APP_NAME} adds the deposit.
+          </p>
+          <ol className="mt-10 grid gap-14 md:grid-cols-2">
+            <Step
+              n={1}
+              title="Create a pay link in seconds"
+              body="Pick the service and time, then paste the link into your chat."
+              image={zoomPayLink}
+              alt="Appointment created: a pay link with a Copy pay link button"
+            />
+            <Step
+              n={2}
+              title="They agree to your policy and pay"
+              body="Cash App, Zelle, Venmo or card. No app, no account."
+              image={zoomClientPays}
+              alt="The client's pay page: your deposit policy, an I agree checkbox and Pay $40.00 deposit"
+            />
+            <Step
+              n={3}
+              title="They're booked and reminded"
+              body="Reminders 48 and 24 hours before. Cancel in time, they get it back."
+              image={zoomBooked}
+              alt="The client's confirmation: deposit paid, with the last day to cancel for a refund"
+            />
+            <Step
+              n={4}
+              title="No-show? One tap"
+              body="You keep the deposit, and they get a polite email. No chasing."
+              image={zoomNoShow}
+              alt="Did Jordan show up? Yes, completed, or No-show, keep deposit"
+            />
+          </ol>
+          <div className="mt-12 flex flex-col items-center gap-3 text-center">
+            <p className="text-muted">See it the way your client will, no sign-up needed.</p>
+            <ButtonLink href="/demo" variant="secondary">
+              Try a demo pay link
+            </ButtonLink>
+          </div>
+        </section>
 
         {/* Comparison */}
         <section className="bg-surface border-line border-y">
@@ -463,17 +462,25 @@ function Step({
   alt: string;
 }) {
   return (
-    <li className="flex flex-col gap-5">
+    <li className="flex flex-col gap-4">
       <div className="flex gap-4">
-        <span className="bg-brand text-brand-foreground flex size-9 shrink-0 items-center justify-center rounded-full font-semibold">
+        <span className="bg-brand text-brand-foreground flex size-9 shrink-0 items-center justify-center rounded-full font-bold">
           {n}
         </span>
         <div className="flex flex-col gap-1">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <p className="text-muted">{body}</p>
+          <h3 className="text-xl font-bold">{title}</h3>
+          <p className="text-foreground/85 text-lg">{body}</p>
         </div>
       </div>
-      <Phone src={image} alt={alt} />
+      <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10 md:max-w-sm">
+        <Image
+          src={image}
+          alt={alt}
+          sizes="(min-width: 768px) 384px, 100vw"
+          placeholder="blur"
+          className="h-auto w-full"
+        />
+      </div>
     </li>
   );
 }
