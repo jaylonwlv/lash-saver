@@ -17,7 +17,12 @@ import { formatWhen } from "@/lib/time";
 export const metadata: Metadata = { title: "Client" };
 
 export default async function ClientPage({ params }: PageProps<"/dashboard/clients/[key]">) {
-  const key = decodeURIComponent((await params).key);
+  const raw = (await params).key;
+  // Next may hand us the segment already decoded; decoding again must not throw.
+  let key = raw;
+  try {
+    key = decodeURIComponent(raw);
+  } catch {}
   const user = await getUser();
   const supabase = await createClient();
   const [{ data: profile }, { appointments, forfeited }, { data: services }] = await Promise.all([

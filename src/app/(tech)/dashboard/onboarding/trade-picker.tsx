@@ -8,7 +8,16 @@ import { chooseTrade } from "./actions";
 type Option = { id: TradeId; label: string; emoji: string };
 
 /** First visit: "What do you do?" One tap adds a starter menu; skipping is just as quick. */
-export function TradePicker({ options, other }: { options: Option[]; other: Option }) {
+export function TradePicker({
+  options,
+  other,
+  hasServices,
+}: {
+  options: Option[];
+  other: Option;
+  /** Pros who already set up services just tell us their trade; nothing is added. */
+  hasServices: boolean;
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(chooseTrade, {});
 
   return (
@@ -18,11 +27,17 @@ export function TradePicker({ options, other }: { options: Option[]; other: Opti
     >
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold">What do you do?</h2>
-        <p className="text-muted text-sm">
-          One tap and we&apos;ll add a few starter services with typical prices and deposits, so
-          you&apos;re ready to send a pay link in a minute.{" "}
-          <strong className="text-foreground">Edit them to match your prices.</strong>
-        </p>
+        {hasServices ? (
+          <p className="text-muted text-sm">
+            One tap. Only you see this, and it won&apos;t change your services.
+          </p>
+        ) : (
+          <p className="text-muted text-sm">
+            One tap and we&apos;ll add a few starter services with typical prices and deposits, so
+            you&apos;re ready to send a pay link in a minute.{" "}
+            <strong className="text-foreground">Edit them to match your prices.</strong>
+          </p>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-2">
         {[...options, other].map((o) => (
@@ -49,7 +64,7 @@ export function TradePicker({ options, other }: { options: Option[]; other: Opti
         disabled={pending}
         className="text-muted min-h-12 text-sm underline disabled:opacity-60"
       >
-        {pending ? "Setting things up…" : "Skip, I'll add my own services"}
+        {pending ? "Saving…" : hasServices ? "Skip" : "Skip, I'll add my own services"}
       </button>
     </form>
   );

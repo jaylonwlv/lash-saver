@@ -53,7 +53,9 @@ src/
     (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), menu page link
     (tech)/dashboard/onboarding/  First-visit "What do you do?" picker: one tap saves profiles.trade and, for a pro
                                   with no services, adds that trade's starter menu (services.is_starter, shown as
-                                  "Example price" until saved) and policy. Skip records "other".
+                                  "Example price" until saved, and kept off the public menu page until then)
+                                  and policy. Skip records "other". Pros who already have services only save
+                                  their trade.
     (tech)/dashboard/profile/     Business name, menu page link (slug), trade, time zone, policy; sign out
     (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete
     (tech)/dashboard/payments/    Deposit method: Cash App / Zelle / Venmo handles, or switch to Stripe

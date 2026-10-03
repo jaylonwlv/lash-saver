@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: PageProps<"/b/[slug]">): Prom
   return { title: `Book with ${slug}` };
 }
 
-export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
+export default async function MenuPage({ params }: PageProps<"/b/[slug]">) {
   const { slug } = await params;
   const supabase = await createClient();
 
@@ -31,6 +31,8 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
     .select("id, name, duration_minutes, price_cents, deposit_cents")
     .eq("tech_id", tech.id)
     .eq("is_active", true)
+    // Starter services still have example prices; they appear once the pro sets theirs.
+    .eq("is_starter", false)
     .order("price_cents");
   if (servicesError) {
     throw new Error(`Menu page: loading services failed: ${servicesError.message}`);
@@ -42,6 +44,11 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
         <h1 className="text-2xl font-bold">{tech.business_name ?? slug}</h1>
         <p className="text-muted text-sm">Services and prices. Message to book a time.</p>
       </div>
+      {!services?.length && (
+        <p className="border-line bg-surface text-muted rounded-2xl border p-4 text-sm">
+          Services and prices are coming soon. Message to ask about booking.
+        </p>
+      )}
       <ul className="flex flex-col gap-3">
         {services?.map((s) => (
           <li key={s.id} className="border-line bg-surface rounded-2xl border p-4">
