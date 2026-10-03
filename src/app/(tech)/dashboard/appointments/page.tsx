@@ -71,7 +71,15 @@ export default async function AppointmentsPage() {
   return (
     <div className="flex flex-col gap-6">
       <BackLink href="/dashboard" label="Dashboard" />
-      <h1 className="text-2xl font-bold">Appointments</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Appointments</h1>
+        <Link
+          href="/dashboard/clients"
+          className="text-brand inline-flex min-h-12 items-center text-sm font-medium"
+        >
+          Clients →
+        </Link>
+      </div>
       <ButtonLink href="/dashboard/appointments/new">New appointment</ButtonLink>
 
       {rows.length === 0 && (

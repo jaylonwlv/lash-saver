@@ -59,7 +59,10 @@ src/
     (tech)/dashboard/payments/    Deposit method: Cash App / Zelle / Venmo handles, or switch to Stripe
     (tech)/dashboard/stripe/      Onboarding + Express dashboard actions; refresh/ and return/ routes
     (tech)/dashboard/billing/     Subscription status, subscribe/trial card, Stripe billing portal; return/ route after Checkout
-    (tech)/dashboard/appointments/ List (needs action / upcoming / waiting / past), new, [id] detail
+    (tech)/dashboard/appointments/ List (needs action / upcoming / waiting / past), new, [id] detail. New
+                                  appointment has a returning-client picker that fills their details and
+                                  warns about past no-shows / late cancels before the deposit field
+    (tech)/dashboard/clients/     Client list and [key] detail (record + appointments), built from appointments
     b/[slug]/page.tsx             Public menu page: services, how to book (DM), policy
     pay/[id]/                     Public pay page: details, policy + agree checkbox → Stripe Checkout
     api/stripe/connect/webhook/   Connect events (account.updated)
@@ -86,6 +89,8 @@ src/
                                   billing.ts (tech subscription: trial eligibility, Checkout, sync, portal)
     subscription.ts               canSendPayLinks(status), normalizeEmail (no server deps)
     payments.ts                   Manual deposits: manualHandles, canTakeDeposits, paymentAppUrl (no server deps)
+    clients.ts                    Client list from appointments (matched by email, else phone): visits,
+                                  no-shows, late cancels; clientKey, isFlaky, clientRecord. No clients table.
     savings.ts                    loadSavings + savingsSummary: deposits kept from no-shows/late cancels (minus
                                   disputes lost), early cancels, show rate. Dashboard "Your results" card and the
                                   trial-ending email.

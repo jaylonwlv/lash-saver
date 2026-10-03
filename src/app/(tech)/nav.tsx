@@ -18,8 +18,13 @@ export function TechNav() {
     <nav className="border-line bg-surface/95 fixed inset-x-0 bottom-0 z-10 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <ul className="mx-auto flex max-w-2xl">
         {items.map((item) => {
+          // Clients lives under Appointments in the tab bar.
           const active =
-            item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href);
+            item.href === "/dashboard"
+              ? pathname === item.href
+              : pathname.startsWith(item.href) ||
+                (item.href === "/dashboard/appointments" &&
+                  pathname.startsWith("/dashboard/clients"));
           return (
             <li key={item.href} className="flex-1">
               <Link

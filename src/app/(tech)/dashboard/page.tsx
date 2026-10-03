@@ -140,6 +140,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             <ButtonLink href="/dashboard/appointments" variant="secondary">
               See appointments
             </ButtonLink>
+            <ButtonLink href="/dashboard/clients" variant="secondary">
+              Your clients
+            </ButtonLink>
           </section>
           <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
             <h2 className="font-semibold">Your menu page, for your bio</h2>

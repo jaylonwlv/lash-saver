@@ -10,6 +10,7 @@ import { canSendPayLinks } from "@/lib/subscription";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { SubscribeCard } from "../../billing/subscribe-card";
 import { wallClockParts } from "@/lib/time";
+import { clientRecord, loadClients } from "@/lib/clients";
 import { AppointmentForm } from "./appointment-form";
 
 export const metadata: Metadata = { title: "New appointment" };
@@ -17,7 +18,7 @@ export const metadata: Metadata = { title: "New appointment" };
 export default async function NewAppointmentPage({
   searchParams,
 }: PageProps<"/dashboard/appointments/new">) {
-  const { billing } = await searchParams;
+  const { billing, client } = await searchParams;
   const user = await getUser();
   const supabase = await createClient();
   const [{ data: profile }, { data: services, error }] = await Promise.all([
@@ -37,6 +38,7 @@ export default async function NewAppointmentPage({
   ]);
   if (error || !profile) throw new Error(`Loading services failed: ${error?.message}`);
 
+  const clients = await loadClients(supabase, user!.id);
   const depositsReady = canTakeDeposits(profile);
   const ready = depositsReady && services.length > 0;
   const subscribed = canSendPayLinks(profile.subscription_status);
@@ -78,6 +80,16 @@ export default async function NewAppointmentPage({
           today={wallClockParts(new Date(), profile.timezone).date}
           timeZoneLabel={profile.timezone.replace(/_/g, " ")}
           cardFees={profile.deposit_method === "stripe"}
+          initialClientKey={typeof client === "string" ? client : undefined}
+          clients={clients.map((c) => ({
+            key: c.key,
+            name: c.name,
+            email: c.email,
+            instagram: c.instagram,
+            phone: c.phone,
+            record: clientRecord(c),
+            missed: c.noShows + c.lateCancels,
+          }))}
           services={services.map((s) => ({
             id: s.id,
             label: `${s.name} · ${formatDuration(s.duration_minutes)} · ${formatCents(s.price_cents)}${s.is_starter ? " (example)" : ""}`,
