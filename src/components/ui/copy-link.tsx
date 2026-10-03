@@ -3,8 +3,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-/** Shows a link with a copy button, for pasting into an Instagram DM. */
-export function CopyLink({ url, label = "Copy link" }: { url: string; label?: string }) {
+/** Shows a link (or, with `prose`, a message) with a copy button, for pasting into an Instagram DM. */
+export function CopyLink({
+  url,
+  label = "Copy link",
+  prose = false,
+}: {
+  url: string;
+  label?: string;
+  prose?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -19,7 +27,9 @@ export function CopyLink({ url, label = "Copy link" }: { url: string; label?: st
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="border-line bg-background rounded-xl border px-4 py-3 text-sm break-all select-all">
+      <p
+        className={`border-line bg-background rounded-xl border px-4 py-3 text-sm select-all ${prose ? "whitespace-pre-line" : "break-all"}`}
+      >
         {url}
       </p>
       <Button type="button" onClick={copy}>

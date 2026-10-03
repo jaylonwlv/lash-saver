@@ -3,7 +3,14 @@ import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
-import { APP_NAME, PROCESSING_FEE_LABEL, SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
+import { CopyLink } from "@/components/ui/copy-link";
+import {
+  APP_NAME,
+  PROCESSING_FEE_LABEL,
+  SUBSCRIPTION_PRICE_CENTS,
+  TRIAL_DAYS,
+  TRIAL_ENDING_NOTICE_DAYS,
+} from "@/lib/config";
 import { formatCents, techPayoutCents } from "@/lib/money";
 import booked from "./images/step-booked.jpg";
 import clientPays from "./images/step-client-pays.jpg";
@@ -33,6 +40,9 @@ const SAMPLE_DEPOSIT = 4000;
 const START = `Start free for ${TRIAL_DAYS} days`;
 // Every "Start free" goes here: sign-up wording, plus the StartSignup and Lead Pixel events.
 const SIGN_UP = "/login?start=1";
+const ANNOUNCEMENT = `Hey! Quick update: to keep my schedule fair for everyone, I'm now taking a deposit to book. It goes toward your appointment, and you get it back if you cancel at least 48 hours before.
+
+When we pick a time, I'll send you a link to lock in your spot. Thank you!`;
 const CARD_NOTE = `No card to sign up. Add one before your first pay link; you're not charged until the trial ends.`;
 
 export default function HomePage() {
@@ -79,6 +89,7 @@ export default function HomePage() {
               <Check>Keep your Cash App, Zelle or Venmo</Check>
               <Check>Cards by Stripe</Check>
               <Check>Clients don&apos;t need an app</Check>
+              <Check>Ready in 2 minutes</Check>
               <Check>Cancel anytime</Check>
             </ul>
           </div>
@@ -189,6 +200,40 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* The awkward part */}
+        <section className="mx-auto grid w-full max-w-5xl gap-8 px-5 py-14 md:grid-cols-2 md:items-center">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Deposits, without the awkward conversation.
+            </h2>
+            <p className="text-muted">
+              The hard part was never the money. It&apos;s asking for it, and enforcing it when
+              someone flakes. {APP_NAME} does that part, so your policy is the bad guy, not you.
+            </p>
+            <ul className="flex flex-col gap-3">
+              <Check>
+                <strong>Your policy does the talking.</strong> Clients agree to it before they pay,
+                so there&apos;s nothing to argue about in the DMs.
+              </Check>
+              <Check>
+                <strong>You never chase anyone.</strong> Reminders go out on their own, and so does
+                the polite &ldquo;you missed your appointment&rdquo; email.
+              </Check>
+              <Check>
+                <strong>It feels fair, not greedy.</strong> Clients who cancel in time get their
+                deposit back, and they see that up front.
+              </Check>
+            </ul>
+          </div>
+          <div className="border-line bg-surface flex flex-col gap-3 rounded-3xl border p-5">
+            <p className="font-semibold">Starting deposits? Send your clients this:</p>
+            <CopyLink url={ANNOUNCEMENT} label="Copy this message" prose />
+            <p className="text-muted text-xs">
+              Edit it however you like. Change 48 hours to your policy.
+            </p>
+          </div>
+        </section>
+
         {/* Pricing */}
         <section
           id="pricing"
@@ -213,6 +258,7 @@ export default function HomePage() {
               <Check>Client cancellations with automatic refund rules</Check>
               <Check>One-tap no-show, keep the deposit</Check>
               <Check>A booking page for your Instagram bio</Check>
+              <Check>No marketplace: your clients never see other pros</Check>
             </ul>
             <p className="text-muted text-sm">
               No fees on deposits paid with Cash App, Zelle or Venmo. Card deposits are{" "}
@@ -227,6 +273,10 @@ export default function HomePage() {
             <p className="text-muted text-xs">{CARD_NOTE}</p>
           </div>
           <ul className="text-muted mx-auto mt-6 flex w-fit flex-col gap-2 text-left text-sm">
+            <Check>
+              An email {TRIAL_ENDING_NOTICE_DAYS} days before your trial ends, with what {APP_NAME}{" "}
+              saved you
+            </Check>
             <Check>Card payments processed by Stripe</Check>
             <Check>Cash App, Zelle and Venmo deposits go straight to you</Check>
             <Check>Your clients&apos; details are never shared with advertisers</Check>
@@ -243,6 +293,11 @@ export default function HomePage() {
                 appointment; it tells them you&apos;re booked and their spot is really held. The
                 ones who push back are usually the ones who would have no-showed. You set the
                 amount, and you can change it for any client.
+              </Faq>
+              <Faq q="What if a regular doesn't want to pay a deposit?">
+                You decide per client. When you create their pay link you can lower the deposit,
+                down to $1, for someone you trust. Most clients are fine once they see it goes
+                toward their appointment and comes back if they cancel in time.
               </Faq>
               <Faq q="Do my clients need to download anything or make an account?">
                 No. They tap the link you send, read your policy, and pay with your Cash App, Zelle
@@ -280,7 +335,8 @@ export default function HomePage() {
               </Faq>
               <Faq q="Do I need a card to try it?">
                 Not to sign up. You add a card when you&apos;re ready to send your first pay link,
-                and you won&apos;t be charged until your {TRIAL_DAYS}-day trial ends.
+                and you won&apos;t be charged until your {TRIAL_DAYS}-day trial ends. We email you{" "}
+                {TRIAL_ENDING_NOTICE_DAYS} days before it ends, and you can cancel from your phone.
               </Faq>
             </div>
           </div>
@@ -293,7 +349,7 @@ export default function HomePage() {
               Your next no-show is already on your calendar.
             </h2>
             <p className="opacity-90">
-              Set up in about 2 minutes. Send your first deposit link today.
+              Pick what you do and we fill in starter services. Send your first deposit link today.
             </p>
             <Link
               href={SIGN_UP}
