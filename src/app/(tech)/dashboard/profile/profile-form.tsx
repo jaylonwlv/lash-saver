@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
 import { saveProfile } from "./actions";
+import { slugFromName } from "./schema";
 
 export type ProfileValues = {
   business_name: string;
@@ -51,6 +52,10 @@ export function ProfileForm({
   const e = state.errors ?? {};
   const common = new Set<string>(COMMON_TIME_ZONES.map(([tz]) => tz));
   const windowValues = new Set<string>(WINDOW_OPTIONS.map(([h]) => String(h)));
+  // Until they type their own, the menu page link follows the business name, so a new
+  // pro doesn't have to invent one before their first pay link.
+  const slugInput = useRef<HTMLInputElement>(null);
+  const slugEdited = useRef(Boolean(v.slug));
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -60,17 +65,27 @@ export function ProfileForm({
         defaultValue={v.business_name}
         error={e.business_name}
         autoComplete="organization"
+        onChange={(event) => {
+          if (!slugEdited.current && slugInput.current) {
+            slugInput.current.value = slugFromName(event.target.value);
+          }
+        }}
         required
       />
       <Input
         id="slug"
+        ref={slugInput}
         label="Menu page link"
         defaultValue={v.slug}
+        onChange={() => {
+          slugEdited.current = true;
+        }}
         error={e.slug}
         hint={
           <>
             Your menu page, for your Instagram bio: {menuPrefix}
-            <strong>your-link</strong>. Lowercase letters, numbers and dashes.
+            <strong>your-link</strong>. Filled in from your business name; change it if you like.
+            Lowercase letters, numbers and dashes.
           </>
         }
         autoCapitalize="none"

@@ -4,6 +4,19 @@ import { TRADE_IDS } from "@/lib/trades";
 
 export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
 
+/** A menu page link suggested from the business name: "Fresh Cuts & Co." → "fresh-cuts-and-co". */
+export function slugFromName(name: string): string {
+  return name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/, "");
+}
+
 /** Must match the checks in supabase/migrations (profiles.slug). */
 export const profileSchema = z.object({
   business_name: z

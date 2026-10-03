@@ -93,7 +93,8 @@ export default function PrivacyPage() {
           <li>To run {APP_NAME}: pay links, menu pages, deposits, cancellations and refunds.</li>
           <li>
             To send messages about appointments (confirmations, reminders, cancellations) and about
-            pros&apos; accounts (sign-in codes, billing and trial notices).
+            pros&apos; accounts (sign-in codes, two setup reminders after sign-up, billing and trial
+            notices).
           </li>
           <li>To prevent fraud, repeat free trials and misuse, and to keep the service secure.</li>
           <li>

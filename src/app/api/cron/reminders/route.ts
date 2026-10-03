@@ -2,15 +2,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { cancelNote, loadAppointmentContext, payUrl } from "@/lib/appointments";
 import {
   REMINDER_OFFSETS_HOURS,
+  SETUP_NUDGE_FIRST_AFTER_HOURS,
+  SETUP_NUDGE_NEXT_AFTER_HOURS,
+  SETUP_NUDGE_STOP_AFTER_DAYS,
   SUBSCRIPTION_PRICE_CENTS,
+  TRIAL_DAYS,
   TRIAL_ENDING_NOTICE_DAYS,
 } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
-import { notify } from "@/lib/notifications";
+import { notify, type Recipient, type TemplateData, type TemplateId } from "@/lib/notifications";
 import { serverEnv } from "@/lib/env";
 import { notifyForAppointment } from "@/lib/notifications/log";
 import { loadSavings, savingsSummary } from "@/lib/savings";
+import { nextStepSentence, setupState } from "@/lib/setup";
+import { trialEligible } from "@/lib/stripe/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, formatWhen } from "@/lib/time";
 import { dueReminder, reminderLogKey } from "./reminders";
@@ -40,7 +46,14 @@ export async function GET(request: NextRequest) {
 
   const reminders = await sendReminders(now);
   const trialNotices = await sendTrialEndingNotices(now);
-  return NextResponse.json({ ok: true, expired: expired?.length ?? 0, ...reminders, trialNotices });
+  const setupNudges = await sendSetupNudges(now);
+  return NextResponse.json({
+    ok: true,
+    expired: expired?.length ?? 0,
+    ...reminders,
+    trialNotices,
+    setupNudges,
+  });
 }
 
 async function sendReminders(now: Date) {
@@ -129,13 +142,7 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
   for (const tech of techs) {
     if (!tech.subscription_id || !tech.trial_ends_at) continue;
     const logKey = `trial_ending:${tech.subscription_id}`;
-    const { data: already } = await admin
-      .from("notification_log")
-      .select("id")
-      .eq("template", logKey)
-      .is("error", null)
-      .limit(1);
-    if (already?.length) continue;
+    if (await alreadyLogged(logKey)) continue;
 
     // What Dibs did for them in the trial; the email still goes out if this fails.
     let savings: string | null = null;
@@ -149,7 +156,7 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
       console.error(`Savings for ${tech.id} failed`, err);
     }
 
-    const results = await notify({
+    const ok = await notifyAndLog(logKey, {
       to: { email: tech.email },
       template: "trial_ending",
       data: {
@@ -159,7 +166,83 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
         savings,
       },
     });
-    await admin.from("notification_log").insert(
+    if (ok) sent++;
+  }
+  return sent;
+}
+
+/**
+ * Remind pros who signed up but haven't added a card (so can't send pay links yet):
+ * one email about a day after sign-up and one about three days after, each sent once.
+ * Most pros finish setup on day one but have no client to book until later; these
+ * bring them back for that first pay link.
+ */
+async function sendSetupNudges(now: Date): Promise<number> {
+  const admin = createAdminClient();
+  const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000).toISOString();
+  const { data: techs, error } = await admin
+    .from("profiles")
+    .select(
+      "id, email, created_at, business_name, slug, deposit_method, stripe_charges_enabled, cashapp_tag, zelle_contact, venmo_handle",
+    )
+    .is("subscription_status", null)
+    .is("subscription_id", null)
+    .lte("created_at", hoursAgo(SETUP_NUDGE_FIRST_AFTER_HOURS))
+    .gt("created_at", hoursAgo(SETUP_NUDGE_STOP_AFTER_DAYS * 24));
+  if (error) throw new Error(`Loading pros for setup reminders failed: ${error.message}`);
+
+  let sent = 0;
+  for (const tech of techs) {
+    // One bad profile must not stop the rest.
+    try {
+      const ageHours = (now.getTime() - new Date(tech.created_at).getTime()) / 3_600_000;
+      const template =
+        ageHours < SETUP_NUDGE_NEXT_AFTER_HOURS ? "setup_nudge_first" : "setup_nudge_next_booking";
+      const logKey = `${template}:${tech.id}`;
+      if (await alreadyLogged(logKey)) continue;
+
+      const { count, error: servicesError } = await admin
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("tech_id", tech.id)
+        .eq("is_active", true);
+      if (servicesError) throw new Error(servicesError.message);
+      // Leave the trial out rather than promise one they can't get.
+      const eligible = await trialEligible(tech.id).catch(() => false);
+
+      const data = {
+        nextStep: nextStepSentence(setupState(tech, count ?? 0)),
+        trialDays: eligible ? TRIAL_DAYS : null,
+        dashboardUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard`,
+      };
+      const ok = await notifyAndLog(logKey, { to: { email: tech.email }, template, data });
+      if (ok) sent++;
+    } catch (err) {
+      console.error(`Setup reminder for ${tech.id} failed`, err);
+    }
+  }
+  return sent;
+}
+
+async function alreadyLogged(logKey: string): Promise<boolean> {
+  const { data } = await createAdminClient()
+    .from("notification_log")
+    .select("id")
+    .eq("template", logKey)
+    .is("error", null)
+    .limit(1);
+  return Boolean(data?.length);
+}
+
+/** Send a message that isn't about an appointment and log it under `logKey`. */
+async function notifyAndLog<T extends TemplateId>(
+  logKey: string,
+  input: { to: Recipient; template: T; data: TemplateData[T] },
+): Promise<boolean> {
+  const results = await notify(input);
+  await createAdminClient()
+    .from("notification_log")
+    .insert(
       results.map((r) => ({
         appointment_id: null,
         template: logKey,
@@ -168,7 +251,5 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
         error: r.ok ? null : r.error,
       })),
     );
-    if (results.some((r) => r.ok)) sent++;
-  }
-  return sent;
+  return results.some((r) => r.ok);
 }

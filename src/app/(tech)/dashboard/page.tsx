@@ -3,12 +3,15 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
-import { APP_NAME } from "@/lib/config";
+import { APP_NAME, TRIAL_DAYS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
-import { canTakeDeposits, manualHandles } from "@/lib/payments";
+import { manualHandles } from "@/lib/payments";
+import { setupState } from "@/lib/setup";
+import { trialEligible } from "@/lib/stripe/billing";
+import { canSendPayLinks } from "@/lib/subscription";
 import { loadSavings, savingsSummary } from "@/lib/savings";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
 import { TradePicker } from "./onboarding/trade-picker";
@@ -24,27 +27,35 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const user = await getUser();
   const supabase = await createClient();
 
-  const [{ data: profile, error }, { count: activeServices }, { count: starterServices }] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select(
-          "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade",
-        )
-        .eq("id", user!.id)
-        .single(),
-      supabase
-        .from("services")
-        .select("id", { count: "exact", head: true })
-        .eq("tech_id", user!.id)
-        .eq("is_active", true),
-      supabase
-        .from("services")
-        .select("id", { count: "exact", head: true })
-        .eq("tech_id", user!.id)
-        .eq("is_active", true)
-        .eq("is_starter", true),
-    ]);
+  const [
+    { data: profile, error },
+    { count: activeServices },
+    { count: starterServices },
+    { count: payLinks },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade",
+      )
+      .eq("id", user!.id)
+      .single(),
+    supabase
+      .from("services")
+      .select("id", { count: "exact", head: true })
+      .eq("tech_id", user!.id)
+      .eq("is_active", true),
+    supabase
+      .from("services")
+      .select("id", { count: "exact", head: true })
+      .eq("tech_id", user!.id)
+      .eq("is_active", true)
+      .eq("is_starter", true),
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("tech_id", user!.id),
+  ]);
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
 
   // While onboarding is unfinished, refresh status from Stripe on each visit so the
@@ -65,15 +76,21 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     console.error("Loading savings failed", err);
     return null;
   });
-  const profileDone = Boolean(profile.business_name && profile.slug);
-  const stripeStatus: StepStatus = canTakeDeposits(profile)
+  const setup = setupState(profile, activeServices ?? 0);
+  const profileDone = setup.profileDone;
+  const stripeStatus: StepStatus = setup.depositsDone
     ? "done"
     : !manual && profile.stripe_details_submitted
       ? "waiting"
       : "todo";
   const handles = manualHandles(profile);
-  const servicesDone = (activeServices ?? 0) > 0;
-  const allDone = profileDone && stripeStatus === "done" && servicesDone;
+  const servicesDone = setup.servicesDone;
+  const allDone = setup.ready;
+  const subscribed = canSendPayLinks(profile.subscription_status);
+  const firstLinkSent = (payLinks ?? 0) > 0;
+  // Only promise a trial they can get; if the check fails, just don't mention it.
+  const offerTrial =
+    !subscribed && !firstLinkSent ? await trialEligible(user!.id).catch(() => false) : false;
   const menuUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
 
   return (
@@ -243,6 +260,29 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                 ? "Manage services"
                 : "Add a service"}
           </ButtonLink>
+        </Step>
+
+        <Step
+          number={4}
+          title="Send your first pay link"
+          status={firstLinkSent ? "done" : "todo"}
+          description={
+            firstLinkSent
+              ? "You're taking deposits. Make a pay link whenever you book a client."
+              : !allDone
+                ? `Unlocks after the steps above.${offerTrial ? ` Adding a card for your first pay link starts your ${TRIAL_DAYS}-day free trial.` : ""}`
+                : subscribed
+                  ? "Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
+                  : offerTrial
+                    ? `Add a card to start your ${TRIAL_DAYS}-day free trial, then send it. You're not charged until the trial ends.`
+                    : "Subscribe to start sending pay links."
+          }
+        >
+          {allDone && !firstLinkSent && (
+            <ButtonLink href="/dashboard/appointments/new">
+              {subscribed ? "New appointment" : offerTrial ? "Start free trial" : "Subscribe"}
+            </ButtonLink>
+          )}
         </Step>
       </ol>
 

@@ -93,6 +93,7 @@ src/
                                   disputes.ts (chargebacks: evidence, transfer reversal, return if won),
                                   billing.ts (tech subscription: trial eligibility, Checkout, sync, portal)
     subscription.ts               canSendPayLinks(status), normalizeEmail (no server deps)
+    setup.ts                      setupState + nextStepSentence: what's left before the first pay link (no server deps)
     payments.ts                   Manual deposits: manualHandles, canTakeDeposits, paymentAppUrl (no server deps)
     clients.ts                    Client list from appointments (matched by email, else phone): visits,
                                   no-shows, late cancels; clientKey, isFlaky, clientRecord. No clients table.
@@ -155,6 +156,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 
 - Stripe is the source of truth. `syncSubscription` copies status, trial end, period end and cancel flag onto `profiles` from `customer.subscription.*` webhooks and the Checkout return route. Techs can't write these columns (column grants).
 - One trial per person. `trial_claims` stores card and payout-bank fingerprints, normalized email (Gmail dots and +tags removed), Instagram handle and Cash App / Zelle / Venmo handles when a trial starts. A match with another tech means no trial is offered; a reused card found after Checkout ends the trial immediately (`trial_end: "now"`).
+- The daily cron also sends two setup reminders to pros with no card yet (`setup_nudge_first` about a day after sign-up, `setup_nudge_next_booking` about three days after; `SETUP_NUDGE_*` in `config.ts`), each once (`notification_log` template `<template>:<tech id>`). They name what's left (`lib/setup.ts`) and mention the trial only if `trialEligible`. The dashboard checklist ends with step 4, "Send your first pay link", which starts the trial.
 - The daily cron emails techs `TRIAL_ENDING_NOTICE_DAYS` before the first charge, once per subscription (`notification_log` template `trial_ending:<sub id>`). The email opens with what Dibs did for them in the trial (`lib/savings.ts`); if that lookup fails, the email still goes out.
 - Enforce the pay-link gate on the server (`createAppointment`), not only in the UI.
 

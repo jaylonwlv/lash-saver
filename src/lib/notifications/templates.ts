@@ -77,6 +77,13 @@ export type TemplateData = {
     refunded: boolean;
     appointmentUrl: string;
   };
+  /**
+   * To a tech who signed up but hasn't added a card yet (so can't send pay links), about a
+   * day and three days after sign-up. `nextStep` names what's left; `trialDays` is null
+   * when they can't get a free trial.
+   */
+  setup_nudge_first: { nextStep: string; trialDays: number | null; dashboardUrl: string };
+  setup_nudge_next_booking: { nextStep: string; trialDays: number | null; dashboardUrl: string };
   /** To the tech, a few days before the first subscription charge. */
   /** `savings`: what Dibs did during the trial, e.g. "Dibs has saved you $120 so far (…)." */
   trial_ending: { endsOn: string; amount: string; billingUrl: string; savings: string | null };
@@ -132,6 +139,14 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
       ? `${d.clientName} cancelled ${d.serviceName} on ${d.when}, early enough for a refund, so their ${d.amount} deposit was returned. That time is open again. ${d.appointmentUrl}`
       : `${d.clientName} cancelled ${d.serviceName} on ${d.when} inside your cancellation window, so you keep their ${d.amount} deposit. That time is open again. ${d.appointmentUrl}`,
   }),
+  setup_nudge_first: (d) => ({
+    subject: `Your first ${APP_NAME} pay link is a few taps away`,
+    text: `${d.nextStep} Paste the pay link into your DMs: your client agrees to your policy and pays the deposit before the slot is theirs. If they don't show, you keep it. ${trialLine(d.trialDays)}${d.dashboardUrl}`,
+  }),
+  setup_nudge_next_booking: (d) => ({
+    subject: `Before your next booking, send a ${APP_NAME} pay link`,
+    text: `Next time a client asks for a time in your DMs, send a pay link instead of your Cash App. They agree to your policy, get reminders, and you keep the deposit if they don't show. ${d.nextStep} ${trialLine(d.trialDays)}This is our last setup reminder. ${d.dashboardUrl}`,
+  }),
   trial_ending: (d) => ({
     subject: `Your ${APP_NAME} trial ends ${d.endsOn}`,
     text: `${d.savings ? `${d.savings} ` : ""}Your free trial ends ${d.endsOn}. After that it's ${d.amount}/month on the card you added, so your pay links and reminders keep working. Nothing to do if you're staying. To change your card or cancel: ${d.billingUrl}`,
@@ -183,4 +198,10 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
 export function render<T extends TemplateId>(template: T, data: TemplateData[T]): RenderedMessage {
   const message = renderers[template](data);
   return { ...message, text: `${message.text}\n\n— sent via ${APP_NAME}` };
+}
+
+function trialLine(trialDays: number | null): string {
+  return trialDays
+    ? `Your ${trialDays}-day free trial starts when you add a card for your first pay link; you're not charged until it ends. `
+    : "";
 }

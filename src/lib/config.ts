@@ -31,6 +31,15 @@ export const SUBSCRIPTION_NAME = APP_NAME;
 /** Send the "trial ending" email this many days before the first charge. */
 export const TRIAL_ENDING_NOTICE_DAYS = 3;
 
+/**
+ * Setup reminders for pros who signed up but haven't added a card (so can't send pay
+ * links): one about a day after sign-up, one about three days after, then none. The
+ * cron runs daily, so each lands within a day of these marks.
+ */
+export const SETUP_NUDGE_FIRST_AFTER_HOURS = 20;
+export const SETUP_NUDGE_NEXT_AFTER_HOURS = 68;
+export const SETUP_NUDGE_STOP_AFTER_DAYS = 7;
+
 /** Reminder offsets before an appointment, in hours. */
 export const REMINDER_OFFSETS_HOURS = [48, 24] as const;
 
