@@ -9,13 +9,15 @@ import booked from "./images/step-booked.jpg";
 import clientPays from "./images/step-client-pays.jpg";
 import noShow from "./images/step-no-show.jpg";
 import payLink from "./images/step-pay-link.jpg";
+import { NoShowCalculator } from "./no-show-calculator";
+import { StickyCta } from "./sticky-cta";
 
 export const metadata: Metadata = {
   title: {
     absolute: `${APP_NAME}: deposits and no-show protection for pros who book in their DMs`,
   },
   description:
-    "Send a deposit link from your Instagram DMs. Clients agree to your policy and pay with Cash App, Zelle, Venmo or card to lock in their spot. Automatic reminders. No-show? Keep the deposit.",
+    "Send a deposit link in your DMs or texts. Clients agree to your policy and pay with your Cash App, Zelle, Venmo or a card before the slot is theirs. Automatic reminders. No-show? Keep the deposit.",
   openGraph: {
     title: "Stop losing money to no-shows",
     description:
@@ -27,13 +29,18 @@ export const metadata: Metadata = {
 const price = formatCents(SUBSCRIPTION_PRICE_CENTS).replace(".00", "");
 const SAMPLE_DEPOSIT = 4000;
 const START = `Start free for ${TRIAL_DAYS} days`;
+// Every "Start free" goes here: sign-up wording, plus the StartSignup and Lead Pixel events.
 const SIGN_UP = "/login?start=1";
+const CARD_NOTE = `No card to sign up. Add one before your first pay link; you're not charged until the trial ends.`;
 
 export default function HomePage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-3">
-        <span className="font-semibold">{APP_NAME}</span>
+        <span className="flex items-center gap-2 text-lg font-bold">
+          <span className="bg-brand size-2.5 rounded-full" aria-hidden />
+          {APP_NAME}
+        </span>
         <Link
           href="/login"
           className="text-brand inline-flex min-h-12 items-center px-2 font-medium"
@@ -44,63 +51,64 @@ export default function HomePage() {
 
       <main className="flex flex-col">
         {/* Hero */}
-        <section className="mx-auto grid w-full max-w-5xl items-center gap-10 px-5 pt-6 pb-14 md:grid-cols-2 md:pt-12">
+        <section className="mx-auto grid w-full max-w-5xl items-center gap-10 px-5 pt-4 pb-14 md:grid-cols-2 md:pt-12">
           <div className="flex flex-col gap-5">
             <p className="text-brand text-sm font-semibold tracking-wide uppercase">
               For pros who book in their DMs
             </p>
-            <h1 className="text-4xl leading-tight font-bold md:text-5xl">
-              Stop losing money to no-shows.
+            <h1 className="text-[2.5rem] leading-[1.05] font-bold tracking-tight md:text-6xl">
+              Stop losing money to <span className="whitespace-nowrap">no-shows.</span>
             </h1>
             <p className="text-muted text-lg">
-              Send a deposit link right from your Instagram DMs. Clients agree to your policy and
-              pay with your Cash App, Zelle, Venmo or a card to call dibs on their spot. They get
-              reminders. And if they don&apos;t show, you keep the deposit.
+              Send a deposit link in your DMs or texts. Clients agree to your policy and pay before
+              the slot is theirs. If they don&apos;t show, you keep the deposit.
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row" data-cta="hero">
               <ButtonLink href={SIGN_UP}>{START}</ButtonLink>
               <ButtonLink href="/demo" variant="secondary">
                 Try a demo pay link
               </ButtonLink>
             </div>
-            <p className="text-muted text-sm">
-              Set up in about 2 minutes from your phone. Add a card before your first pay link;
-              you&apos;re not charged until the {TRIAL_DAYS}-day trial ends.
-            </p>
+            <p className="text-muted text-sm">{CARD_NOTE}</p>
+            <ul className="text-muted flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              <Check>Keep your Cash App, Zelle or Venmo</Check>
+              <Check>Cards by Stripe</Check>
+              <Check>Clients don&apos;t need an app</Check>
+              <Check>Cancel anytime</Check>
+            </ul>
           </div>
-          <Phone
-            src={clientPays}
-            alt="A client's pay page: appointment details, deposit policy, and a button to pay the $40 deposit"
-            eager
-          />
+          <HeroVisual />
         </section>
 
-        {/* The cost of a no-show */}
+        {/* The cost */}
         <section className="bg-surface border-line border-y">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-5 py-14">
-            <h2 className="text-3xl font-bold">One no-show costs more than the set.</h2>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Stat value="$150" label="gone when a $150 appointment doesn't show" />
-              <Stat value="2+ hrs" label="of your day blocked for nothing" />
-              <Stat value="$5,400" label="a year, at just 3 no-shows a month" />
+          <div className="mx-auto grid w-full max-w-5xl gap-8 px-5 py-14 md:grid-cols-2 md:items-center">
+            <div className="flex flex-col gap-4">
+              <h2 className="text-3xl font-bold tracking-tight">
+                A no-show costs more than the appointment.
+              </h2>
+              <p className="text-muted">
+                It&apos;s the hours you blocked, the prep you did, and the client you turned away
+                for that slot. Most no-shows aren&apos;t personal: people forget, or nothing makes
+                them feel committed. A paid deposit and a reminder fix both.
+              </p>
+              <p className="text-muted">See what it adds up to for you:</p>
             </div>
-            <p className="text-muted max-w-2xl">
-              Most no-shows aren&apos;t personal. Clients forget, or nothing makes them feel
-              committed. A paid deposit and a reminder fix both, and you stop having the awkward
-              &ldquo;about my policy&hellip;&rdquo; conversation.
-            </p>
+            <NoShowCalculator priceCents={SUBSCRIPTION_PRICE_CENTS} appName={APP_NAME} />
           </div>
         </section>
 
         {/* How it works */}
         <section id="how-it-works" className="mx-auto w-full max-w-5xl scroll-mt-4 px-5 py-14">
-          <h2 className="text-3xl font-bold">From DM to deposit in 30 seconds</h2>
-          <p className="text-muted mt-2 text-lg">Keep booking the way you already do.</p>
+          <h2 className="text-3xl font-bold tracking-tight">From DM to deposit in 30 seconds</h2>
+          <p className="text-muted mt-2 text-lg">
+            Keep booking the way you already do. {APP_NAME} adds the deposit.
+          </p>
           <ol className="mt-10 grid gap-12 md:grid-cols-2">
             <Step
               n={1}
-              title="Agree on a time in your DMs, then create a pay link"
-              body="Pick the service, date and time. Copy the link and paste it into the chat."
+              title="Agree on a time, then create a pay link"
+              body="Pick the service, date and time, and paste the link into the chat. You can change the deposit for any client."
               image={payLink}
               alt="The pro's screen after creating an appointment, with a Copy pay link button"
             />
@@ -114,169 +122,187 @@ export default function HomePage() {
             <Step
               n={3}
               title="They're booked, and reminded"
-              body="Confirmation right away, reminders 48 and 24 hours before. If they can't make it, they cancel instead of ghosting: early enough gets a refund, too late and you keep the deposit."
+              body="Confirmation right away, reminders 48 and 24 hours before. Can't make it? They cancel from the link instead of ghosting: early enough gets a refund, too late and you keep the deposit."
               image={booked}
               alt="The client's confirmation page with a Can't make it section"
             />
             <Step
               n={4}
               title="No-show? One tap, you keep the deposit"
-              body="After the appointment, mark it completed or no-show. No chasing, no arguing."
+              body="After the appointment, mark it completed or no-show. No chasing, no arguing. The client gets a polite email so you don't have to write one."
               image={noShow}
-              alt="The pro's appointment page asking Did Jada show up, with No-show, keep deposit"
+              alt="The pro's appointment page asking Did Jordan show up, with No-show, keep deposit"
             />
           </ol>
-        </section>
-
-        {/* Features */}
-        <section className="bg-surface border-line border-y">
-          <div className="mx-auto w-full max-w-5xl px-5 py-14">
-            <h2 className="text-3xl font-bold">Everything a deposit should do</h2>
-            <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <Feature title="Your policy, agreed in writing">
-                Clients tick &ldquo;I agree&rdquo; before they pay, and it&apos;s saved with a
-                timestamp. If a client disputes a kept deposit, you have the proof.
-              </Feature>
-              <Feature title="Automatic reminders">
-                Emails 48 and 24 hours before, with the exact time they can still cancel for a
-                refund. Forgetting stops being an excuse.
-              </Feature>
-              <Feature title="Cancel instead of ghost">
-                Clients can cancel from their link. Early enough is refunded automatically, too late
-                means you keep the deposit, and you get a heads-up to fill the slot.
-              </Feature>
-              <Feature title="One-tap no-show">
-                Mark it and you keep the deposit. The client gets a polite email, so you don&apos;t
-                have to write one.
-              </Feature>
-              <Feature title="Get paid your way">
-                Keep your Cash App, Zelle or Venmo: clients pay you directly and you tap Received.
-                Or take cards through Stripe and deposits land in your bank automatically.
-              </Feature>
-              <Feature title="Built for your phone">
-                Everything works from your phone, and the pay link opens right inside Instagram.
-              </Feature>
-            </ul>
+          <div className="mt-12 flex flex-col items-center gap-3 text-center">
+            <p className="text-muted">See it the way your client will, no sign-up needed.</p>
+            <ButtonLink href="/demo" variant="secondary">
+              Try a demo pay link
+            </ButtonLink>
           </div>
         </section>
 
         {/* Comparison */}
-        <section className="mx-auto w-full max-w-5xl px-5 py-14">
-          <h2 className="text-3xl font-bold">Keep your Cash App. Add what it&apos;s missing.</h2>
-          <p className="text-muted mt-2 max-w-2xl">
-            Cash App works, until a client asks for their money back, forgets, or ghosts. Big
-            booking apps are built around online calendars and marketplaces. {APP_NAME} adds real
-            deposit protection to the way you already book and get paid: in your DMs.
-          </p>
-          <div className="border-line bg-surface mt-8 overflow-hidden rounded-2xl border">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-line border-b">
-                  <th className="p-4 font-medium">&nbsp;</th>
-                  <th className="p-4 text-center font-medium">Cash App or Zelle alone</th>
-                  <th className="text-brand p-4 text-center font-semibold">With {APP_NAME}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <Row label="Client agrees to your policy before paying" them={false} />
-                <Row label="Automatic reminders" them={false} />
-                <Row label="Refund or keep, decided by your policy" them={false} />
-                <Row label="One tap to keep a no-show's deposit" them={false} />
-                <Row label="Proof if a client disputes" them={false} />
-                <Row label="Works from your DMs" them />
-                <Row label="Clients pay with Cash App, Zelle or Venmo" them />
-              </tbody>
-            </table>
+        <section className="bg-surface border-line border-y">
+          <div className="mx-auto w-full max-w-5xl px-5 py-14">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Keep your Cash App. Add what it&apos;s missing.
+            </h2>
+            <p className="text-muted mt-2 max-w-2xl">
+              Payment apps take money but don&apos;t protect you. Booking apps protect you but make
+              your clients use a booking site and pay through their checkout. {APP_NAME} adds the
+              protection to the way you already book and get paid.
+            </p>
+            <div className="border-line bg-background mt-8 overflow-hidden rounded-2xl border">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-line border-b">
+                    <th className="p-3 font-medium">&nbsp;</th>
+                    <th className="w-16 px-1 py-3 text-center text-xs font-medium sm:w-auto sm:px-3">
+                      Cash App alone
+                    </th>
+                    <th className="w-16 px-1 py-3 text-center text-xs font-medium sm:w-auto sm:px-3">
+                      Most booking apps
+                    </th>
+                    <th className="text-brand bg-brand-soft/50 w-16 px-1 py-3 text-center text-xs font-bold sm:w-auto sm:px-3">
+                      {APP_NAME}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <Row label="Keep booking in your DMs or texts" cash booking={false} />
+                  <Row label="Clients pay with Cash App, Zelle or Venmo" cash booking={false} />
+                  <Row label="Client agrees to your policy before paying" cash={false} booking />
+                  <Row label="Automatic reminders" cash={false} booking />
+                  <Row label="Refund or keep, decided by your policy" cash={false} booking />
+                  <Row label="One tap to keep a no-show's deposit" cash={false} booking />
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 
         {/* Pricing */}
-        <section id="pricing" className="bg-surface border-line border-y">
-          <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-5 py-14 text-center">
-            <h2 className="text-3xl font-bold">Simple pricing</h2>
-            <div className="border-brand bg-background flex flex-col gap-4 rounded-2xl border-2 p-6">
-              <p>
-                <span className="text-5xl font-bold">{price}</span>
-                <span className="text-muted">/month</span>
-              </p>
-              <p className="font-medium">Free for {TRIAL_DAYS} days. Cancel anytime.</p>
-              <ul className="text-muted flex flex-col gap-2 text-left text-sm">
-                <li>✓ Unlimited pay links and clients</li>
-                <li>✓ Automatic reminders and confirmations</li>
-                <li>✓ Client cancel with automatic refund rules</li>
-                <li>✓ One-tap no-show, keep the deposit</li>
-                <li>✓ Your own booking page for your Instagram bio</li>
-              </ul>
-              <p className="text-muted text-sm">
-                No fees on deposits paid with Cash App, Zelle or Venmo. Card deposits are{" "}
-                {PROCESSING_FEE_LABEL}: on a {formatCents(SAMPLE_DEPOSIT)} deposit you receive{" "}
-                {formatCents(techPayoutCents(SAMPLE_DEPOSIT))}.
-              </p>
-              <ButtonLink href={SIGN_UP}>{START}</ButtonLink>
-              <p className="text-muted text-xs">
-                No card to sign up. You add one when you send your first pay link.
-              </p>
+        <section
+          id="pricing"
+          className="mx-auto w-full max-w-md scroll-mt-4 px-5 py-14 text-center"
+        >
+          <h2 className="text-3xl font-bold tracking-tight">One price. Everything included.</h2>
+          <div className="border-brand bg-surface mt-6 flex flex-col gap-4 rounded-3xl border-2 p-6 shadow-sm">
+            <p>
+              <span className="text-5xl font-bold">{price}</span>
+              <span className="text-muted">/month</span>
+            </p>
+            <p className="font-medium">
+              Free for {TRIAL_DAYS} days. Cancel anytime from your phone.
+            </p>
+            <p className="bg-brand-soft/60 rounded-xl px-3 py-2 text-sm font-medium">
+              One kept {formatCents(SAMPLE_DEPOSIT).replace(".00", "")} deposit covers the month.
+            </p>
+            <ul className="flex flex-col gap-2 text-left text-sm">
+              <Check>Unlimited pay links and clients</Check>
+              <Check>Your policy, agreed in writing before they pay</Check>
+              <Check>Automatic reminders and confirmations</Check>
+              <Check>Client cancellations with automatic refund rules</Check>
+              <Check>One-tap no-show, keep the deposit</Check>
+              <Check>A booking page for your Instagram bio</Check>
+            </ul>
+            <p className="text-muted text-sm">
+              No fees on deposits paid with Cash App, Zelle or Venmo. Card deposits are{" "}
+              {PROCESSING_FEE_LABEL}: on a {formatCents(SAMPLE_DEPOSIT)} deposit you receive{" "}
+              {formatCents(techPayoutCents(SAMPLE_DEPOSIT))}.
+            </p>
+            <div data-cta="pricing">
+              <ButtonLink href={SIGN_UP} className="w-full sm:w-full">
+                {START}
+              </ButtonLink>
             </div>
-            <p className="text-muted text-sm">One saved no-show pays for months of {APP_NAME}.</p>
+            <p className="text-muted text-xs">{CARD_NOTE}</p>
           </div>
+          <ul className="text-muted mx-auto mt-6 flex w-fit flex-col gap-2 text-left text-sm">
+            <Check>Card payments processed by Stripe</Check>
+            <Check>Cash App, Zelle and Venmo deposits go straight to you</Check>
+            <Check>Your clients&apos; details are never shared with advertisers</Check>
+          </ul>
         </section>
 
         {/* FAQ */}
-        <section className="mx-auto w-full max-w-2xl px-5 py-14">
-          <h2 className="text-3xl font-bold">Questions</h2>
-          <div className="mt-6 flex flex-col">
-            <Faq q="Do my clients need to download anything or make an account?">
-              No. They tap the link you send, read your policy, and pay with your Cash App, Zelle or
-              Venmo, or by card, Apple Pay or Google Pay if you take cards. That&apos;s it.
-            </Faq>
-            <Faq q="How do I get paid?">
-              Your choice. Clients can send the deposit straight to your Cash App, Zelle or Venmo,
-              and you tap Received when it lands. Or connect Stripe (about 5 minutes) and card
-              deposits go to your bank automatically.
-            </Faq>
-            <Faq q="What happens when a client cancels?">
-              If they cancel before your cancellation window (for example, 48 hours before), their
-              deposit is refunded: automatically for card deposits, or we remind you to send it back
-              on Cash App, Zelle or Venmo. If it&apos;s later than that, you keep it. Either way,
-              you get a notification so you can fill the spot.
-            </Faq>
-            <Faq q="What if a client doesn't show up?">
-              After the appointment time, tap &ldquo;No-show, keep deposit.&rdquo; The client gets
-              an email saying the deposit was kept per your policy, which they agreed to before
-              paying.
-            </Faq>
-            <Faq q="Do I need to change how I book?">
-              No. Keep booking in your DMs. {APP_NAME} just adds the deposit link, reminders and
-              policy on top.
-            </Faq>
-            <Faq q="What does it cost?">
-              {price}/month after a {TRIAL_DAYS}-day free trial. No fees on Cash App, Zelle or Venmo
-              deposits; card deposits are {PROCESSING_FEE_LABEL}. No contract. Cancel anytime from
-              your billing page.
-            </Faq>
-            <Faq q="Do I need a card to try it?">
-              Not to sign up. You add a card when you&apos;re ready to send your first pay link, and
-              you won&apos;t be charged until your {TRIAL_DAYS}-day trial ends.
-            </Faq>
+        <section className="bg-surface border-line border-y">
+          <div className="mx-auto w-full max-w-2xl px-5 py-14">
+            <h2 className="text-3xl font-bold tracking-tight">Questions</h2>
+            <div className="mt-6 flex flex-col">
+              <Faq q="Won't asking for a deposit scare clients off?">
+                Clients who plan to show up don&apos;t mind a deposit that goes toward their
+                appointment; it tells them you&apos;re booked and their spot is really held. The
+                ones who push back are usually the ones who would have no-showed. You set the
+                amount, and you can change it for any client.
+              </Faq>
+              <Faq q="Do my clients need to download anything or make an account?">
+                No. They tap the link you send, read your policy, and pay with your Cash App, Zelle
+                or Venmo, or by card, Apple Pay or Google Pay if you take cards. That&apos;s it.
+              </Faq>
+              <Faq q="How do I get paid?">
+                Your choice. Clients send the deposit straight to your Cash App, Zelle or Venmo, and
+                you tap Received when it lands. Or connect Stripe (about 5 minutes) and card
+                deposits go to your bank automatically.
+              </Faq>
+              <Faq q="What happens when a client cancels?">
+                If they cancel before your cancellation window (for example, 48 hours before), their
+                deposit is refunded: automatically for card deposits, or we remind you to send it
+                back on Cash App, Zelle or Venmo. If it&apos;s later than that, you keep it. Either
+                way, you get a notification so you can fill the spot.
+              </Faq>
+              <Faq q="What if a client doesn't show up?">
+                After the appointment time, tap &ldquo;No-show, keep deposit.&rdquo; The client gets
+                an email saying the deposit was kept per your policy, which they agreed to before
+                paying.
+              </Faq>
+              <Faq q="What if a client disputes a card deposit with their bank?">
+                We automatically send the bank the policy your client agreed to, with the date and
+                time they agreed, and the confirmation and reminders they received. That&apos;s the
+                proof banks look for.
+              </Faq>
+              <Faq q="Do I need to change how I book?">
+                No. Keep booking in your DMs or by text. {APP_NAME} just adds the deposit link,
+                reminders and policy on top.
+              </Faq>
+              <Faq q="What does it cost?">
+                {price}/month after a {TRIAL_DAYS}-day free trial. No fees on Cash App, Zelle or
+                Venmo deposits; card deposits are {PROCESSING_FEE_LABEL}. No contract. Cancel
+                anytime from your billing page.
+              </Faq>
+              <Faq q="Do I need a card to try it?">
+                Not to sign up. You add a card when you&apos;re ready to send your first pay link,
+                and you won&apos;t be charged until your {TRIAL_DAYS}-day trial ends.
+              </Faq>
+            </div>
           </div>
         </section>
 
         {/* Final call to action */}
         <section className="bg-brand text-brand-foreground">
-          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-5 px-5 py-14 text-center">
-            <h2 className="text-3xl font-bold">Your time is worth protecting.</h2>
-            <p className="opacity-90">Set up in 2 minutes. Send your first deposit link today.</p>
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-5 px-5 py-16 text-center">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Your next no-show is already on your calendar.
+            </h2>
+            <p className="opacity-90">
+              Set up in about 2 minutes. Send your first deposit link today.
+            </p>
             <Link
               href={SIGN_UP}
+              data-cta="final"
               className="bg-surface text-brand inline-flex min-h-12 w-full items-center justify-center rounded-xl px-5 font-semibold sm:w-auto"
             >
               {START}
+            </Link>
+            <Link href="/demo" className="inline-flex min-h-12 items-center underline">
+              Or try a demo pay link first
             </Link>
           </div>
         </section>
       </main>
 
-      <footer className="text-muted mx-auto flex w-full max-w-5xl flex-col gap-2 px-5 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-sm sm:flex-row sm:justify-between">
+      <footer className="text-muted mx-auto flex w-full max-w-5xl flex-col gap-2 px-5 py-8 pb-[max(6rem,env(safe-area-inset-bottom))] text-sm sm:flex-row sm:justify-between md:pb-8">
         <span>© {APP_NAME}</span>
         <div className="flex gap-4">
           <Link href="/terms" className="underline">
@@ -290,6 +316,37 @@ export default function HomePage() {
           </Link>
         </div>
       </footer>
+
+      <StickyCta
+        href={SIGN_UP}
+        label={START}
+        note={`Free for ${TRIAL_DAYS} days · cancel anytime`}
+      />
+    </div>
+  );
+}
+
+/** The DM that sends the link, above the page the client opens. */
+function HeroVisual() {
+  return (
+    <div className="relative mx-auto w-full max-w-[320px]">
+      <div className="mb-4 flex flex-col gap-2 text-[15px]" aria-hidden>
+        <p className="bg-surface border-line max-w-[78%] self-start rounded-2xl rounded-bl-md border px-4 py-2.5 shadow-sm">
+          Can I get Saturday at 2? 🙏
+        </p>
+        <p className="bg-brand text-brand-foreground max-w-[78%] self-end rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
+          Yes! Lock it in here 👇
+        </p>
+        <p className="bg-surface border-line max-w-[78%] self-end rounded-2xl rounded-br-md border px-4 py-2.5 shadow-sm">
+          <span className="block font-semibold">Pay your $40 deposit</span>
+          <span className="text-brand text-sm">getdibs.pro/pay/…</span>
+        </p>
+      </div>
+      <Phone
+        src={clientPays}
+        alt="A client's pay page: appointment details, deposit policy, and a button to pay the $40 deposit"
+        eager
+      />
     </div>
   );
 }
@@ -318,12 +375,14 @@ function Phone({
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Check({ children }: { children: ReactNode }) {
   return (
-    <div className="border-line bg-background rounded-2xl border p-5">
-      <p className="text-brand text-3xl font-bold">{value}</p>
-      <p className="text-muted mt-1 text-sm">{label}</p>
-    </div>
+    <li className="flex items-start gap-2">
+      <span className="text-success font-bold" aria-hidden>
+        ✓
+      </span>
+      <span>{children}</span>
+    </li>
   );
 }
 
@@ -356,24 +415,30 @@ function Step({
   );
 }
 
-function Feature({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <li className="border-line bg-background flex flex-col gap-2 rounded-2xl border p-5">
-      <h3 className="font-semibold">{title}</h3>
-      <p className="text-muted text-sm">{children}</p>
-    </li>
+function Mark({ yes }: { yes: boolean }) {
+  return yes ? (
+    <span className="text-success font-bold" aria-label="Yes">
+      ✓
+    </span>
+  ) : (
+    <span className="text-muted" aria-label="No">
+      ✗
+    </span>
   );
 }
 
-function Row({ label, them }: { label: string; them: boolean }) {
+function Row({ label, cash, booking }: { label: string; cash: boolean; booking: boolean }) {
   return (
     <tr className="border-line border-b last:border-0">
-      <td className="p-4">{label}</td>
-      <td className="text-muted p-4 text-center" aria-label={them ? "Yes" : "No"}>
-        {them ? "✓" : "✗"}
+      <td className="p-3">{label}</td>
+      <td className="p-3 text-center">
+        <Mark yes={cash} />
       </td>
-      <td className="text-success p-4 text-center font-semibold" aria-label="Yes">
-        ✓
+      <td className="p-3 text-center">
+        <Mark yes={booking} />
+      </td>
+      <td className="bg-brand-soft/50 p-3 text-center">
+        <Mark yes />
       </td>
     </tr>
   );

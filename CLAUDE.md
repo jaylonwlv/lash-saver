@@ -36,9 +36,11 @@ The product's job is preventing no-shows: deposit up front, a policy the client 
 src/
   proxy.ts                        Refreshes the Supabase session; guards /dashboard
   app/
-    (marketing)/page.tsx          Landing page (static): hero, cost of no-shows, 4 steps with real app
-                                  screenshots (images/), features, vs Cash App, pricing, FAQ. Pulls
-                                  price, trial and fee from config.ts; keep claims true to the product.
+    (marketing)/page.tsx          Landing page (static): hero with DM + pay page, no-show cost calculator,
+                                  4 steps with real app screenshots (images/, neutral "Studio Nova" example,
+                                  no trade names), vs Cash App / booking apps, pricing, FAQ, sticky phone CTA.
+                                  Every "Start free" links to /login?start=1. Pulls price, trial and fee from
+                                  config.ts; keep claims true to the product.
     (marketing)/demo/             Demo pay link anyone can try (no sign-up): reuses the pay page's forms
                                   with local actions, so nothing is charged or saved. Card or manual toggle.
     (marketing)/terms/, privacy/  Terms of Service and Privacy Policy (legal-page.tsx layout). Keep them true to

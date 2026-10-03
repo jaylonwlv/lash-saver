@@ -12,6 +12,7 @@
   --line: #eadfdb;
   --brand: #b23a5b;
   --brand-foreground: #ffffff;
+  --brand-soft: #f6d9e1;
   --success: #2f7a4f;
   --danger: #b42318;
 }
@@ -24,6 +25,7 @@
   --color-line: var(--line);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
   --color-success: var(--success);
   --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
