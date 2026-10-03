@@ -48,7 +48,9 @@ src/
                                   the product: update them, and LEGAL_UPDATED in config.ts, when data, fees,
                                   providers or billing change. No ad trackers on pay links or menu pages
                                   (the Privacy Policy says so); a Meta Pixel belongs on marketing pages only.
-    (auth)/login/                 Email sign-in: 6-digit code (any browser) or link (page, form, actions)
+    (auth)/login/                 Email sign-in: 6-digit code (any browser) or link (page, form, actions). The code
+                                  screen survives a reload for an hour (localStorage) and shows an "Open Gmail /
+                                  Mail / Outlook" button picked from the email domain and phone (inbox.ts)
     auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
     (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), menu page link
