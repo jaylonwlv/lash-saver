@@ -60,7 +60,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     }
   }
 
-  const savings = savingsSummary(await loadSavings(supabase, user!.id));
+  // A failed lookup only hides the results card; the rest of the dashboard still loads.
+  const savings = await loadSavings(supabase, user!.id).then(savingsSummary, (err) => {
+    console.error("Loading savings failed", err);
+    return null;
+  });
   const profileDone = Boolean(profile.business_name && profile.slug);
   const stripeStatus: StepStatus = canTakeDeposits(profile)
     ? "done"

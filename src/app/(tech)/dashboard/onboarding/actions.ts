@@ -32,7 +32,8 @@ export async function chooseTrade(_prev: FormState, formData: FormData): Promise
   }
 
   const usePreset = trade !== null && count === 0;
-  const { error: updateError } = await supabase
+  // Only the first pick counts: a double tap can't add the starter menu twice.
+  const { data: claimed, error: updateError } = await supabase
     .from("profiles")
     .update({
       trade: parsed.data,
@@ -40,11 +41,14 @@ export async function chooseTrade(_prev: FormState, formData: FormData): Promise
         ? { cancellation_window_hours: trade.windowHours, policy_text: trade.policyText }
         : {}),
     })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .is("trade", null)
+    .select("id");
   if (updateError) {
     console.error("Saving trade failed", updateError);
     return { message: "Something went wrong. Try again." };
   }
+  if (!claimed?.length) redirect("/dashboard");
 
   if (usePreset) {
     const { error } = await supabase.from("services").insert(
