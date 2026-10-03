@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         <p>
           This policy explains what personal information {APP_NAME} collects, how we use it and the
           choices you have. It covers pros, who have an account, and clients, who open a pay link or
-          booking page and never need an account. It&apos;s part of our{" "}
+          menu page and never need an account. It&apos;s part of our{" "}
           <Link href="/terms">Terms of Service</Link>.
         </p>
       </Section>
@@ -22,9 +22,9 @@ export default function PrivacyPage() {
       <Section title="Information about pros">
         <ul>
           <li>
-            <strong>Account and business details:</strong> your email address, business name,
-            booking page link, Instagram handle, time zone, services, prices, deposits and
-            cancellation policy.
+            <strong>Account and business details:</strong> your email address, business name, menu
+            page link, Instagram handle, time zone, services, prices, deposits and cancellation
+            policy.
           </li>
           <li>
             <strong>Payment details you choose to share:</strong> your Cash App, Zelle or Venmo
@@ -83,14 +83,14 @@ export default function PrivacyPage() {
           someone started signing up (without their email address). When a pro signs up, starts a
           trial or subscribes, we also tell Meta, using a scrambled (hashed) email address, so we
           can see which ads work. We don&apos;t use advertising cookies or trackers on pay links,
-          booking pages or the pro dashboard, and we never share clients&apos; information with
+          menu pages or the pro dashboard, and we never share clients&apos; information with
           advertisers.
         </p>
       </Section>
 
       <Section title="How we use it">
         <ul>
-          <li>To run {APP_NAME}: pay links, booking pages, deposits, cancellations and refunds.</li>
+          <li>To run {APP_NAME}: pay links, menu pages, deposits, cancellations and refunds.</li>
           <li>
             To send messages about appointments (confirmations, reminders, cancellations) and about
             pros&apos; accounts (sign-in codes, billing and trial notices).

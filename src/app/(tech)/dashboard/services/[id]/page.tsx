@@ -53,11 +53,11 @@ export default async function EditServicePage({ params }: PageProps<"/dashboard/
       >
         <p className="text-muted text-sm">
           {service.is_active
-            ? "Hide this service from your booking page. Existing appointments aren't affected."
-            : "This service is hidden from your booking page."}
+            ? "Hide this service from your menu page and new appointments. Existing appointments aren't affected."
+            : "This service is hidden from your menu page."}
         </p>
         <Button type="submit" variant="secondary">
-          {service.is_active ? "Hide from booking page" : "Show on booking page"}
+          {service.is_active ? "Hide this service" : "Show this service again"}
         </Button>
       </form>
     </div>

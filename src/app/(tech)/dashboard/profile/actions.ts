@@ -19,7 +19,7 @@ export async function saveProfile(_prev: FormState, formData: FormData): Promise
 
   if (error) {
     if (error.code === "23505") {
-      return { errors: { slug: "That booking link is taken. Try another." }, values };
+      return { errors: { slug: "That menu page link is taken. Try another." }, values };
     }
     console.error("Saving profile failed", error);
     return { message: "Couldn't save your profile. Try again.", values };

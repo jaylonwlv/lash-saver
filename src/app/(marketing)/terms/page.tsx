@@ -29,7 +29,7 @@ export default function TermsPage() {
         </p>
         <p>
           These terms apply to everyone who uses {APP_NAME}: pros who create an account, and clients
-          who open a pay link or booking page. By using {APP_NAME}, you agree to them. If you
+          who open a pay link or menu page. By using {APP_NAME}, you agree to them. If you
           don&apos;t agree, please don&apos;t use it. Our{" "}
           <Link href="/privacy">Privacy Policy</Link> explains how we handle personal information.
         </p>
@@ -189,8 +189,7 @@ export default function TermsPage() {
         <p>
           You keep ownership of what you put into {APP_NAME} (your business name, services, policy
           and so on). You give us permission to store, display and send it as needed to run the
-          service, for example showing your services on your booking page and your policy on pay
-          links.
+          service, for example showing your services on your menu page and your policy on pay links.
         </p>
       </Section>
 

@@ -40,11 +40,11 @@ const WINDOW_OPTIONS = [
 export function ProfileForm({
   initial,
   timeZones,
-  bookingPrefix,
+  menuPrefix,
 }: {
   initial: ProfileValues;
   timeZones: string[];
-  bookingPrefix: string;
+  menuPrefix: string;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveProfile, {});
   const v = { ...initial, ...state.values };
@@ -64,12 +64,12 @@ export function ProfileForm({
       />
       <Input
         id="slug"
-        label="Booking link"
+        label="Menu page link"
         defaultValue={v.slug}
         error={e.slug}
         hint={
           <>
-            Clients will book at {bookingPrefix}
+            Your menu page, for your Instagram bio: {menuPrefix}
             <strong>your-link</strong>. Lowercase letters, numbers and dashes.
           </>
         }

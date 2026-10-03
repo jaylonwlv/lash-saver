@@ -12,7 +12,7 @@ declare global {
 
 /**
  * Meta Pixel for measuring ads. Marketing pages and sign-in only: never on pay
- * links, booking pages or the dashboard (the Privacy Policy says so).
+ * links, menu pages or the dashboard (the Privacy Policy says so).
  *
  * Sign-in moves to the dashboard without a page reload, so the script stays in
  * memory there. disablePushState and autoConfig off stop it from tracking those

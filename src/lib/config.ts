@@ -39,7 +39,7 @@ export const LEGAL_CONTACT_EMAIL = "jaylonw.lv@gmail.com";
 export const GOVERNING_STATE = "Nevada";
 /** Where Dibs sends alerts meant for the business owner (disputes). */
 export const OWNER_ALERT_EMAIL = LEGAL_CONTACT_EMAIL;
-export const LEGAL_UPDATED = "September 27, 2026";
+export const LEGAL_UPDATED = "October 3, 2026";
 
 /** Graph API version for the Meta Conversions API. Meta supports each for about two years. */
 export const META_GRAPH_API_VERSION = "v23.0";

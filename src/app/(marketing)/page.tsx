@@ -256,7 +256,7 @@ export default function HomePage() {
               <Check>Automatic reminders and confirmations</Check>
               <Check>Client cancellations with automatic refund rules</Check>
               <Check>One-tap no-show, keep the deposit</Check>
-              <Check>A booking page for your Instagram bio</Check>
+              <Check>A menu page for your Instagram bio: your services, prices and policy</Check>
               <Check>No marketplace: your clients never see other pros</Check>
             </ul>
             <p className="text-muted text-sm">

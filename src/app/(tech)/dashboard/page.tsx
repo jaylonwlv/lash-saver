@@ -74,7 +74,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const handles = manualHandles(profile);
   const servicesDone = (activeServices ?? 0) > 0;
   const allDone = profileDone && stripeStatus === "done" && servicesDone;
-  const bookingUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
+  const menuUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -128,7 +128,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         />
       )}
 
-      {allDone && bookingUrl ? (
+      {allDone && menuUrl ? (
         <>
           <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
             <h2 className="font-semibold">Book a client</h2>
@@ -142,11 +142,24 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             </ButtonLink>
           </section>
           <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
-            <h2 className="font-semibold">Your booking page</h2>
+            <h2 className="font-semibold">Your menu page, for your bio</h2>
             <p className="text-muted text-sm">
-              Your services and prices, for your Instagram bio. Clients message you to book.
+              Your services, prices and policy on one page. Put it in your Instagram bio so people
+              can see what you offer, then message you to book.
             </p>
-            <CopyLink url={bookingUrl} label="Copy booking page link" />
+            <p className="bg-background rounded-xl p-3 text-sm">
+              <strong>This isn&apos;t a pay link.</strong> It doesn&apos;t book anyone or take a
+              deposit. To lock in a client, tap <strong>New appointment</strong> and send them the
+              pay link it makes.
+            </p>
+            <CopyLink url={menuUrl} label="Copy menu page link" variant="secondary" />
+            <Link
+              href={menuUrl}
+              target="_blank"
+              className="text-brand inline-flex min-h-12 items-center justify-center text-sm font-medium underline"
+            >
+              See what people see
+            </Link>
           </section>
         </>
       ) : (
@@ -160,8 +173,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           status={profileDone ? "done" : "todo"}
           description={
             profileDone
-              ? `Your booking link ends in /b/${profile.slug}.`
-              : "Your business name, booking link and cancellation policy."
+              ? `Your menu page is at /b/${profile.slug}.`
+              : "Your business name, menu page link and cancellation policy."
           }
         >
           <ButtonLink href="/dashboard/profile" variant={profileDone ? "secondary" : "primary"}>
@@ -207,7 +220,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             starterServices
               ? `${starterServices} still ${starterServices === 1 ? "has an example price" : "have example prices"}. Edit them to match what you charge.`
               : servicesDone
-                ? `${activeServices} service${activeServices === 1 ? "" : "s"} on your booking page.`
+                ? `${activeServices} service${activeServices === 1 ? "" : "s"} on your menu page.`
                 : "What you offer, how long it takes, the price and the deposit."
           }
         >
@@ -224,10 +237,10 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </Step>
       </ol>
 
-      {profileDone && !allDone && bookingUrl && (
+      {profileDone && !allDone && menuUrl && (
         <p className="text-muted text-sm">
-          Your booking page goes live at{" "}
-          <Link href={bookingUrl} className="text-brand underline">
+          Your menu page goes live at{" "}
+          <Link href={menuUrl} className="text-brand underline">
             /b/{profile.slug}
           </Link>{" "}
           once{" "}

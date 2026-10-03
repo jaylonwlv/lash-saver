@@ -60,7 +60,7 @@ export async function updateService(
   done();
 }
 
-/** Hide a service from the booking page, or show it again. Past bookings keep it. */
+/** Hide a service from the menu page, or show it again. Past bookings keep it. */
 export async function setServiceActive(serviceId: string, isActive: boolean) {
   await requireUser();
   const id = serviceIdSchema.safeParse(serviceId);

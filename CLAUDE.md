@@ -8,7 +8,7 @@
 
 1. A tech signs up, sets up deposits (**Collect it yourself** with their own Cash App / Zelle / Venmo handles, or **Stripe** Express for cards), and adds services with prices and deposit amounts. No card needed.
    Before their **first pay link**, they add a card in Stripe Checkout to start a **30-day free trial** (`TRIAL_DAYS`), then $29/month (`SUBSCRIPTION_PRICE_CENTS`). Without an active subscription (`trialing`, `active`, or `past_due` as a grace period) they can't create new pay links; existing links, reminders and cancellations keep working.
-2. The tech and client agree on a time in the DMs. The tech creates the appointment in the app (**New appointment**), which makes a **pay link** (`/pay/[appointmentId]`), and pastes it into the DM. The link works for `PAY_LINK_VALID_HOURS` or until the appointment starts. The booking page `/b/[slug]` is a menu for the tech's Instagram bio; clients message the tech to book.
+2. The tech and client agree on a time in the DMs. The tech creates the appointment in the app (**New appointment**), which makes a **pay link** (`/pay/[appointmentId]`), and pastes it into the DM. The link works for `PAY_LINK_VALID_HOURS` or until the appointment starts. The menu page `/b/[slug]` lists the tech's services, prices and policy for their Instagram bio; it doesn't book or take deposits (clients message the tech to book), so the UI always calls it the menu page and says it isn't a pay link.
 3. The client opens the pay link, agrees to the deposit policy (a snapshot is saved with the time they agreed), and pays. **Stripe:** through Stripe Checkout; the webhook confirms the appointment and emails the client and the tech. **Manual:** the client sends the deposit in their own app and taps "I've sent my deposit"; the tech is emailed and taps **Received** (confirms and emails the client) or **Not received**. The tech can also mark a deposit received without the client tapping.
 4. The daily cron sends reminders (`REMINDER_OFFSETS_HOURS`, 48h and 24h; email now, SMS later), each logged in `notification_log` as `appointment_reminder_<N>h` so it's sent once. Every email says when the client can still cancel for a refund.
 5. The client can cancel from the same link (reschedules happen in the DMs). Before the refund deadline (start minus the cancellation window they agreed to) the deposit is refunded; after it, the deposit is kept. Stripe deposits are refunded automatically; manual ones become `refund_due` and the tech sends the money back themselves, then taps **I sent the refund**. The server decides at submit time and refuses if the page showed different terms. The tech is emailed either way.
@@ -16,7 +16,7 @@
 
 The product's job is preventing no-shows: deposit up front, a policy the client agrees to, reminders, easy cancel instead of ghosting, and one tap to keep the deposit. Judge new features against that. Self-serve time slots are a convenience, not the core.
 
-**Words to use.** In code, the business user is the _tech_ (`tech_id`, `(tech)` routes); in UI text call them a _pro_, or "your provider" when talking to their clients, and never name a trade (no "lash tech", "full set"). The one exception is the pro's own setup: the "What do you do?" picker, the profile's trade field and the starter services (`lib/trades.ts`). Client-facing pages (pay links, booking pages) and marketing pages stay trade-neutral. The end customer is the _client_ (never has an account). Say _deposit_, _no-show_ and _booking page_. Don't say "customer", "user" or "stylist" in UI text. The app name comes from `APP_NAME` in `config.ts`; never hard-code it.
+**Words to use.** In code, the business user is the _tech_ (`tech_id`, `(tech)` routes); in UI text call them a _pro_, or "your provider" when talking to their clients, and never name a trade (no "lash tech", "full set"). The one exception is the pro's own setup: the "What do you do?" picker, the profile's trade field and the starter services (`lib/trades.ts`). Client-facing pages (pay links, menu pages) and marketing pages stay trade-neutral. The end customer is the _client_ (never has an account). Say _deposit_, _no-show_, _pay link_ and _menu page_ (never "booking page": it doesn't book anyone). Don't say "customer", "user" or "stylist" in UI text. The app name comes from `APP_NAME` in `config.ts`; never hard-code it.
 
 **Users are on phones.** Techs run their business from their phone, and clients open links inside Instagram's in-app browser. Design and test at 375px first.
 
@@ -45,22 +45,22 @@ src/
                                   with local actions, so nothing is charged or saved. Card or manual toggle.
     (marketing)/terms/, privacy/  Terms of Service and Privacy Policy (legal-page.tsx layout). Keep them true to
                                   the product: update them, and LEGAL_UPDATED in config.ts, when data, fees,
-                                  providers or billing change. No ad trackers on pay links or booking pages
+                                  providers or billing change. No ad trackers on pay links or menu pages
                                   (the Privacy Policy says so); a Meta Pixel belongs on marketing pages only.
     (auth)/login/                 Email sign-in: 6-digit code (any browser) or link (page, form, actions)
     auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
-    (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), booking link
+    (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), menu page link
     (tech)/dashboard/onboarding/  First-visit "What do you do?" picker: one tap saves profiles.trade and, for a pro
                                   with no services, adds that trade's starter menu (services.is_starter, shown as
                                   "Example price" until saved) and policy. Skip records "other".
-    (tech)/dashboard/profile/     Business name, booking link (slug), time zone, policy; sign out
+    (tech)/dashboard/profile/     Business name, menu page link (slug), trade, time zone, policy; sign out
     (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete
     (tech)/dashboard/payments/    Deposit method: Cash App / Zelle / Venmo handles, or switch to Stripe
     (tech)/dashboard/stripe/      Onboarding + Express dashboard actions; refresh/ and return/ routes
     (tech)/dashboard/billing/     Subscription status, subscribe/trial card, Stripe billing portal; return/ route after Checkout
     (tech)/dashboard/appointments/ List (needs action / upcoming / waiting / past), new, [id] detail
-    b/[slug]/page.tsx             Public booking page: services, how to book (DM), policy
+    b/[slug]/page.tsx             Public menu page: services, how to book (DM), policy
     pay/[id]/                     Public pay page: details, policy + agree checkbox → Stripe Checkout
     api/stripe/connect/webhook/   Connect events (account.updated)
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
@@ -122,7 +122,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - RLS is **on for every table**. Each new table needs policies in the same migration.
 - Supabase grants table-level privileges to `anon`/`authenticated` by default, so a column-level `revoke` does nothing. To limit which columns techs can write, revoke the table privilege and grant specific columns (see `20260924000000_profile_update_grants.sql`).
 - `createAdminClient()` bypasses RLS. Use it only where no tech is signed in (webhooks, cron, public booking writes after validation), and scope every query by id yourself.
-- Clients never sign in. The public booking page reads through the anon role (`public_profiles` view, active `services`). Every client write goes through server code.
+- Clients never sign in. The public menu page reads through the anon role (`public_profiles` view, active `services`). Every client write goes through server code.
 - Migrations are append-only. Never edit a migration that has been applied; add a new one. After schema changes, run `npm run db:types`.
 - Store times as `timestamptz` (UTC). Show them in the **tech's** `profiles.timezone`.
 
@@ -150,7 +150,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 
 **Ads measurement (Meta)**
 
-- Off unless `NEXT_PUBLIC_META_PIXEL_ID` and `META_CAPI_TOKEN` are set. The browser Pixel runs on marketing pages and sign-in only; never add it to pay links, booking pages or the dashboard.
+- Off unless `NEXT_PUBLIC_META_PIXEL_ID` and `META_CAPI_TOKEN` are set. The browser Pixel runs on marketing pages and sign-in only; never add it to pay links, menu pages or the dashboard.
 - Landing "Start free" buttons go to `/login?start=1` (sign-up wording). That page fires two browser Pixel funnel events via `trackPixel` (no email): `StartSignup` (custom) on arrival and `Lead` when the code is sent.
 - Conversions go server-side through `lib/meta.ts`, for pros only (never client data): `CompleteRegistration` on a new pro's first sign-in, `StartTrial` when a trial starts, `Subscribe` on the first paid period. Each has a stable `event_id` so Meta drops duplicates. Tracking failures are logged, never thrown.
 - If this changes what's shared with Meta, update the Privacy Policy.

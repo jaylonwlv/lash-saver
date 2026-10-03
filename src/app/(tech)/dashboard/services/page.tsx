@@ -29,7 +29,7 @@ export default async function ServicesPage({ searchParams }: PageProps<"/dashboa
       {services.some((s) => s.is_starter && s.is_active) && (
         <p className="border-brand bg-surface rounded-2xl border-2 p-4 text-sm">
           <strong>These are example prices.</strong> Tap each service to set your own name, price
-          and deposit. Hide any you don&apos;t offer. Clients see these on your booking page and pay
+          and deposit. Hide any you don&apos;t offer. Clients see these on your menu page and pay
           links, so edit them before you send your first link.
         </p>
       )}

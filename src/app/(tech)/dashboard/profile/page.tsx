@@ -20,7 +20,7 @@ export default async function ProfilePage() {
     .single();
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
 
-  const bookingPrefix = `${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}/b/`;
+  const menuPrefix = `${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}/b/`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -30,7 +30,7 @@ export default async function ProfilePage() {
         <p className="text-muted text-sm">Signed in as {profile.email}</p>
       </div>
       <ProfileForm
-        bookingPrefix={bookingPrefix}
+        menuPrefix={menuPrefix}
         timeZones={Intl.supportedValuesOf("timeZone")}
         initial={{
           business_name: profile.business_name ?? "",

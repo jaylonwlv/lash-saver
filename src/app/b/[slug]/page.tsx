@@ -7,7 +7,7 @@ import { formatDuration } from "@/lib/format";
 import { formatCents } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 
-/** Public booking page. Techs paste this link into Instagram DMs. */
+/** Public menu page: services, prices and policy, for the tech's Instagram bio. It doesn't book or take deposits; that's the pay link. */
 export async function generateMetadata({ params }: PageProps<"/b/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   return { title: `Book with ${slug}` };
@@ -23,7 +23,7 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
     .eq("slug", slug.toLowerCase())
     .maybeSingle();
   // A query error (bad key, missing table) must surface, not look like "no such tech".
-  if (techError) throw new Error(`Booking page: loading tech failed: ${techError.message}`);
+  if (techError) throw new Error(`Menu page: loading tech failed: ${techError.message}`);
   if (!tech?.id) notFound();
 
   const { data: services, error: servicesError } = await supabase
@@ -33,13 +33,15 @@ export default async function BookingPage({ params }: PageProps<"/b/[slug]">) {
     .eq("is_active", true)
     .order("price_cents");
   if (servicesError) {
-    throw new Error(`Booking page: loading services failed: ${servicesError.message}`);
+    throw new Error(`Menu page: loading services failed: ${servicesError.message}`);
   }
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 py-8">
-      <h1 className="text-2xl font-bold">{tech.business_name ?? slug}</h1>
-      {/* TODO: time picker, client details form, then Stripe Checkout for the deposit. */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold">{tech.business_name ?? slug}</h1>
+        <p className="text-muted text-sm">Services and prices. Message to book a time.</p>
+      </div>
       <ul className="flex flex-col gap-3">
         {services?.map((s) => (
           <li key={s.id} className="border-line bg-surface rounded-2xl border p-4">

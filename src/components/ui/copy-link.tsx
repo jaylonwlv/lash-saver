@@ -8,10 +8,12 @@ export function CopyLink({
   url,
   label = "Copy link",
   prose = false,
+  variant = "primary",
 }: {
   url: string;
   label?: string;
   prose?: boolean;
+  variant?: "primary" | "secondary";
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -32,7 +34,7 @@ export function CopyLink({
       >
         {url}
       </p>
-      <Button type="button" onClick={copy}>
+      <Button type="button" variant={variant} onClick={copy}>
         {copied ? "Copied!" : label}
       </Button>
     </div>
