@@ -16,7 +16,7 @@
 
 The product's job is preventing no-shows: deposit up front, a policy the client agrees to, reminders, easy cancel instead of ghosting, and one tap to keep the deposit. Judge new features against that. Self-serve time slots are a convenience, not the core.
 
-**Words to use.** In code, the business user is the _tech_ (`tech_id`, `(tech)` routes); in UI text call them a _pro_, or "your provider" when talking to their clients, and never name a trade (no "lash tech", "full set"). The end customer is the _client_ (never has an account). Say _deposit_, _no-show_ and _booking page_. Don't say "customer", "user" or "stylist" in UI text. The app name comes from `APP_NAME` in `config.ts`; never hard-code it.
+**Words to use.** In code, the business user is the _tech_ (`tech_id`, `(tech)` routes); in UI text call them a _pro_, or "your provider" when talking to their clients, and never name a trade (no "lash tech", "full set"). The one exception is the pro's own setup: the "What do you do?" picker, the profile's trade field and the starter services (`lib/trades.ts`). Client-facing pages (pay links, booking pages) and marketing pages stay trade-neutral. The end customer is the _client_ (never has an account). Say _deposit_, _no-show_ and _booking page_. Don't say "customer", "user" or "stylist" in UI text. The app name comes from `APP_NAME` in `config.ts`; never hard-code it.
 
 **Users are on phones.** Techs run their business from their phone, and clients open links inside Instagram's in-app browser. Design and test at 375px first.
 
@@ -51,6 +51,9 @@ src/
     auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
     (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), booking link
+    (tech)/dashboard/onboarding/  First-visit "What do you do?" picker: one tap saves profiles.trade and, for a pro
+                                  with no services, adds that trade's starter menu (services.is_starter, shown as
+                                  "Example price" until saved) and policy. Skip records "other".
     (tech)/dashboard/profile/     Business name, booking link (slug), time zone, policy; sign out
     (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete
     (tech)/dashboard/payments/    Deposit method: Cash App / Zelle / Venmo handles, or switch to Stripe
@@ -83,6 +86,8 @@ src/
                                   billing.ts (tech subscription: trial eligibility, Checkout, sync, portal)
     subscription.ts               canSendPayLinks(status), normalizeEmail (no server deps)
     payments.ts                   Manual deposits: manualHandles, canTakeDeposits, paymentAppUrl (no server deps)
+    trades.ts                     Kinds of pro and their starter menus (typical prices, policy); must match the
+                                  profiles.trade check constraint
     meta.ts                       Meta Conversions API: trackSignUp, trackSubscription (StartTrial, Subscribe)
     notifications/                notify() + Notifier interface, Resend email, SMS stub, templates,
                                   log.ts (notifyForAppointment: send + write notification_log)
@@ -160,7 +165,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Tap targets are at least 44px (`min-h-12` on buttons and inputs). Inputs use `text-base` so iOS doesn't zoom in on focus.
 - Use single-column layouts, primary actions at the bottom within thumb reach, and respect `env(safe-area-inset-*)`.
 - Use the right `type`, `inputMode` and `autoComplete` on inputs (`email`, `tel`, `name`).
-- Use the design tokens, not raw hex colors.
+- Use the design tokens, not raw hex colors. Brand colors are black (`ink`) and hot pink (`pink`). Marketing pages and sign-in set `data-theme="dark"` (black, hot-pink buttons with black text); a nested `data-theme="light"` gives a light band. Pay links and the dashboard stay light (deeper rose `brand`, which holds white text) with a black header.
 - Every inner tech page starts with `<BackLink>` to its parent (Services → Dashboard, Edit service → Services). Don't rely on the bottom tab bar alone.
 
 ## Commands

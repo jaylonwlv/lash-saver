@@ -17,7 +17,53 @@
   --danger: #b42318;
 }
 
+/*
+ * Brand colors: black and hot pink. Marketing pages (landing, sign-in) use the
+ * dark theme; pay links and the dashboard stay light, where the hot pink is too
+ * light for white text, so --brand there is the deeper rose. Set data-theme on
+ * a wrapper to switch; a nested data-theme="light" brings a light band back.
+ */
+:root {
+  --ink: #0d0b0c;
+  --pink: #ff5c9d;
+}
+
+[data-theme="dark"] {
+  --background: #0d0b0c;
+  --surface: #181416;
+  --foreground: #f7f1f3;
+  --muted: #b4a7ad;
+  --line: #2e2529;
+  --brand: #ff5c9d;
+  --brand-foreground: #0d0b0c;
+  --brand-soft: #3d1a2a;
+  --success: #4cc38a;
+  --danger: #ff6b6b;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --background: #fdf8f6;
+  --surface: #ffffff;
+  --foreground: #1f1a1c;
+  --muted: #6b6166;
+  --line: #eadfdb;
+  --brand: #b23a5b;
+  --brand-foreground: #ffffff;
+  --brand-soft: #f6d9e1;
+  --success: #2f7a4f;
+  --danger: #b42318;
+  color-scheme: light;
+}
+
+[data-theme] {
+  background: var(--background);
+  color: var(--foreground);
+}
+
 @theme inline {
+  --color-ink: var(--ink);
+  --color-pink: var(--pink);
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);

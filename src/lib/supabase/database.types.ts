@@ -9,6 +9,17 @@ type Timestamps = { created_at: string; updated_at: string };
 
 export type ManualApp = "cashapp" | "zelle" | "venmo";
 
+export type TradeId =
+  | "barber"
+  | "tattoo"
+  | "nails"
+  | "lashes"
+  | "hair"
+  | "fitness"
+  | "detailing"
+  | "photography"
+  | "other";
+
 type ProfileRow = Timestamps & {
   id: string;
   email: string;
@@ -32,6 +43,7 @@ type ProfileRow = Timestamps & {
   cashapp_tag: string | null;
   zelle_contact: string | null;
   venmo_handle: string | null;
+  trade: TradeId | null;
 };
 
 type ServiceRow = Timestamps & {
@@ -43,6 +55,7 @@ type ServiceRow = Timestamps & {
   price_cents: number;
   deposit_cents: number;
   is_active: boolean;
+  is_starter: boolean;
 };
 
 type AppointmentRow = Timestamps & {

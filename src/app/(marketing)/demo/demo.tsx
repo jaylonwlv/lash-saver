@@ -65,11 +65,11 @@ export function DemoPayPage({ policy }: { policy: string }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="bg-brand text-brand-foreground px-5 py-4">
+      <div className="bg-ink px-5 py-4 text-white">
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
           <p className="text-sm">
-            <strong>Demo:</strong> this is the page your client opens from your DM. Try it. Nothing
-            is charged.
+            <strong className="text-pink">Demo:</strong> this is the page your client opens from
+            your DM. Try it. Nothing is charged.
           </p>
           <div className="flex flex-col gap-2">
             <span className="text-xs font-semibold tracking-wide uppercase opacity-90">
@@ -91,9 +91,7 @@ export function DemoPayPage({ policy }: { policy: string }) {
                     setStage("pay");
                   }}
                   className={`min-h-12 rounded-xl px-3 text-sm font-semibold ${
-                    method === value
-                      ? "bg-surface text-brand"
-                      : "border border-white/40 bg-transparent"
+                    method === value ? "bg-pink text-ink" : "border border-white/30 bg-transparent"
                   }`}
                 >
                   {label}

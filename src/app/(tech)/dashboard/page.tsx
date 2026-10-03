@@ -9,6 +9,8 @@ import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
 import { canTakeDeposits, manualHandles } from "@/lib/payments";
+import { OTHER_TRADE, TRADES } from "@/lib/trades";
+import { TradePicker } from "./onboarding/trade-picker";
 import { startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
 
@@ -21,20 +23,27 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const user = await getUser();
   const supabase = await createClient();
 
-  const [{ data: profile, error }, { count: activeServices }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select(
-        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle",
-      )
-      .eq("id", user!.id)
-      .single(),
-    supabase
-      .from("services")
-      .select("id", { count: "exact", head: true })
-      .eq("tech_id", user!.id)
-      .eq("is_active", true),
-  ]);
+  const [{ data: profile, error }, { count: activeServices }, { count: starterServices }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade",
+        )
+        .eq("id", user!.id)
+        .single(),
+      supabase
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("tech_id", user!.id)
+        .eq("is_active", true),
+      supabase
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("tech_id", user!.id)
+        .eq("is_active", true)
+        .eq("is_starter", true),
+    ]);
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
 
   // While onboarding is unfinished, refresh status from Stripe on each visit so the
@@ -90,6 +99,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         <p className="text-danger text-sm">
           We couldn&apos;t reopen Stripe setup. Tap the Stripe button below to try again.
         </p>
+      )}
+
+      {profile.trade === null && (
+        <TradePicker
+          options={TRADES.map(({ id, label, emoji }) => ({ id, label, emoji }))}
+          other={OTHER_TRADE}
+        />
       )}
 
       {allDone && bookingUrl ? (
@@ -168,16 +184,22 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           title="Add your services"
           status={servicesDone ? "done" : "todo"}
           description={
-            servicesDone
-              ? `${activeServices} service${activeServices === 1 ? "" : "s"} on your booking page.`
-              : "What you offer, how long it takes, the price and the deposit."
+            starterServices
+              ? `${starterServices} still ${starterServices === 1 ? "has an example price" : "have example prices"}. Edit them to match what you charge.`
+              : servicesDone
+                ? `${activeServices} service${activeServices === 1 ? "" : "s"} on your booking page.`
+                : "What you offer, how long it takes, the price and the deposit."
           }
         >
           <ButtonLink
             href={servicesDone ? "/dashboard/services" : "/dashboard/services/new"}
-            variant={servicesDone ? "secondary" : "primary"}
+            variant={servicesDone && !starterServices ? "secondary" : "primary"}
           >
-            {servicesDone ? "Manage services" : "Add a service"}
+            {starterServices
+              ? "Set your prices"
+              : servicesDone
+                ? "Manage services"
+                : "Add a service"}
           </ButtonLink>
         </Step>
       </ol>

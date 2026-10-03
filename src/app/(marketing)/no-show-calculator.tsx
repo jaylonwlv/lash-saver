@@ -55,7 +55,7 @@ export function NoShowCalculator({ priceCents, appName }: { priceCents: number; 
         </div>
       </div>
 
-      <div className="bg-foreground text-background flex flex-col gap-1 rounded-2xl p-5 text-center">
+      <div className="bg-brand text-brand-foreground flex flex-col gap-1 rounded-2xl p-5 text-center">
         <span className="text-sm opacity-80">No-shows cost you about</span>
         <span className="text-4xl font-bold tabular-nums" aria-live="polite">
           {dollars(yearly)}

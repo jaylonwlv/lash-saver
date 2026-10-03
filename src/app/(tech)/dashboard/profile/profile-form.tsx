@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
+import { OTHER_TRADE, TRADES } from "@/lib/trades";
 import { saveProfile } from "./actions";
 
 export type ProfileValues = {
@@ -14,6 +15,7 @@ export type ProfileValues = {
   timezone: string;
   cancellation_window_hours: string;
   policy_text: string;
+  trade: string;
 };
 
 const COMMON_TIME_ZONES = [
@@ -96,6 +98,20 @@ export function ProfileForm({
         defaultValue={v.phone}
         error={e.phone}
       />
+      <Select
+        id="trade"
+        label="What do you do?"
+        defaultValue={v.trade}
+        error={e.trade}
+        hint="Only you see this. It helps us suggest the right setup."
+      >
+        <option value="">Choose one</option>
+        {[...TRADES, OTHER_TRADE].map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.label}
+          </option>
+        ))}
+      </Select>
       <Select
         id="timezone"
         label="Time zone"

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { BackLink } from "@/components/ui/back-link";
 import { ButtonLink } from "@/components/ui/button";
 import { formatDuration } from "@/lib/format";
@@ -29,7 +30,7 @@ export default async function NewAppointmentPage({
       .single(),
     supabase
       .from("services")
-      .select("id, name, duration_minutes, price_cents, deposit_cents")
+      .select("id, name, duration_minutes, price_cents, deposit_cents, is_starter")
       .eq("tech_id", user!.id)
       .eq("is_active", true)
       .order("price_cents"),
@@ -61,6 +62,15 @@ export default async function NewAppointmentPage({
           That card was already used for a free trial, so your subscription started today.
         </p>
       )}
+      {ready && services.some((s) => s.is_starter) && (
+        <p className="border-brand bg-surface rounded-2xl border p-4 text-sm">
+          Some services still have example prices (marked <strong>example</strong> below).{" "}
+          <Link href="/dashboard/services" className="text-brand underline">
+            Set your prices
+          </Link>{" "}
+          first, or change the deposit for this client.
+        </p>
+      )}
       {ready && !subscribed ? (
         <SubscribeCard trialEligible={await trialEligible(user!.id)} timezone={profile.timezone} />
       ) : ready ? (
@@ -70,7 +80,7 @@ export default async function NewAppointmentPage({
           cardFees={profile.deposit_method === "stripe"}
           services={services.map((s) => ({
             id: s.id,
-            label: `${s.name} · ${formatDuration(s.duration_minutes)} · ${formatCents(s.price_cents)}`,
+            label: `${s.name} · ${formatDuration(s.duration_minutes)} · ${formatCents(s.price_cents)}${s.is_starter ? " (example)" : ""}`,
             priceCents: s.price_cents,
             depositCents: s.deposit_cents,
           }))}

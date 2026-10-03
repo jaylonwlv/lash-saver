@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { instagramHandle, optionalText } from "@/lib/forms";
+import { TRADE_IDS } from "@/lib/trades";
 
 export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
 
@@ -25,4 +26,5 @@ export const profileSchema = z.object({
     .refine((tz) => Intl.supportedValuesOf("timeZone").includes(tz), "Pick a time zone."),
   cancellation_window_hours: z.coerce.number().int().min(0).max(336),
   policy_text: optionalText(1000),
+  trade: z.preprocess((v) => (v === "" || v == null ? null : v), z.enum(TRADE_IDS).nullable()),
 });

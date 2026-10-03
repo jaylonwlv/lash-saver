@@ -18,7 +18,9 @@ export default async function EditServicePage({ params }: PageProps<"/dashboard/
   const supabase = await createClient();
   const { data: service, error } = await supabase
     .from("services")
-    .select("id, name, description, duration_minutes, price_cents, deposit_cents, is_active")
+    .select(
+      "id, name, description, duration_minutes, price_cents, deposit_cents, is_active, is_starter",
+    )
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(`Loading service failed: ${error.message}`);
@@ -28,6 +30,12 @@ export default async function EditServicePage({ params }: PageProps<"/dashboard/
     <div className="flex flex-col gap-6">
       <BackLink href="/dashboard/services" label="Services" />
       <h1 className="text-2xl font-bold">Edit service</h1>
+      {service.is_starter && (
+        <p className="border-brand bg-surface rounded-2xl border p-4 text-sm">
+          <strong>Example price.</strong> This came from your starter menu. Change the name, length,
+          price and deposit to match yours, then save.
+        </p>
+      )}
       <ServiceForm
         action={updateService.bind(null, service.id)}
         submitLabel="Save changes"

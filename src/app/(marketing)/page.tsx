@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -26,6 +26,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = { themeColor: "#0d0b0c" };
+
 const price = formatCents(SUBSCRIPTION_PRICE_CENTS).replace(".00", "");
 const SAMPLE_DEPOSIT = 4000;
 const START = `Start free for ${TRIAL_DAYS} days`;
@@ -35,7 +37,7 @@ const CARD_NOTE = `No card to sign up. Add one before your first pay link; you'r
 
 export default function HomePage() {
   return (
-    <div className="flex flex-1 flex-col">
+    <div data-theme="dark" className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-3">
         <span className="flex items-center gap-2 text-lg font-bold">
           <span className="bg-brand size-2.5 rounded-full" aria-hidden />
@@ -53,7 +55,10 @@ export default function HomePage() {
         {/* Hero */}
         <section className="mx-auto grid w-full max-w-5xl items-center gap-10 px-5 pt-4 pb-14 md:grid-cols-2 md:pt-12">
           <div className="flex flex-col gap-5">
-            <p className="text-brand text-sm font-semibold tracking-wide uppercase">
+            <p className="bg-brand-soft text-brand self-start rounded-full px-3 py-1 text-sm font-semibold">
+              {TRIAL_DAYS} days free · No card to sign up
+            </p>
+            <p className="text-muted -mb-2 text-sm font-semibold tracking-wide uppercase">
               For pros who book in their DMs
             </p>
             <h1 className="text-[2.5rem] leading-[1.05] font-bold tracking-tight md:text-6xl">
@@ -99,48 +104,50 @@ export default function HomePage() {
         </section>
 
         {/* How it works */}
-        <section id="how-it-works" className="mx-auto w-full max-w-5xl scroll-mt-4 px-5 py-14">
-          <h2 className="text-3xl font-bold tracking-tight">From DM to deposit in 30 seconds</h2>
-          <p className="text-muted mt-2 text-lg">
-            Keep booking the way you already do. {APP_NAME} adds the deposit.
-          </p>
-          <ol className="mt-10 grid gap-12 md:grid-cols-2">
-            <Step
-              n={1}
-              title="Agree on a time, then create a pay link"
-              body="Pick the service, date and time, and paste the link into the chat. You can change the deposit for any client."
-              image={payLink}
-              alt="The pro's screen after creating an appointment, with a Copy pay link button"
-            />
-            <Step
-              n={2}
-              title="Your client agrees to your policy and pays"
-              body="They see the details and your cancellation policy, tick “I agree”, and pay with your Cash App, Zelle or Venmo, or by card. No account, no app to download."
-              image={clientPays}
-              alt="The client's pay page with the deposit policy and an agree checkbox"
-            />
-            <Step
-              n={3}
-              title="They're booked, and reminded"
-              body="Confirmation right away, reminders 48 and 24 hours before. Can't make it? They cancel from the link instead of ghosting: early enough gets a refund, too late and you keep the deposit."
-              image={booked}
-              alt="The client's confirmation page with a Can't make it section"
-            />
-            <Step
-              n={4}
-              title="No-show? One tap, you keep the deposit"
-              body="After the appointment, mark it completed or no-show. No chasing, no arguing. The client gets a polite email so you don't have to write one."
-              image={noShow}
-              alt="The pro's appointment page asking Did Jordan show up, with No-show, keep deposit"
-            />
-          </ol>
-          <div className="mt-12 flex flex-col items-center gap-3 text-center">
-            <p className="text-muted">See it the way your client will, no sign-up needed.</p>
-            <ButtonLink href="/demo" variant="secondary">
-              Try a demo pay link
-            </ButtonLink>
-          </div>
-        </section>
+        <div data-theme="light">
+          <section id="how-it-works" className="mx-auto w-full max-w-5xl scroll-mt-4 px-5 py-14">
+            <h2 className="text-3xl font-bold tracking-tight">From DM to deposit in 30 seconds</h2>
+            <p className="text-muted mt-2 text-lg">
+              Keep booking the way you already do. {APP_NAME} adds the deposit.
+            </p>
+            <ol className="mt-10 grid gap-12 md:grid-cols-2">
+              <Step
+                n={1}
+                title="Agree on a time, then create a pay link"
+                body="Pick the service, date and time, and paste the link into the chat. You can change the deposit for any client."
+                image={payLink}
+                alt="The pro's screen after creating an appointment, with a Copy pay link button"
+              />
+              <Step
+                n={2}
+                title="Your client agrees to your policy and pays"
+                body="They see the details and your cancellation policy, tick “I agree”, and pay with your Cash App, Zelle or Venmo, or by card. No account, no app to download."
+                image={clientPays}
+                alt="The client's pay page with the deposit policy and an agree checkbox"
+              />
+              <Step
+                n={3}
+                title="They're booked, and reminded"
+                body="Confirmation right away, reminders 48 and 24 hours before. Can't make it? They cancel from the link instead of ghosting: early enough gets a refund, too late and you keep the deposit."
+                image={booked}
+                alt="The client's confirmation page with a Can't make it section"
+              />
+              <Step
+                n={4}
+                title="No-show? One tap, you keep the deposit"
+                body="After the appointment, mark it completed or no-show. No chasing, no arguing. The client gets a polite email so you don't have to write one."
+                image={noShow}
+                alt="The pro's appointment page asking Did Jordan show up, with No-show, keep deposit"
+              />
+            </ol>
+            <div className="mt-12 flex flex-col items-center gap-3 text-center">
+              <p className="text-muted">See it the way your client will, no sign-up needed.</p>
+              <ButtonLink href="/demo" variant="secondary">
+                Try a demo pay link
+              </ButtonLink>
+            </div>
+          </section>
+        </div>
 
         {/* Comparison */}
         <section className="bg-surface border-line border-y">
@@ -361,7 +368,7 @@ function Phone({
   eager?: boolean;
 }) {
   return (
-    <div className="border-foreground mx-auto w-full max-w-[280px] overflow-hidden rounded-[2.25rem] border-[7px] shadow-xl">
+    <div className="border-ink mx-auto w-full max-w-[280px] overflow-hidden rounded-[2.25rem] border-[7px] shadow-xl ring-1 ring-white/15">
       <Image
         src={src}
         alt={alt}

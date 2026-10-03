@@ -49,7 +49,7 @@ export async function updateService(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("services")
-    .update(parsed.data)
+    .update({ ...parsed.data, is_starter: false })
     .eq("id", id.data)
     .select("id");
   if (error) {

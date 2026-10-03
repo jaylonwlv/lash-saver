@@ -11,8 +11,9 @@ export default async function TechLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="border-line bg-surface/90 sticky top-0 z-10 border-b px-5 py-3 backdrop-blur">
-        <Link href="/dashboard" className="font-semibold">
+      <header className="bg-ink sticky top-0 z-10 px-5 py-3 text-white">
+        <Link href="/dashboard" className="flex items-center gap-2 font-bold">
+          <span className="bg-pink size-2.5 rounded-full" aria-hidden />
           {APP_NAME}
         </Link>
       </header>

@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(
-      "email, business_name, slug, instagram_handle, phone, timezone, cancellation_window_hours, policy_text",
+      "email, business_name, slug, instagram_handle, phone, timezone, cancellation_window_hours, policy_text, trade",
     )
     .eq("id", user!.id)
     .single();
@@ -40,6 +40,7 @@ export default async function ProfilePage() {
           timezone: profile.timezone,
           cancellation_window_hours: String(profile.cancellation_window_hours),
           policy_text: profile.policy_text ?? "",
+          trade: profile.trade ?? "",
         }}
       />
       <div className="border-line flex flex-col gap-3 border-t pt-6">
