@@ -98,7 +98,9 @@ export function savingsSummary(s: Savings): { headline: string; lines: string[] 
     s.lateCancels && plural(s.lateCancels, "late cancel"),
   ].filter(Boolean);
   if (s.keptCents > 0)
-    lines.push(`${formatCents(s.keptCents)} kept from ${keptFrom.join(" and ")}`);
+    lines.push(
+      `${formatCents(s.keptCents).replace(".00", "")} kept from ${keptFrom.join(" and ")}`,
+    );
   if (s.earlyCancels)
     lines.push(`${plural(s.earlyCancels, "slot")} freed early, with time to rebook`);
   if (s.showRate !== null)
