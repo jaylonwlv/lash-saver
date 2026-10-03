@@ -18,7 +18,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold">Start your free {TRIAL_DAYS} days</h1>
           <p className="text-muted">
-            Enter your email and we&apos;ll send you a code. No card needed to sign up.
+            Enter your email and we&apos;ll send you a code. No card to sign up: you add one before
+            your first pay link.
           </p>
         </div>
       ) : (

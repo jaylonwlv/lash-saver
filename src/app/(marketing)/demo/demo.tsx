@@ -224,7 +224,10 @@ export function DemoPayPage({ policy }: { policy: string }) {
             Venmo or card.
           </p>
           <ButtonLink href={SIGN_UP}>Start free for {TRIAL_DAYS} days</ButtonLink>
-          <p className="text-muted text-center text-xs">No card to sign up.</p>
+          <p className="text-muted text-center text-xs">
+            No card to sign up. You add one before your first pay link and aren&apos;t charged until
+            the trial ends.
+          </p>
         </section>
 
         <LegalLinks className="mt-auto pt-2" />

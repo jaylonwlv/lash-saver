@@ -64,7 +64,8 @@ export default function HomePage() {
               </ButtonLink>
             </div>
             <p className="text-muted text-sm">
-              No card to sign up. Set up in about 2 minutes, right from your phone.
+              Set up in about 2 minutes from your phone. Add a card before your first pay link;
+              you&apos;re not charged until the {TRIAL_DAYS}-day trial ends.
             </p>
           </div>
           <Phone
