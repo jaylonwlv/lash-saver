@@ -123,7 +123,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
       {profile.trade === null && (
         <TradePicker
-          options={TRADES.map(({ id, label, emoji }) => ({ id, label, emoji }))}
+          options={TRADES.map(({ id, label, emoji, services }) => ({
+            id,
+            label,
+            emoji,
+            preview: services.map((service) => service.name).join(" · "),
+          }))}
           other={OTHER_TRADE}
           hasServices={(activeServices ?? 0) > 0}
         />
