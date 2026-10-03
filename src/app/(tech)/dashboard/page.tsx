@@ -9,6 +9,7 @@ import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
 import { canTakeDeposits, manualHandles } from "@/lib/payments";
+import { loadSavings, savingsSummary } from "@/lib/savings";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
 import { TradePicker } from "./onboarding/trade-picker";
 import { startStripeOnboarding } from "./stripe/actions";
@@ -59,6 +60,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     }
   }
 
+  const savings = savingsSummary(await loadSavings(supabase, user!.id));
   const profileDone = Boolean(profile.business_name && profile.slug);
   const stripeStatus: StepStatus = canTakeDeposits(profile)
     ? "done"
@@ -93,6 +95,20 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           Free trial until {formatDate(profile.trial_ends_at, profile.timezone)}
           {profile.cancel_at_period_end ? " (cancelled)" : ""}. Manage billing →
         </Link>
+      )}
+
+      {savings && (
+        <section className="bg-ink flex flex-col gap-2 rounded-2xl p-5 text-white">
+          <p className="text-pink text-xs font-semibold tracking-wide uppercase">Your results</p>
+          <h2 className="text-2xl font-bold">{savings.headline}</h2>
+          {savings.lines.length > 0 && (
+            <ul className="flex flex-col gap-1 text-sm text-white/80">
+              {savings.lines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
 
       {stripeParam === "error" && (

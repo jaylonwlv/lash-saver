@@ -78,7 +78,8 @@ export type TemplateData = {
     appointmentUrl: string;
   };
   /** To the tech, a few days before the first subscription charge. */
-  trial_ending: { endsOn: string; amount: string; billingUrl: string };
+  /** `savings`: what Dibs did during the trial, e.g. "Dibs has saved you $120 so far (…)." */
+  trial_ending: { endsOn: string; amount: string; billingUrl: string; savings: string | null };
   /** To the tech, when a subscription renewal fails. */
   subscription_payment_failed: { amount: string; billingUrl: string };
   no_show_recorded: { businessName: string; when: string; amount: string };
@@ -133,7 +134,7 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   }),
   trial_ending: (d) => ({
     subject: `Your ${APP_NAME} trial ends ${d.endsOn}`,
-    text: `Your free trial ends ${d.endsOn}. After that it's ${d.amount}/month on the card you added, so your pay links and reminders keep working. Nothing to do if you're staying. To change your card or cancel: ${d.billingUrl}`,
+    text: `${d.savings ? `${d.savings} ` : ""}Your free trial ends ${d.endsOn}. After that it's ${d.amount}/month on the card you added, so your pay links and reminders keep working. Nothing to do if you're staying. To change your card or cancel: ${d.billingUrl}`,
   }),
   subscription_payment_failed: (d) => ({
     subject: `Your ${APP_NAME} payment didn't go through`,

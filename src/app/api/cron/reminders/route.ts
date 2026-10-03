@@ -10,6 +10,7 @@ import { formatCents } from "@/lib/money";
 import { notify } from "@/lib/notifications";
 import { serverEnv } from "@/lib/env";
 import { notifyForAppointment } from "@/lib/notifications/log";
+import { loadSavings, savingsSummary } from "@/lib/savings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, formatWhen } from "@/lib/time";
 import { dueReminder, reminderLogKey } from "./reminders";
@@ -136,6 +137,18 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
       .limit(1);
     if (already?.length) continue;
 
+    // What Dibs did for them in the trial; the email still goes out if this fails.
+    let savings: string | null = null;
+    try {
+      const summary = savingsSummary(await loadSavings(admin, tech.id));
+      if (summary)
+        savings = summary.lines.length
+          ? `${summary.headline} so far: ${summary.lines.join("; ")}.`
+          : `${summary.headline} so far.`;
+    } catch (err) {
+      console.error(`Savings for ${tech.id} failed`, err);
+    }
+
     const results = await notify({
       to: { email: tech.email },
       template: "trial_ending",
@@ -143,6 +156,7 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
         endsOn: formatDate(tech.trial_ends_at, tech.timezone),
         amount: formatCents(SUBSCRIPTION_PRICE_CENTS),
         billingUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard/billing`,
+        savings,
       },
     });
     await admin.from("notification_log").insert(
