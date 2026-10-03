@@ -38,7 +38,8 @@ src/
   app/
     (marketing)/page.tsx          Landing page (static): hero with DM + pay page, no-show cost calculator,
                                   4 steps with close-up crops of real app screens (images/zoom-*.png, neutral
-                                  "Studio Nova" example, no trade names), vs Cash App / booking apps, pricing, FAQ, sticky phone CTA.
+                                  "Studio Nova" example, no trade names), vs Cash App / booking apps, founder note, pricing, FAQ,
+                                  sticky phone CTA. The price shows under the hero button and in the sticky bar.
                                   Every "Start free" links to /login?start=1. Pulls price, trial and fee from
                                   config.ts; keep claims true to the product.
     (marketing)/demo/             Demo pay link anyone can try (no sign-up): reuses the pay page's forms

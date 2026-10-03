@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
 import {
   APP_NAME,
+  LEGAL_CONTACT_EMAIL,
   PROCESSING_FEE_LABEL,
   SUBSCRIPTION_PRICE_CENTS,
   TRIAL_DAYS,
@@ -44,7 +45,8 @@ const SIGN_UP = "/login?start=1";
 const ANNOUNCEMENT = `Hey! Quick update: to keep my schedule fair for everyone, I'm now taking a deposit to book. It goes toward your appointment, and you get it back if you cancel at least 48 hours before.
 
 When we pick a time, I'll send you a link to lock in your spot. Thank you!`;
-const CARD_NOTE = `No card to sign up. Add one before your first pay link; you're not charged until the trial ends.`;
+const HERO_NOTE = `Then ${price}/month, cancel anytime. You add a card before your first pay link, and you're not charged until the trial ends.`;
+const CARD_NOTE = `You add a card before your first pay link. You're not charged until the trial ends.`;
 
 export default function HomePage() {
   return (
@@ -64,13 +66,10 @@ export default function HomePage() {
 
       <main className="flex flex-col">
         {/* Hero */}
-        <section className="mx-auto grid w-full max-w-5xl items-center gap-10 px-5 pt-4 pb-14 md:grid-cols-2 md:pt-12">
+        <section className="mx-auto grid w-full max-w-5xl items-center gap-8 px-5 pt-2 pb-14 md:grid-cols-2 md:gap-10 md:pt-12">
           <div className="flex flex-col gap-5">
             <p className="bg-brand-soft text-brand self-start rounded-full px-3 py-1 text-sm font-semibold">
               {TRIAL_DAYS} days free · No card to sign up
-            </p>
-            <p className="text-muted -mb-2 text-sm font-semibold tracking-wide uppercase">
-              For pros who book in their DMs
             </p>
             <h1 className="text-[2.5rem] leading-[1.05] font-bold tracking-tight md:text-6xl">
               Stop losing money to <span className="whitespace-nowrap">no-shows.</span>
@@ -85,16 +84,16 @@ export default function HomePage() {
                 Try a demo pay link
               </ButtonLink>
             </div>
-            <p className="text-muted text-sm">{CARD_NOTE}</p>
-            <ul className="text-muted flex flex-wrap gap-x-4 gap-y-2 text-sm">
-              <Check>Keep your Cash App, Zelle or Venmo</Check>
-              <Check>Cards by Stripe</Check>
-              <Check>Clients don&apos;t need an app</Check>
-              <Check>Ready in 2 minutes</Check>
-              <Check>Cancel anytime</Check>
-            </ul>
+            <p className="text-muted text-sm">{HERO_NOTE}</p>
           </div>
           <HeroVisual />
+          <ul className="text-muted flex flex-wrap gap-x-4 gap-y-2 text-sm md:col-span-2 md:justify-center">
+            <Check>Keep your Cash App, Zelle or Venmo</Check>
+            <Check>Cards by Stripe</Check>
+            <Check>Clients don&apos;t need an app</Check>
+            <Check>Ready in 2 minutes</Check>
+            <Check>Cancel anytime</Check>
+          </ul>
         </section>
 
         {/* The cost */}
@@ -231,6 +230,34 @@ export default function HomePage() {
               Edit it however you like. Change 48 hours to your policy.
             </p>
           </div>
+        </section>
+
+        {/* Founder note */}
+        <section className="mx-auto w-full max-w-2xl px-5 pb-4">
+          <figure className="border-line bg-surface flex flex-col gap-4 rounded-3xl border p-6">
+            <p className="text-brand text-xs font-semibold tracking-wide uppercase">
+              A note from the founder
+            </p>
+            <blockquote className="flex flex-col gap-3 text-lg">
+              <p>
+                I built {APP_NAME} for pros who run their whole business from their phone and are
+                tired of holding a slot for someone who never shows up.
+              </p>
+              <p>
+                There&apos;s no sales team and no contract. If something doesn&apos;t work the way
+                you need, email me and I&apos;ll answer it myself.
+              </p>
+            </blockquote>
+            <figcaption className="flex flex-col gap-1">
+              <span className="font-semibold">Jaylon, founder of {APP_NAME}</span>
+              <a
+                href={`mailto:${LEGAL_CONTACT_EMAIL}`}
+                className="text-brand inline-flex min-h-12 items-center self-start underline"
+              >
+                {LEGAL_CONTACT_EMAIL}
+              </a>
+            </figcaption>
+          </figure>
         </section>
 
         {/* Pricing */}
@@ -379,11 +406,7 @@ export default function HomePage() {
         </div>
       </footer>
 
-      <StickyCta
-        href={SIGN_UP}
-        label={START}
-        note={`Free for ${TRIAL_DAYS} days · cancel anytime`}
-      />
+      <StickyCta href={SIGN_UP} label={START} note={`Then ${price}/month · cancel anytime`} />
     </div>
   );
 }

@@ -41,6 +41,7 @@ export function LoginForm({ next, signUp = false }: { next?: string; signUp?: bo
         autoComplete="email"
         inputMode="email"
         defaultValue={state.sent?.email}
+        autoFocus
         required
       />
       {state.error && <p className="text-danger text-sm">{state.error}</p>}
