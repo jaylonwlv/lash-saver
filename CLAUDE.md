@@ -67,6 +67,8 @@ src/
     (tech)/dashboard/appointments/ List (needs action / upcoming / waiting / past), new, [id] detail. New
                                   appointment has a returning-client picker that fills their details and
                                   warns about past no-shows / late cancels before the deposit field
+                                  The detail page sends the pay link with a ready-made DM (share-pay-link.tsx): Share opens
+                                  the phone's share sheet (Instagram, iMessage…); Copy message / Copy the link only as fallbacks
     (tech)/dashboard/clients/     Client list and [key] detail (record + appointments), built from appointments
     b/[slug]/page.tsx             Public menu page: services, how to book (DM), policy
     pay/[id]/                     Public pay page: details, policy + agree checkbox → Stripe Checkout

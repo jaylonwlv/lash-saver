@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BackLink } from "@/components/ui/back-link";
-import { CopyLink } from "@/components/ui/copy-link";
 import { STATUS_LABEL, payability, payUrl } from "@/lib/appointments";
 import { formatDuration } from "@/lib/format";
 import { formatCents, processingFeeCents, techPayoutCents } from "@/lib/money";
 import { createClient, getUser } from "@/lib/supabase/server";
-import { formatWhen } from "@/lib/time";
+import { formatDayTime, formatWhen } from "@/lib/time";
 import { MANUAL_APP_LABEL } from "@/lib/payments";
 import type { ManualApp } from "@/lib/supabase/database.types";
 import {
@@ -20,6 +19,7 @@ import {
 } from "../actions";
 import { appointmentIdSchema } from "../schema";
 import { ActionButton } from "./appointment-actions";
+import { SharePayLink } from "./share-pay-link";
 
 export const metadata: Metadata = { title: "Appointment" };
 
@@ -128,11 +128,20 @@ export default async function AppointmentPage({
             {isNew ? "Appointment created. Send the pay link" : "Pay link"}
           </h2>
           <p className="text-muted text-sm">
-            Paste this into your DM with {a.client_name}. The link works until{" "}
-            {formatWhen(a.hold_expires_at ?? a.starts_at, tz)}. Once they pay, the appointment is
-            confirmed and they get an email.
+            Send this to {a.client_name} in your DMs: tap Share, then Instagram and their chat. The
+            link works until {formatWhen(a.hold_expires_at ?? a.starts_at, tz)}. Once they pay, the
+            appointment is confirmed and they get an email.
           </p>
-          <CopyLink url={payUrl(a.id)} label="Copy pay link" />
+          <SharePayLink
+            url={payUrl(a.id)}
+            message={payLinkMessage({
+              clientName: a.client_name,
+              serviceName: service?.name ?? null,
+              when: formatDayTime(a.starts_at, tz),
+              deposit: a.deposit_cents !== null ? formatCents(a.deposit_cents) : null,
+              url: payUrl(a.id),
+            })}
+          />
         </section>
       )}
 
@@ -245,4 +254,20 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
       <dd>{children}</dd>
     </div>
   );
+}
+
+/** The DM that goes with a pay link, written the way a pro would say it. */
+function payLinkMessage(m: {
+  clientName: string;
+  serviceName: string | null;
+  when: string;
+  deposit: string | null;
+  url: string;
+}): string {
+  const first = m.clientName.trim().split(/\s+/)[0];
+  const what = m.serviceName ? `your ${m.serviceName} on ${m.when}` : `your spot on ${m.when}`;
+  const deposit = m.deposit
+    ? ` It's a ${m.deposit.replace(".00", "")} deposit that goes toward your appointment.`
+    : "";
+  return `Hi ${first}! Here's the link to lock in ${what}:\n${m.url}\n${deposit.trim()}`.trim();
 }

@@ -98,3 +98,20 @@ export function formatWhen(value: string | Date, timeZone: string): string {
   }).format(date);
   return `${day} at ${time}`;
 }
+
+/** "Fri, Oct 3 at 2:30 PM": formatWhen without the time zone, for chat messages. */
+export function formatDayTime(value: string | Date, timeZone: string): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const day = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+  const time = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+  return `${day} at ${time}`;
+}
