@@ -137,6 +137,9 @@ export function StartFlow({
   const savedDraft = useSyncExternalStore(noSubscribe, draftSnapshot, serverNull);
   const [draftChecked, setDraftChecked] = useState(false);
   const [resumed, setResumed] = useState(false);
+  // Where a returning visitor was put back: their first visit already counted those
+  // funnel steps, so they aren't sent again.
+  const [restoredStep, setRestoredStep] = useState<Step | null>(null);
   if (!draftChecked && savedDraft) {
     setDraftChecked(true);
     const draft = parseDraft(
@@ -152,7 +155,10 @@ export function StartFlow({
       setServicePrice(draft.servicePrice);
       setServiceDeposit(draft.serviceDeposit);
       // The save step needs the business details; otherwise resume on them.
-      setStep(draft.step === "save" && draft.businessName && draft.method ? "save" : "business");
+      const resumeStep =
+        draft.step === "save" && draft.businessName && draft.method ? "save" : "business";
+      setStep(resumeStep);
+      setRestoredStep(resumeStep);
       setResumed(true);
     }
   }
@@ -168,6 +174,7 @@ export function StartFlow({
     setServiceDeposit("");
     setLocalErrors({});
     setResumed(false);
+    setRestoredStep(null);
     setStep("trade");
   };
 
@@ -192,15 +199,15 @@ export function StartFlow({
     trackPixel("StartSignup", { custom: true });
   }, []);
   useEffect(() => {
-    if (step === "business" && !businessSent.current) {
+    if (step === "business" && !businessSent.current && restoredStep === null) {
       businessSent.current = true;
       trackPixel("StartBusinessStep", { custom: true });
     }
-    if (step === "save" && !leadSent.current) {
+    if (step === "save" && !leadSent.current && restoredStep !== "save") {
       leadSent.current = true;
       trackPixel("Lead");
     }
-  }, [step]);
+  }, [step, restoredStep]);
   // A server error on a business field: show it where it can be fixed (once per response).
   const [seenState, setSeenState] = useState(state);
   // Turnstile tokens work once: a fresh widget after every reply gives the next try a new one.

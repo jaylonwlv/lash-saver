@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { sendMagicLink } from "@/app/(auth)/login/actions";
 import { SLUG_PATTERN, slugFromName } from "@/app/(tech)/dashboard/profile/schema";
 import { serverEnv } from "@/lib/env";
@@ -93,12 +94,16 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     return sendCode(data.email, values, READY_MESSAGE);
   }
   await trackSignUp(session.data.user);
-  // A plain note from the founder; replies go straight to them. Never blocks sign-up.
-  await notifyOnce(`founder_welcome:${created.user.id}`, {
-    to: { email: data.email },
-    template: "founder_welcome",
-    data: { appUrl: publicEnv().NEXT_PUBLIC_APP_URL },
-  }).catch((err: unknown) => console.error("Founder welcome email failed", err));
+  // A plain note from the founder, sent after the response so sign-up never waits on email.
+  const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
+  const techId = created.user.id;
+  after(() =>
+    notifyOnce(`founder_welcome:${techId}`, {
+      to: { email: data.email },
+      template: "founder_welcome",
+      data: { appUrl },
+    }).catch((err: unknown) => console.error("Founder welcome email failed", err)),
+  );
 
   revalidatePath("/dashboard", "layout");
   redirect("/dashboard");

@@ -176,10 +176,8 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
 }
 
 /**
- * Remind pros who signed up but haven't added a card (so can't send pay links yet):
- * one email about a day after sign-up and one about three days after, each sent once.
- * Most pros finish setup on day one but have no client to book until later; these
- * bring them back for that first pay link.
+ * The founder's one check-in, 7–10 days after sign-up, for pros who haven't sent a
+ * pay link: answers to what usually holds people up, each with a link. Sent once.
  */
 async function sendFounderCheckins(now: Date): Promise<number> {
   const admin = createAdminClient();
@@ -222,6 +220,12 @@ async function sendFounderCheckins(now: Date): Promise<number> {
   return sent;
 }
 
+/**
+ * Remind pros who signed up but haven't added a card (so can't send pay links yet):
+ * one email about a day after sign-up and one about three days after, each sent once.
+ * Most pros finish setup on day one but have no client to book until later; these
+ * bring them back for that first pay link.
+ */
 async function sendSetupNudges(now: Date): Promise<number> {
   const admin = createAdminClient();
   const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000).toISOString();
