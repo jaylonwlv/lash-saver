@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
-import { cancelNote, clientCalendar, loadAppointmentContext, payUrl } from "@/lib/appointments";
+import {
+  cancelNote,
+  clientCalendarAttachment,
+  loadAppointmentContext,
+  payUrl,
+} from "@/lib/appointments";
 import { PAY_LINK_VALID_HOURS } from "@/lib/config";
 import { fieldErrors, formValues, type FormState } from "@/lib/forms";
 import { formatCents } from "@/lib/money";
@@ -297,7 +302,7 @@ export async function confirmManualDeposit(appointmentId: string): Promise<FormS
         amount: formatCents(appointment.deposit_cents),
         cancelNote: cancelNote(ctx),
         detailsUrl: payUrl(appointmentId),
-        calendar: clientCalendar(ctx),
+        calendar: clientCalendarAttachment(ctx),
       },
     });
   }

@@ -25,8 +25,9 @@ export function AddToCalendar({ href }: { href: string }) {
       </a>
       {inApp && (
         <p className="text-muted text-sm">
-          Nothing happening? Instagram&apos;s browser can&apos;t open calendars. Tap{" "}
-          <strong className="text-foreground">•••</strong> at the top, then{" "}
+          Nothing happening? Instagram&apos;s browser can&apos;t open calendars. Tap the{" "}
+          <strong className="text-foreground">•••</strong> (or{" "}
+          <strong className="text-foreground">⋮</strong>) menu at the top, then{" "}
           <strong className="text-foreground">Open in external browser</strong>, or use the invite
           in your confirmation email.
         </p>

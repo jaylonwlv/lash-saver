@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import {
   appointmentUrl,
   cancelNote,
-  clientCalendar,
+  clientCalendarAttachment,
   loadAppointmentContext,
   payability,
   payUrl,
@@ -251,7 +251,7 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
       amount,
       cancelNote: cancelNote(ctx),
       detailsUrl: payUrl(appointmentId),
-      calendar: clientCalendar(ctx),
+      calendar: clientCalendarAttachment(ctx),
     },
   });
   await notifyForAppointment({

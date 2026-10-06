@@ -148,7 +148,19 @@ const CLIENT_ALARM_MINUTES = 120;
 export const calendarUid = (appointmentId: string) =>
   `${appointmentId}@${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}`;
 
-/** The client's booked appointment as an .ics file, with their cancel-by note and pay link. */
+/**
+ * The client's booked appointment as an .ics file, with their cancel-by note and
+ * pay link. Never throws: the confirmation email goes out without it instead.
+ */
+export function clientCalendarAttachment(ctx: AppointmentContext): string | undefined {
+  try {
+    return clientCalendar(ctx);
+  } catch (err) {
+    console.error(`Calendar file for ${ctx.appointment.id} failed`, err);
+    return undefined;
+  }
+}
+
 export function clientCalendar(ctx: AppointmentContext): string {
   const { appointment: a, tech, serviceName } = ctx;
   const business = tech.business_name ?? "your provider";

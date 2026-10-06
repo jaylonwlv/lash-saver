@@ -29,7 +29,12 @@ export class ResendEmailNotifier implements Notifier {
       subject: message.subject,
       text: message.text,
       html: message.html,
-      attachments: message.attachments,
+      // Resend reads string content as base64.
+      attachments: message.attachments?.map((a) => ({
+        filename: a.filename,
+        contentType: a.contentType,
+        content: Buffer.from(a.content, "utf8").toString("base64"),
+      })),
     });
 
     if (error) return { ok: false, channel: this.channel, error: error.message };
