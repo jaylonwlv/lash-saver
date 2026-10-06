@@ -10,16 +10,18 @@ export function BillingButton({
   label,
   pendingLabel = "Opening Stripe…",
   variant = "primary",
+  className = "",
 }: {
   action: () => Promise<FormState>;
   label: string;
   pendingLabel?: string;
   variant?: "primary" | "secondary";
+  className?: string;
 }) {
   const [state, formAction, pending] = useActionState<FormState>(action, {});
   return (
     <form action={formAction} className="flex flex-col gap-2">
-      <Button type="submit" variant={variant} disabled={pending}>
+      <Button type="submit" variant={variant} disabled={pending} className={className}>
         {pending ? pendingLabel : label}
       </Button>
       {state.message && <p className="text-danger text-sm">{state.message}</p>}

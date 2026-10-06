@@ -42,16 +42,22 @@ export default async function NewAppointmentPage({
   const depositsReady = canTakeDeposits(profile);
   const ready = depositsReady && services.length > 0;
   const subscribed = canSendPayLinks(profile.subscription_status);
+  const paywalled = ready && !subscribed;
 
   return (
     <div className="flex flex-col gap-6">
       <BackLink href="/dashboard/appointments" label="Appointments" />
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold">New appointment</h1>
-        <p className="text-muted text-sm">
-          Agree on a time in your DMs, fill this in, then send the client the pay link.
-        </p>
-      </div>
+      {paywalled ? (
+        // The trial card is the whole page here: no form title competing with it.
+        <h1 className="sr-only">Start your free trial</h1>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold">New appointment</h1>
+          <p className="text-muted text-sm">
+            Agree on a time in your DMs, fill this in, then send the client the pay link.
+          </p>
+        </div>
+      )}
       {billing === "started" && subscribed && (
         <p className="border-success text-success bg-surface rounded-2xl border p-4 text-sm">
           {profile.subscription_status === "trialing"
@@ -73,8 +79,17 @@ export default async function NewAppointmentPage({
           first, or change the deposit for this client.
         </p>
       )}
-      {ready && !subscribed ? (
-        <SubscribeCard trialEligible={await trialEligible(user!.id)} timezone={profile.timezone} />
+      {paywalled ? (
+        <SubscribeCard
+          trialEligible={await trialEligible(user!.id)}
+          timezone={profile.timezone}
+          // Services are ordered by price, so the last is their priciest.
+          topService={
+            services.at(-1)
+              ? { name: services.at(-1)!.name, priceCents: services.at(-1)!.price_cents }
+              : null
+          }
+        />
       ) : ready ? (
         <AppointmentForm
           today={wallClockParts(new Date(), profile.timezone).date}

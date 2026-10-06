@@ -9,6 +9,7 @@ import { trackPixel } from "@/components/meta-pixel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TRIAL_DAYS } from "@/lib/config";
+import { publicEnv } from "@/lib/env.public";
 import { dollarsToCents, formatCents } from "@/lib/money";
 import type { TradeId } from "@/lib/supabase/database.types";
 import { AD_TRADE_KEY } from "../remember-trade";
@@ -490,7 +491,10 @@ export function StartFlow({
       {resumed && <ResumedNote onStartOver={startOver} />}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold">Here&apos;s your pay link</h1>
-        <p className="text-muted">This is what clients see when you send it in your DMs.</p>
+        <p className="text-muted">
+          Send it in your DMs. Your client taps it and lands on this page, with your name, prices
+          and policy.
+        </p>
       </div>
 
       <PayLinkPreview
@@ -609,7 +613,11 @@ function Back({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** A look-alike of the client's pay page, with the pro's own details. */
+/**
+ * A look-alike of the client's pay page, with the pro's own details, shown on a
+ * phone under the DM that delivers it, so it reads as "what my client sees"
+ * rather than a form to fill in.
+ */
 function PayLinkPreview({
   businessName,
   service,
@@ -628,57 +636,86 @@ function PayLinkPreview({
   example: boolean;
 }) {
   const deposit = service ? formatCents(service.depositCents) : "";
+  const host = new URL(publicEnv().NEXT_PUBLIC_APP_URL).host;
   return (
-    <div data-theme="light" className="overflow-hidden rounded-3xl shadow-2xl">
-      <div className="bg-background text-foreground flex flex-col gap-4 p-5">
-        <div className="flex flex-col gap-0.5">
-          <p className="text-brand text-sm font-semibold">{businessName}</p>
-          <p className="text-xl font-bold">Hi Jordan, secure your spot</p>
-        </div>
-        {service && (
-          <dl className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-4 text-sm">
-            <div>
-              <dt className="text-muted text-xs uppercase">Appointment</dt>
-              <dd className="font-medium">{service.name}</dd>
-            </div>
-            <div>
-              <dt className="text-muted text-xs uppercase">When</dt>
-              <dd className="font-medium">Saturday at 2:00 PM</dd>
-            </div>
-            <div>
-              <dt className="text-muted text-xs uppercase">Deposit</dt>
-              <dd className="font-medium">
-                {deposit} · {formatCents(service.priceCents - service.depositCents)} due at your
-                appointment
-              </dd>
-            </div>
-          </dl>
-        )}
-        <div className="flex flex-col gap-1 text-sm">
-          <p className="font-semibold">Deposit policy</p>
-          <p className="text-muted whitespace-pre-line">{policy}</p>
-        </div>
-        <p className="flex items-center gap-2 text-sm">
-          <span
-            aria-hidden
-            className="bg-brand text-brand-foreground flex size-5 items-center justify-center rounded text-xs"
-          >
-            ✓
-          </span>
-          I&apos;ve read and agree to the deposit policy above.
+    <figure aria-label="Preview of the page your clients see" className="flex flex-col gap-3">
+      <p className="bg-pink/15 text-pink inline-flex items-center gap-2 self-start rounded-full px-3 py-1.5 text-sm font-bold">
+        <span aria-hidden>👀</span> What your clients see
+      </p>
+
+      {/* The DM it arrives in. */}
+      <div className="flex flex-col items-end gap-1">
+        <p className="bg-pink text-ink max-w-[85%] rounded-3xl rounded-br-md px-4 py-2.5 text-sm">
+          Here&apos;s the link to lock in Saturday 👇
+          <span className="mt-1 block font-semibold underline">{host}/pay/…</span>
         </p>
-        <div className="bg-brand text-brand-foreground flex min-h-12 items-center justify-center rounded-xl px-4 text-center font-semibold">
-          {method === "stripe"
-            ? `Pay ${deposit} deposit`
-            : `Send ${deposit} with ${methodLabel}${handle ? ` to ${handle}` : ""}`}
-        </div>
-        {example && (
-          <p className="text-muted text-center text-xs">
-            Example price. You can change your prices after you save.
-          </p>
-        )}
+        <p className="text-muted pr-2 text-xs">You, in the DMs</p>
       </div>
-    </div>
+
+      {/* Their phone. Not interactive: nothing here can be tapped. */}
+      <div
+        aria-hidden
+        className="bg-surface mx-auto w-full max-w-[350px] rounded-[44px] p-2.5 shadow-2xl ring-1 ring-white/15 select-none"
+      >
+        <div data-theme="light" className="overflow-hidden rounded-[36px]">
+          <div className="bg-background flex items-center justify-between px-6 pt-3 text-[11px] font-semibold">
+            <span>9:41</span>
+            <span className="bg-ink h-5 w-20 rounded-full" />
+            <span>●●●</span>
+          </div>
+          <div className="bg-background px-3 pt-2 pb-1">
+            <p className="bg-surface text-muted border-line rounded-xl border px-3 py-1.5 text-center text-xs">
+              🔒 {host}
+            </p>
+          </div>
+          <div className="bg-background text-foreground flex flex-col gap-4 p-5">
+            <div className="flex flex-col gap-0.5">
+              <p className="text-brand text-sm font-semibold">{businessName}</p>
+              <p className="text-xl font-bold">Hi Jordan, secure your spot</p>
+            </div>
+            {service && (
+              <dl className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-4 text-sm">
+                <div>
+                  <dt className="text-muted text-xs uppercase">Appointment</dt>
+                  <dd className="font-medium">{service.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted text-xs uppercase">When</dt>
+                  <dd className="font-medium">Saturday at 2:00 PM</dd>
+                </div>
+                <div>
+                  <dt className="text-muted text-xs uppercase">Deposit</dt>
+                  <dd className="font-medium">
+                    {deposit} · {formatCents(service.priceCents - service.depositCents)} due at the
+                    appointment
+                  </dd>
+                </div>
+              </dl>
+            )}
+            <div className="flex flex-col gap-1 text-sm">
+              <p className="font-semibold">Deposit policy</p>
+              <p className="text-muted whitespace-pre-line">{policy}</p>
+            </div>
+            <p className="flex items-center gap-2 text-sm">
+              <span className="bg-brand text-brand-foreground flex size-5 items-center justify-center rounded text-xs">
+                ✓
+              </span>
+              I&apos;ve read and agree to the deposit policy above.
+            </p>
+            <div className="bg-brand text-brand-foreground flex min-h-12 items-center justify-center rounded-xl px-4 text-center font-semibold">
+              {method === "stripe"
+                ? `Pay ${deposit} deposit`
+                : `Send ${deposit} with ${methodLabel}${handle ? ` to ${handle}` : ""}`}
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption className="text-muted text-center text-xs">
+        {example
+          ? "Example client, time and price. You set your real prices after you save."
+          : "Example client and time. You make a pay link for each booking."}
+      </figcaption>
+    </figure>
   );
 }
 
