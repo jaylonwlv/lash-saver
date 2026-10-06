@@ -6,7 +6,7 @@
 
 **Dibs** helps independent service pros protect themselves from no-shows: the client "calls dibs" on a slot by paying a deposit. It's for anyone who books clients through **Instagram DMs** rather than a booking site (lash techs, nail techs, braiders, tattoo artists, and so on). The product copy stays general ("pros", "your provider"); marketing targets one niche at a time, starting with lash techs, so niche-specific wording belongs in ads, not in the app. The product fits the DM flow:
 
-1. A tech signs up, sets up deposits (**Collect it yourself** with their own Cash App / Zelle / Venmo handles, or **Stripe** Express for cards), and adds services with prices and deposit amounts. No card needed.
+1. A tech signs up on **`/start`** (instant sign-up: what they do, business name and payment handle, a preview of their pay link, then their email; the account is created and signed in with no code), sets up deposits (**Collect it yourself** with their own Cash App / Zelle / Venmo handles, or **Stripe** Express for cards), and adds services with prices and deposit amounts. No card needed.
    Before their **first pay link**, they add a card in Stripe Checkout to start a **30-day free trial** (`TRIAL_DAYS`), then $29/month (`SUBSCRIPTION_PRICE_CENTS`). Without an active subscription (`trialing`, `active`, or `past_due` as a grace period) they can't create new pay links; existing links, reminders and cancellations keep working.
 2. The tech and client agree on a time in the DMs. The tech creates the appointment in the app (**New appointment**), which makes a **pay link** (`/pay/[appointmentId]`), and pastes it into the DM. The link works for `PAY_LINK_VALID_HOURS` or until the appointment starts. The menu page `/b/[slug]` lists the tech's services, prices and policy for their Instagram bio; it doesn't book or take deposits (clients message the tech to book), so the UI always calls it the menu page and says it isn't a pay link.
 3. The client opens the pay link, agrees to the deposit policy (a snapshot is saved with the time they agreed), and pays. **Stripe:** through Stripe Checkout; the webhook confirms the appointment and emails the client and the tech. **Manual:** the client sends the deposit in their own app and taps "I've sent my deposit"; the tech is emailed and taps **Received** (confirms and emails the client) or **Not received**. The tech can also mark a deposit received without the client tapping.
@@ -40,7 +40,7 @@ src/
                                   4 steps with close-up crops of real app screens (images/zoom-*.png, neutral
                                   "Studio Nova" example, no trade names), vs Cash App / booking apps, founder note, pricing, FAQ,
                                   sticky phone CTA. The price shows under the hero button and in the sticky bar.
-                                  Every "Start free" links to /login?start=1. Pulls price, trial and fee from
+                                  Every "Start free" links to /start. Pulls price, trial and fee from
                                   config.ts; keep claims true to the product.
     (marketing)/demo/             Demo pay link anyone can try (no sign-up): reuses the pay page's forms
                                   with local actions, so nothing is charged or saved. Card or manual toggle.
@@ -48,6 +48,15 @@ src/
                                   the product: update them, and LEGAL_UPDATED in config.ts, when data, fees,
                                   providers or billing change. No ad trackers on pay links or menu pages
                                   (the Privacy Policy says so); a Meta Pixel belongs on marketing pages only.
+    (marketing)/start/            Instant sign-up: trade → business name + payment handle (or Card) → preview of their
+                                  pay link → email. createAccount (actions.ts) creates the user with the admin API
+                                  and signs them in on the server (generateLink + verifyOtp, nothing emailed), sets up
+                                  profile, starter services and time zone, sends CompleteRegistration. An email
+                                  that already has an account is never signed in this way: it gets a sign-in code.
+                                  Optional Cloudflare Turnstile + honeypot. profiles.email_confirmed is false until
+                                  a code or link sign-in (markEmailConfirmed); New appointment, Billing and
+                                  createAppointment / startSubscription wait for it (dashboard/confirm-email/,
+                                  which can also fix a mistyped email). /login?start=1 redirects here.
     (auth)/login/                 Email sign-in: 6-digit code (any browser) or link (page, form, actions). The code
                                   screen survives a reload for an hour (localStorage) and shows an "Open Gmail /
                                   Mail / Outlook" button picked from the email domain and phone (inbox.ts)
@@ -168,8 +177,8 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 **Ads measurement (Meta)**
 
 - Off unless `NEXT_PUBLIC_META_PIXEL_ID` and `META_CAPI_TOKEN` are set. The browser Pixel runs on marketing pages and sign-in only; never add it to pay links, menu pages or the dashboard. The snippet is inline HTML at the top of the page (`components/meta-pixel.tsx`), not a script that waits for hydration: waiting took 2–3 s on phones and lost most landing page views from ad clicks. `PixelPageViews` tracks client-side navigations only.
-- Landing "Start free" buttons go to `/login?start=1` (sign-up wording). That page fires two browser Pixel funnel events via `trackPixel` (no email): `StartSignup` (custom) on arrival and `Lead` when the code is sent.
-- Conversions go server-side through `lib/meta.ts`, for pros only (never client data): `CompleteRegistration` on a new pro's first sign-in, `StartTrial` when a trial starts, `Purchase` whenever a pro adds their card in Checkout (trial or not, value $29), `Subscribe` on the first paid period. Each has a stable `event_id` so Meta drops duplicates. Tracking failures are logged, never thrown.
+- Landing "Start free" buttons go to `/start`. That page fires two browser Pixel funnel events via `trackPixel` (no email): `StartSignup` (custom) on arrival and `Lead` when the pro reaches the save step.
+- Conversions go server-side through `lib/meta.ts`, for pros only (never client data): `CompleteRegistration` when `/start` creates the account (or on a new pro's first code sign-in), `StartTrial` when a trial starts, `Purchase` whenever a pro adds their card in Checkout (trial or not, value $29), `Subscribe` on the first paid period. Each has a stable `event_id` so Meta drops duplicates. Tracking failures are logged, never thrown.
 - If this changes what's shared with Meta, update the Privacy Policy.
 
 **Notifications**

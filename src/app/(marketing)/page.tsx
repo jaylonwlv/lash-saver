@@ -40,8 +40,8 @@ export const viewport: Viewport = { themeColor: "#0d0b0c" };
 const price = formatCents(SUBSCRIPTION_PRICE_CENTS).replace(".00", "");
 const SAMPLE_DEPOSIT = 4000;
 const START = `Start free for ${TRIAL_DAYS} days`;
-// Every "Start free" goes here: sign-up wording, plus the StartSignup and Lead Pixel events.
-const SIGN_UP = "/login?start=1";
+// Every "Start free" goes to instant sign-up (StartSignup and Lead Pixel events fire there).
+const SIGN_UP = "/start";
 const ANNOUNCEMENT = `Hey! Quick update: to keep my schedule fair for everyone, I'm now taking a deposit to book. It goes toward your appointment, and you get it back if you cancel at least 48 hours before.
 
 When we pick a time, I'll send you a link to lock in your spot. Thank you!`;

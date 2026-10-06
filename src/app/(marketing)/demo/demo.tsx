@@ -29,7 +29,7 @@ const OPTIONS: PayOption[] = [
   { app: "zelle", label: "Zelle", handle: "hello@studionova.example", url: null },
   { app: "venmo", label: "Venmo", handle: "@StudioNova-Demo", url: null },
 ];
-const SIGN_UP = "/login?start=1";
+const SIGN_UP = "/start";
 
 type Method = "card" | "manual";
 type Stage = "pay" | "sent" | "booked" | "cancelled";

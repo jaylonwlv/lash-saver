@@ -21,6 +21,8 @@ export async function chooseTrade(_prev: FormState, formData: FormData): Promise
   if (!parsed.success) return { message: "Pick one of the options." };
 
   const trade = tradeById(parsed.data);
+  const timeZone = String(formData.get("timezone") ?? "");
+  const validTimeZone = Intl.supportedValuesOf("timeZone").includes(timeZone) ? timeZone : null;
   const supabase = await createClient();
   const [{ data: profile, error: profileError }, { count, error: countError }] = await Promise.all([
     supabase.from("profiles").select("policy_text").eq("id", user.id).single(),
@@ -37,6 +39,7 @@ export async function chooseTrade(_prev: FormState, formData: FormData): Promise
     .from("profiles")
     .update({
       trade: parsed.data,
+      ...(validTimeZone ? { timezone: validTimeZone } : {}),
       ...(usePreset && !profile.policy_text
         ? { cancellation_window_hours: trade.windowHours, policy_text: trade.policyText }
         : {}),

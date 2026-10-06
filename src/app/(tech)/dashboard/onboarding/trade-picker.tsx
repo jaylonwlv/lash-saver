@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useSyncExternalStore } from "react";
 import type { FormState } from "@/lib/forms";
 import type { TradeId } from "@/lib/supabase/database.types";
 import { chooseTrade } from "./actions";
@@ -29,12 +29,19 @@ export function TradePicker({
   hasServices: boolean;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(chooseTrade, {});
+  // The phone's time zone, so reminders go out at the right time (the server can't see it).
+  const timeZone = useSyncExternalStore(
+    () => () => {},
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    () => "",
+  );
 
   return (
     <form
       action={action}
       className="border-brand bg-surface flex flex-col gap-4 rounded-2xl border-2 p-4"
     >
+      <input type="hidden" name="timezone" value={timeZone} />
       <div className="flex flex-col gap-1 px-1 pt-1">
         <p className="text-brand text-xs font-semibold tracking-wide uppercase">
           {hasServices ? "One quick question" : "Quick setup · one tap"}

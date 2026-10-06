@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { publicEnv } from "@/lib/env.public";
+import { markEmailConfirmed } from "@/lib/email-confirmed";
 import { trackSignUp } from "@/lib/meta";
 import { createClient } from "@/lib/supabase/server";
 
@@ -56,7 +57,7 @@ export async function verifyCode(_prev: LoginState, formData: FormData): Promise
     type: "email",
   });
   if (error) return { error: "That code didn't work or has expired. Check it, or send a new one." };
-  if (data.user) await trackSignUp(data.user);
+  if (data.user) await Promise.all([markEmailConfirmed(data.user.id), trackSignUp(data.user)]);
 
   redirect(parsed.data.next);
 }

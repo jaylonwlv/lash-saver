@@ -1,5 +1,6 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { markEmailConfirmed } from "@/lib/email-confirmed";
 import { trackSignUp } from "@/lib/meta";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,13 +28,13 @@ export async function GET(request: NextRequest) {
       type: type as EmailOtpType,
     });
     if (!error) {
-      if (data.user) await trackSignUp(data.user);
+      if (data.user) await Promise.all([markEmailConfirmed(data.user.id), trackSignUp(data.user)]);
       return NextResponse.redirect(new URL(next, origin));
     }
   } else if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      if (data.user) await trackSignUp(data.user);
+      if (data.user) await Promise.all([markEmailConfirmed(data.user.id), trackSignUp(data.user)]);
       return NextResponse.redirect(new URL(next, origin));
     }
   }

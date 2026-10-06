@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useState, useSyncExternalStore } from "react";
-import { trackPixel } from "@/components/meta-pixel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { sendMagicLink, verifyCode, type LoginState } from "./actions";
@@ -62,7 +61,14 @@ const noSubscribe = () => () => {};
 const serverNull = () => null;
 const deviceSnapshot = () => deviceFromUserAgent(navigator.userAgent);
 
-export function LoginForm({ next, signUp = false }: { next?: string; signUp?: boolean }) {
+export function LoginForm({
+  next,
+  fixedEmail,
+}: {
+  next?: string;
+  /** Send the code to this address without asking (confirming a signed-in pro's email). */
+  fixedEmail?: string;
+}) {
   const [state, action, pending] = useActionState<LoginState, FormData>(sendMagicLink, {});
   // Each send returns a new state object, so a dismissed one never hides a new send.
   const [dismissed, setDismissed] = useState<LoginState | null>(null);
@@ -73,25 +79,19 @@ export function LoginForm({ next, signUp = false }: { next?: string; signUp?: bo
   const [pinned, setPinned] = useState<Sent | null>(null);
   const restored = restoreDismissed
     ? null
-    : (pinned ?? (saved && saved.next === (next || "/dashboard") ? saved : null));
+    : (pinned ??
+      (saved && saved.next === (next || "/dashboard") && (!fixedEmail || saved.email === fixedEmail)
+        ? saved
+        : null));
   useEffect(() => {
     if (state.sent) saveSent(state.sent);
   }, [state]);
-
-  // Ad funnel steps between the landing page and a finished sign-up (no email is sent).
-  useEffect(() => {
-    if (signUp) trackPixel("StartSignup", { custom: true });
-  }, [signUp]);
-  useEffect(() => {
-    if (signUp && state.sent) trackPixel("Lead");
-  }, [signUp, state]);
 
   if (state.sent && dismissed !== state) {
     return (
       <CodeForm
         email={state.sent.email}
         next={state.sent.next}
-        signUp={signUp}
         onChange={() => {
           saveSent(null);
           setDismissed(state);
@@ -105,7 +105,6 @@ export function LoginForm({ next, signUp = false }: { next?: string; signUp?: bo
       <CodeForm
         email={restored.email}
         next={restored.next}
-        signUp={signUp}
         onSubmit={() => setPinned(restored)}
         onChange={() => {
           saveSent(null);
@@ -118,35 +117,37 @@ export function LoginForm({ next, signUp = false }: { next?: string; signUp?: bo
   return (
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="next" value={next ?? ""} />
-      <Input
-        id="email"
-        name="email"
-        type="email"
-        label="Email"
-        autoComplete="email"
-        inputMode="email"
-        defaultValue={state.sent?.email}
-        autoFocus
-        required
-      />
+      {fixedEmail ? (
+        <input type="hidden" name="email" value={fixedEmail} />
+      ) : (
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          label="Email"
+          autoComplete="email"
+          inputMode="email"
+          defaultValue={state.sent?.email}
+          autoFocus
+          required
+        />
+      )}
       {state.error && <p className="text-danger text-sm">{state.error}</p>}
       <Button type="submit" disabled={pending}>
-        {pending ? "Sending…" : signUp ? "Get my code" : "Email me a sign-in code"}
+        {pending ? "Sending…" : fixedEmail ? "Email me a code" : "Email me a sign-in code"}
       </Button>
     </form>
   );
 }
 
-function CodeForm({
+export function CodeForm({
   email,
   next,
-  signUp,
   onSubmit,
   onChange,
 }: {
   email: string;
   next: string;
-  signUp: boolean;
   onSubmit?: () => void;
   onChange: () => void;
 }) {
@@ -192,7 +193,7 @@ function CodeForm({
       <Input
         id="code"
         name="code"
-        label={signUp ? "Code from the email" : "Sign-in code"}
+        label="Code from the email"
         inputMode="numeric"
         autoComplete="one-time-code"
         pattern="[0-9 ]*"
@@ -202,7 +203,7 @@ function CodeForm({
         error={state.error}
       />
       <Button type="submit" disabled={pending}>
-        {pending ? "Signing in…" : signUp ? "Continue" : "Sign in"}
+        {pending ? "Signing in…" : "Continue"}
       </Button>
       <button
         type="button"

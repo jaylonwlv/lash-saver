@@ -25,6 +25,9 @@ const serverSchema = z.object({
   // Set while testing in Events Manager → Test events; remove afterwards.
   META_TEST_EVENT_CODE: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
 
+  // Cloudflare Turnstile bot check on instant sign-up (optional; needs the site key too).
+  TURNSTILE_SECRET_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+
   /** Texting provider. "none" disables SMS; "log" prints messages (dev). */
   SMS_PROVIDER: z.enum(["none", "log"]).default("none"),
 });

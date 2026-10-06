@@ -44,6 +44,8 @@ type ProfileRow = Timestamps & {
   zelle_contact: string | null;
   venmo_handle: string | null;
   trade: TradeId | null;
+  /** False after instant sign-up until the pro confirms their email with a code. */
+  email_confirmed: boolean;
 };
 
 type ServiceRow = Timestamps & {

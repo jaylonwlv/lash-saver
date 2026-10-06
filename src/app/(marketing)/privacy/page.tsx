@@ -115,8 +115,9 @@ export default function PrivacyPage() {
           <li>
             <strong>Service providers</strong> who run parts of {APP_NAME} for us, under their own
             privacy and security commitments: Supabase (database and sign-in), Vercel (hosting),
-            Stripe (payments and billing), Resend (email) and Meta (ad measurement for our own
-            marketing, described above).
+            Stripe (payments and billing), Resend (email), Cloudflare (a check on the sign-up page
+            that you&apos;re a person, not a bot) and Meta (ad measurement for our own marketing,
+            described above).
           </li>
           <li>
             <strong>When required:</strong> to comply with the law or a valid legal request, or to
