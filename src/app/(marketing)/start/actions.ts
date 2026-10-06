@@ -9,6 +9,8 @@ import { SLUG_PATTERN, slugFromName } from "@/app/(tech)/dashboard/profile/schem
 import { serverEnv } from "@/lib/env";
 import { fieldErrors, formValues, type FormState } from "@/lib/forms";
 import { trackSignUp } from "@/lib/meta";
+import { notifyOnce } from "@/lib/notifications/log";
+import { publicEnv } from "@/lib/env.public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -91,6 +93,12 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     return sendCode(data.email, values, READY_MESSAGE);
   }
   await trackSignUp(session.data.user);
+  // A plain note from the founder; replies go straight to them. Never blocks sign-up.
+  await notifyOnce(`founder_welcome:${created.user.id}`, {
+    to: { email: data.email },
+    template: "founder_welcome",
+    data: { dashboardUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard` },
+  }).catch((err: unknown) => console.error("Founder welcome email failed", err));
 
   revalidatePath("/dashboard", "layout");
   redirect("/dashboard");

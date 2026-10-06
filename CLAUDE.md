@@ -53,7 +53,7 @@ src/
                                   and signs them in on the server (generateLink + verifyOtp, nothing emailed), sets up
                                   profile, starter services and time zone, sends CompleteRegistration. An email
                                   that already has an account is never signed in this way: it gets a sign-in code.
-                                  Optional Cloudflare Turnstile + honeypot. profiles.email_confirmed is false until
+                                  Optional Cloudflare Turnstile + honeypot. What they've typed (never the email) is kept on the phone for 7 days so they resume where they left off. Pixel: StartSignup on arrival, StartBusinessStep (custom) on step 2, Lead on step 3. profiles.email_confirmed is false until
                                   a code or link sign-in (markEmailConfirmed); New appointment, Billing and
                                   createAppointment / startSubscription wait for it (dashboard/confirm-email/,
                                   which can also fix a mistyped email). /login?start=1 redirects here.
@@ -65,7 +65,8 @@ src/
     (tech)/install-banner.tsx     Pros sign up inside Instagram's browser, whose sign-in doesn't carry over: banner
                                   says open in Safari / Chrome (Android intent link), then "Add to Home Screen"
                                   (dismissible); hidden once running from the Home Screen. manifest.ts + public/icon-*.png
-    (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), menu page link
+    (tech)/dashboard/             Tech home: "N of 4 done" progress, setup checklist (profile → deposits → services →
+                                  first pay link), menu page link
     (tech)/dashboard/onboarding/  First-visit "What do you do?" picker: one tap saves profiles.trade and, for a pro
                                   with no services, adds that trade's starter menu (services.is_starter, shown as
                                   "Example price" until saved, and kept off the public menu page until then)
@@ -170,6 +171,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 
 - Stripe is the source of truth. `syncSubscription` copies status, trial end, period end and cancel flag onto `profiles` from `customer.subscription.*` webhooks and the Checkout return route. Techs can't write these columns (column grants).
 - One trial per person. `trial_claims` stores card and payout-bank fingerprints, normalized email (Gmail dots and +tags removed), Instagram handle and Cash App / Zelle / Venmo handles when a trial starts. A match with another tech means no trial is offered; a reused card found after Checkout ends the trial immediately (`trial_end: "now"`).
+- New pros get a plain-text **founder welcome** from `/start` (`founder_welcome`, from "FOUNDER_NAME at APP_NAME", replies to `FOUNDER_EMAIL`, no app footer), and the cron sends one **founder check-in** 7–10 days after sign-up if they haven't sent a pay link (`founder_checkin`). Both go through `notifyOnce` (`notifications/log.ts`), logged as `<template>:<tech id>`.
 - The daily cron also sends two setup reminders to pros with no card yet (`setup_nudge_first` about a day after sign-up, `setup_nudge_next_booking` about three days after; `SETUP_NUDGE_*` in `config.ts`), each once (`notification_log` template `<template>:<tech id>`). They name what's left (`lib/setup.ts`) and mention the trial only if `trialEligible`. The dashboard checklist ends with step 4, "Send your first pay link", which starts the trial.
 - The daily cron emails techs `TRIAL_ENDING_NOTICE_DAYS` before the first charge, once per subscription (`notification_log` template `trial_ending:<sub id>`). The email opens with what Dibs did for them in the trial (`lib/savings.ts`); if that lookup fails, the email still goes out.
 - Enforce the pay-link gate on the server (`createAppointment`), not only in the UI.

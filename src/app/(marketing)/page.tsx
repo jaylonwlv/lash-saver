@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
 import {
   APP_NAME,
+  FOUNDER_NAME,
   LEGAL_CONTACT_EMAIL,
   PROCESSING_FEE_LABEL,
   SUBSCRIPTION_PRICE_CENTS,
@@ -249,7 +250,9 @@ export default function HomePage() {
               </p>
             </blockquote>
             <figcaption className="flex flex-col gap-1">
-              <span className="font-semibold">Jaylon, founder of {APP_NAME}</span>
+              <span className="font-semibold">
+                {FOUNDER_NAME}, founder of {APP_NAME}
+              </span>
               <a
                 href={`mailto:${LEGAL_CONTACT_EMAIL}`}
                 className="text-brand inline-flex min-h-12 items-center self-start underline"

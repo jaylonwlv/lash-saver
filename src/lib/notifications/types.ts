@@ -12,6 +12,10 @@ export type RenderedMessage = {
   subject: string;
   text: string;
   html?: string;
+  /** Sender name instead of the app's (same address), e.g. "Jaylon at Dibs". */
+  fromName?: string;
+  /** Where replies go, instead of EMAIL_REPLY_TO. */
+  replyTo?: string;
 };
 
 export type SendResult =

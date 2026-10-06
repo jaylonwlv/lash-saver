@@ -1,4 +1,4 @@
-import { APP_NAME } from "@/lib/config";
+import { APP_NAME, FOUNDER_EMAIL, FOUNDER_NAME } from "@/lib/config";
 import type { RenderedMessage } from "./types";
 
 /**
@@ -84,6 +84,9 @@ export type TemplateData = {
    */
   setup_nudge_first: { nextStep: string; trialDays: number | null; dashboardUrl: string };
   setup_nudge_next_booking: { nextStep: string; trialDays: number | null; dashboardUrl: string };
+  /** Plain notes from the founder to a new pro: right after sign-up, and a week later if they haven't sent a pay link. Replies go to the founder. */
+  founder_welcome: { dashboardUrl: string };
+  founder_checkin: { dashboardUrl: string };
   /** To the tech, a few days before the first subscription charge. */
   /** `savings`: what Dibs did during the trial, e.g. "Dibs has saved you $120 so far (…)." */
   trial_ending: { endsOn: string; amount: string; billingUrl: string; savings: string | null };
@@ -147,6 +150,30 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
     subject: `Before your next booking, send a ${APP_NAME} pay link`,
     text: `Next time a client asks for a time in your DMs, send a pay link instead of your Cash App. They agree to your policy, get reminders, and you keep the deposit if they don't show. ${d.nextStep} ${trialLine(d.trialDays)}This is our last setup reminder. ${d.dashboardUrl}`,
   }),
+  founder_welcome: (d) => ({
+    subject: `Quick question from ${FOUNDER_NAME}`,
+    fromName: `${FOUNDER_NAME} at ${APP_NAME}`,
+    replyTo: FOUNDER_EMAIL,
+    text: `Hi! I'm ${FOUNDER_NAME}, I built ${APP_NAME}. Thanks for signing up.
+
+Quick question: how do you handle deposits right now? Just hit reply. I read every email, and I'm happy to help you send your first pay link.
+
+Your dashboard: ${d.dashboardUrl}
+
+${FOUNDER_NAME}`,
+  }),
+  founder_checkin: (d) => ({
+    subject: "Did something get in the way?",
+    fromName: `${FOUNDER_NAME} at ${APP_NAME}`,
+    replyTo: FOUNDER_EMAIL,
+    text: `Hi, ${FOUNDER_NAME} from ${APP_NAME} again. I noticed you haven't sent your first pay link yet.
+
+Was something confusing, or missing for how you work? Reply with one line and I'll fix it or help you set it up. This is the only check-in I'll send.
+
+${d.dashboardUrl}
+
+${FOUNDER_NAME}`,
+  }),
   trial_ending: (d) => ({
     subject: `Your ${APP_NAME} trial ends ${d.endsOn}`,
     text: `${d.savings ? `${d.savings} ` : ""}Your free trial ends ${d.endsOn}. After that it's ${d.amount}/month on the card you added, so your pay links and reminders keep working. Nothing to do if you're staying. To change your card or cancel: ${d.billingUrl}`,
@@ -196,7 +223,9 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
 };
 
 export function render<T extends TemplateId>(template: T, data: TemplateData[T]): RenderedMessage {
-  const message = renderers[template](data);
+  const message: RenderedMessage = renderers[template](data);
+  // Personal notes from a named sender read as letters, without the app footer.
+  if (message.fromName) return message;
   return { ...message, text: `${message.text}\n\n— sent via ${APP_NAME}` };
 }
 

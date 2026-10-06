@@ -89,6 +89,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const subscribed = canSendPayLinks(profile.subscription_status);
   const firstLinkSent = (payLinks ?? 0) > 0;
   // Only promise a trial they can get; if the check fails, just don't mention it.
+  const stepsDone = [profileDone, stripeStatus === "done", servicesDone, firstLinkSent].filter(
+    Boolean,
+  ).length;
   const offerTrial =
     !subscribed && !firstLinkSent ? await trialEligible(user!.id).catch(() => false) : false;
   const menuUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
@@ -98,6 +101,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       <h1 className="text-2xl font-bold">
         Hi{profile.business_name ? `, ${profile.business_name}` : ""}
       </h1>
+      {!firstLinkSent && <SetupProgress done={stepsDone} />}
 
       {profile.subscription_status === "past_due" && (
         <Link
@@ -301,6 +305,29 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * "3 of 4 done": progress already made pulls people through the rest (the
+ * endowed progress effect), and instant sign-up finishes the first three.
+ */
+function SetupProgress({ done }: { done: number }) {
+  return (
+    <section className="bg-ink flex flex-col gap-3 rounded-2xl p-5 text-white">
+      <p className="text-lg font-bold">
+        {done} of 4 done
+        {done === 3 ? <span className="text-pink"> · one step to your first pay link</span> : null}
+      </p>
+      <div className="flex gap-1.5" aria-hidden>
+        {[0, 1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={`h-2 flex-1 rounded-full ${i < done ? "bg-pink" : "bg-white/20"}`}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 

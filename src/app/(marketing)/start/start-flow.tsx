@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CodeForm } from "@/app/(auth)/login/login-form";
 import { trackPixel } from "@/components/meta-pixel";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,67 @@ const BUSINESS_FIELDS = [
 
 type Step = "trade" | "business" | "save";
 
+/*
+ * What they've entered so far, kept on this phone so someone who leaves (a DM, a
+ * call) picks up where they were when they come back. No email is stored.
+ */
+const DRAFT_KEY = "dibs:start-draft";
+const DRAFT_DAYS = 7;
+type Draft = {
+  at: number;
+  step: Step;
+  tradeId: TradeId | null;
+  businessName: string;
+  method: PayMethod | null;
+  handle: string;
+  serviceName: string;
+  servicePrice: string;
+  serviceDeposit: string;
+};
+
+const noSubscribe = () => () => {};
+const serverNull = () => null;
+function draftSnapshot(): string | null {
+  try {
+    return localStorage.getItem(DRAFT_KEY);
+  } catch {
+    return null;
+  }
+}
+function writeDraft(draft: Draft | null) {
+  try {
+    if (draft) localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    else localStorage.removeItem(DRAFT_KEY);
+  } catch {}
+}
+function parseDraft(raw: string | null, tradeIds: string[]): Draft | null {
+  if (!raw) return null;
+  try {
+    const v: unknown = JSON.parse(raw);
+    if (typeof v !== "object" || v === null) return null;
+    const d = v as Partial<Record<keyof Draft, unknown>>;
+    const text = (x: unknown) => (typeof x === "string" ? x.slice(0, 200) : "");
+    if (typeof d.at !== "number" || Date.now() - d.at > DRAFT_DAYS * 86_400_000) return null;
+    const tradeId =
+      typeof d.tradeId === "string" && tradeIds.includes(d.tradeId) ? d.tradeId : null;
+    const method = METHODS.find((m) => m.id === d.method)?.id ?? null;
+    const step: Step = d.step === "save" || d.step === "business" ? d.step : "trade";
+    return {
+      at: d.at,
+      step,
+      tradeId: tradeId as TradeId | null,
+      businessName: text(d.businessName),
+      method,
+      handle: text(d.handle),
+      serviceName: text(d.serviceName),
+      servicePrice: text(d.servicePrice),
+      serviceDeposit: text(d.serviceDeposit),
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * /start: what do you do → your business → your pay link + save. Nothing is
  * saved until the last step, which creates the account and signs the pro in.
@@ -68,7 +129,47 @@ export function StartFlow({
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
   const [state, action, pending] = useActionState<StartState, FormData>(createAccount, {});
   const leadSent = useRef(false);
+  const businessSent = useRef(false);
   const router = useRouter();
+
+  // Pick up where they left off: only a draft from before this visit, applied once on
+  // arrival. Any tap here ends that, so the page's own saving never overwrites typing.
+  const savedDraft = useSyncExternalStore(noSubscribe, draftSnapshot, serverNull);
+  const [draftChecked, setDraftChecked] = useState(false);
+  const [resumed, setResumed] = useState(false);
+  if (!draftChecked && savedDraft) {
+    setDraftChecked(true);
+    const draft = parseDraft(
+      savedDraft,
+      [...trades, other].map((t) => t.id),
+    );
+    if (draft?.tradeId) {
+      setTradeId(draft.tradeId);
+      setBusinessName(draft.businessName);
+      setMethod(draft.method);
+      setHandle(draft.handle);
+      setServiceName(draft.serviceName);
+      setServicePrice(draft.servicePrice);
+      setServiceDeposit(draft.serviceDeposit);
+      // The save step needs the business details; otherwise resume on them.
+      setStep(draft.step === "save" && draft.businessName && draft.method ? "save" : "business");
+      setResumed(true);
+    }
+  }
+  const startOver = () => {
+    setDraftChecked(true);
+    writeDraft(null);
+    setTradeId(null);
+    setBusinessName("");
+    setMethod(null);
+    setHandle("");
+    setServiceName("");
+    setServicePrice("");
+    setServiceDeposit("");
+    setLocalErrors({});
+    setResumed(false);
+    setStep("trade");
+  };
 
   const trade = [...trades, other].find((t) => t.id === tradeId) ?? null;
   // Fixing a field clears its message (and any server message for it).
@@ -91,6 +192,10 @@ export function StartFlow({
     trackPixel("StartSignup", { custom: true });
   }, []);
   useEffect(() => {
+    if (step === "business" && !businessSent.current) {
+      businessSent.current = true;
+      trackPixel("StartBusinessStep", { custom: true });
+    }
     if (step === "save" && !leadSent.current) {
       leadSent.current = true;
       trackPixel("Lead");
@@ -108,6 +213,34 @@ export function StartFlow({
       setStep("business");
     }
   }
+
+  // Keep the draft current (and again after a failed save, which cleared it).
+  useEffect(() => {
+    // Nothing chosen yet, or the email already had an account (they're signing in instead).
+    if (!tradeId || state.existing) return;
+    writeDraft({
+      at: Date.now(),
+      step,
+      tradeId,
+      businessName,
+      method,
+      handle,
+      serviceName,
+      servicePrice,
+      serviceDeposit,
+    });
+  }, [
+    step,
+    tradeId,
+    businessName,
+    method,
+    handle,
+    serviceName,
+    servicePrice,
+    serviceDeposit,
+    attempt,
+    state.existing,
+  ]);
 
   const go = (next: Step) => {
     setStep(next);
@@ -145,6 +278,7 @@ export function StartFlow({
               <button
                 type="button"
                 onClick={() => {
+                  setDraftChecked(true);
                   setTradeId(t.id);
                   go("business");
                 }}
@@ -196,6 +330,7 @@ export function StartFlow({
       <section className="flex flex-col gap-5">
         <Back onClick={() => go("trade")} />
         <Progress step={2} />
+        {resumed && <ResumedNote onStartOver={startOver} />}
         <h1 className="text-2xl font-bold">Your business</h1>
         <Input
           id="business_name"
@@ -321,6 +456,7 @@ export function StartFlow({
     <section className="flex flex-col gap-5">
       <Back onClick={() => go("business")} />
       <Progress step={3} />
+      {resumed && <ResumedNote onStartOver={startOver} />}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold">Here&apos;s your pay link</h1>
         <p className="text-muted">This is what clients see when you send it in your DMs.</p>
@@ -336,7 +472,7 @@ export function StartFlow({
         example={tradeId !== "other"}
       />
 
-      <form action={action} className="flex flex-col gap-4">
+      <form action={action} onSubmit={() => writeDraft(null)} className="flex flex-col gap-4">
         <input type="hidden" name="trade" value={trade.id} />
         <input type="hidden" name="business_name" value={businessName} />
         <input type="hidden" name="method" value={method} />
@@ -399,6 +535,21 @@ function displayHandle(method: PayMethod, handle: string): string {
   if (method === "cashapp") return `$${h.replace(/^\$/, "")}`;
   if (method === "venmo") return `@${h.replace(/^@/, "")}`;
   return h;
+}
+
+function ResumedNote({ onStartOver }: { onStartOver: () => void }) {
+  return (
+    <p className="bg-surface border-line flex items-center justify-between gap-3 rounded-xl border px-4 py-2 text-sm">
+      <span>Welcome back. We kept what you entered.</span>
+      <button
+        type="button"
+        onClick={onStartOver}
+        className="text-brand inline-flex min-h-11 shrink-0 items-center font-medium underline"
+      >
+        Start over
+      </button>
+    </p>
+  );
 }
 
 function Progress({ step }: { step: 1 | 2 | 3 }) {

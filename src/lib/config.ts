@@ -39,6 +39,9 @@ export const TRIAL_ENDING_NOTICE_DAYS = 3;
 export const SETUP_NUDGE_FIRST_AFTER_HOURS = 20;
 export const SETUP_NUDGE_NEXT_AFTER_HOURS = 68;
 export const SETUP_NUDGE_STOP_AFTER_DAYS = 7;
+/** The founder's one personal check-in, about a week after sign-up, if no pay link yet. */
+export const FOUNDER_CHECKIN_AFTER_DAYS = 7;
+export const FOUNDER_CHECKIN_STOP_AFTER_DAYS = 10;
 
 /** Reminder offsets before an appointment, in hours. */
 export const REMINDER_OFFSETS_HOURS = [48, 24] as const;
@@ -48,6 +51,10 @@ export const LEGAL_CONTACT_EMAIL = "jaylonw.lv@gmail.com";
 export const GOVERNING_STATE = "Nevada";
 /** Where Dibs sends alerts meant for the business owner (disputes). */
 export const OWNER_ALERT_EMAIL = LEGAL_CONTACT_EMAIL;
+
+/** Signs the landing page's founder note and the founder emails to new pros; replies go to FOUNDER_EMAIL. */
+export const FOUNDER_NAME = "Jaylon";
+export const FOUNDER_EMAIL = LEGAL_CONTACT_EMAIL;
 export const LEGAL_UPDATED = "October 6, 2026";
 
 /** Graph API version for the Meta Conversions API. Meta supports each for about two years. */

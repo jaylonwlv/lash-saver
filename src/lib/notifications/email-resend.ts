@@ -23,9 +23,9 @@ export class ResendEmailNotifier implements Notifier {
     if (!to.email) return { ok: false, channel: this.channel, error: "No email address" };
 
     const { data, error } = await this.client.emails.send({
-      from: this.from,
+      from: message.fromName ? `${message.fromName} <${address(this.from)}>` : this.from,
       to: to.email,
-      replyTo: this.replyTo,
+      replyTo: message.replyTo ?? this.replyTo,
       subject: message.subject,
       text: message.text,
       html: message.html,
@@ -34,6 +34,11 @@ export class ResendEmailNotifier implements Notifier {
     if (error) return { ok: false, channel: this.channel, error: error.message };
     return { ok: true, channel: this.channel, providerMessageId: data?.id };
   }
+}
+
+/** "Dibs <bookings@getdibs.pro>" → "bookings@getdibs.pro". */
+function address(from: string): string {
+  return /<([^>]+)>/.exec(from)?.[1] ?? from;
 }
 
 export function createEmailNotifier(): Notifier {

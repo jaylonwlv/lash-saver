@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { cancelNote, loadAppointmentContext, payUrl } from "@/lib/appointments";
 import {
+  FOUNDER_CHECKIN_AFTER_DAYS,
+  FOUNDER_CHECKIN_STOP_AFTER_DAYS,
   REMINDER_OFFSETS_HOURS,
   SETUP_NUDGE_FIRST_AFTER_HOURS,
   SETUP_NUDGE_NEXT_AFTER_HOURS,
@@ -11,9 +13,8 @@ import {
 } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
-import { notify, type Recipient, type TemplateData, type TemplateId } from "@/lib/notifications";
 import { serverEnv } from "@/lib/env";
-import { notifyForAppointment } from "@/lib/notifications/log";
+import { alreadyLogged, notifyForAppointment, notifyOnce } from "@/lib/notifications/log";
 import { loadSavings, savingsSummary } from "@/lib/savings";
 import { nextStepSentence, setupState } from "@/lib/setup";
 import { trialEligible } from "@/lib/stripe/billing";
@@ -47,12 +48,14 @@ export async function GET(request: NextRequest) {
   const reminders = await sendReminders(now);
   const trialNotices = await sendTrialEndingNotices(now);
   const setupNudges = await sendSetupNudges(now);
+  const founderCheckins = await sendFounderCheckins(now);
   return NextResponse.json({
     ok: true,
     expired: expired?.length ?? 0,
     ...reminders,
     trialNotices,
     setupNudges,
+    founderCheckins,
   });
 }
 
@@ -156,7 +159,7 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
       console.error(`Savings for ${tech.id} failed`, err);
     }
 
-    const ok = await notifyAndLog(logKey, {
+    const ok = await notifyOnce(logKey, {
       to: { email: tech.email },
       template: "trial_ending",
       data: {
@@ -177,6 +180,41 @@ async function sendTrialEndingNotices(now: Date): Promise<number> {
  * Most pros finish setup on day one but have no client to book until later; these
  * bring them back for that first pay link.
  */
+async function sendFounderCheckins(now: Date): Promise<number> {
+  const admin = createAdminClient();
+  const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
+  const { data: techs, error } = await admin
+    .from("profiles")
+    .select("id, email")
+    .lte("created_at", daysAgo(FOUNDER_CHECKIN_AFTER_DAYS))
+    .gt("created_at", daysAgo(FOUNDER_CHECKIN_STOP_AFTER_DAYS));
+  if (error) throw new Error(`Loading pros for check-ins failed: ${error.message}`);
+
+  let sent = 0;
+  for (const tech of techs) {
+    try {
+      const logKey = `founder_checkin:${tech.id}`;
+      if (await alreadyLogged(logKey)) continue;
+      // Only pros who haven't sent a pay link yet.
+      const { count, error: countError } = await admin
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("tech_id", tech.id);
+      if (countError) throw new Error(countError.message);
+      if (count) continue;
+      const ok = await notifyOnce(logKey, {
+        to: { email: tech.email },
+        template: "founder_checkin",
+        data: { dashboardUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard` },
+      });
+      if (ok) sent++;
+    } catch (err) {
+      console.error(`Founder check-in for ${tech.id} failed`, err);
+    }
+  }
+  return sent;
+}
+
 async function sendSetupNudges(now: Date): Promise<number> {
   const admin = createAdminClient();
   const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000).toISOString();
@@ -215,41 +253,11 @@ async function sendSetupNudges(now: Date): Promise<number> {
         trialDays: eligible ? TRIAL_DAYS : null,
         dashboardUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard`,
       };
-      const ok = await notifyAndLog(logKey, { to: { email: tech.email }, template, data });
+      const ok = await notifyOnce(logKey, { to: { email: tech.email }, template, data });
       if (ok) sent++;
     } catch (err) {
       console.error(`Setup reminder for ${tech.id} failed`, err);
     }
   }
   return sent;
-}
-
-async function alreadyLogged(logKey: string): Promise<boolean> {
-  const { data } = await createAdminClient()
-    .from("notification_log")
-    .select("id")
-    .eq("template", logKey)
-    .is("error", null)
-    .limit(1);
-  return Boolean(data?.length);
-}
-
-/** Send a message that isn't about an appointment and log it under `logKey`. */
-async function notifyAndLog<T extends TemplateId>(
-  logKey: string,
-  input: { to: Recipient; template: T; data: TemplateData[T] },
-): Promise<boolean> {
-  const results = await notify(input);
-  await createAdminClient()
-    .from("notification_log")
-    .insert(
-      results.map((r) => ({
-        appointment_id: null,
-        template: logKey,
-        channel: r.channel,
-        provider_message_id: r.ok ? (r.providerMessageId ?? null) : null,
-        error: r.ok ? null : r.error,
-      })),
-    );
-  return results.some((r) => r.ok);
 }
