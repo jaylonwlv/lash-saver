@@ -157,11 +157,12 @@ export function StartFlow({
     setDraftChecked(true);
     const tradeIds = [...trades, other].map((t) => t.id);
     const draft = parseDraft(savedDraft, tradeIds);
-    if (!draft?.tradeId && !tradeId && adTrade && tradeIds.includes(adTrade as TradeId)) {
-      setTradeId(adTrade as TradeId);
-      setStep("business");
-    }
-    if (draft?.tradeId) {
+    const fromAd = adTrade && tradeIds.includes(adTrade as TradeId) ? (adTrade as TradeId) : null;
+    // The ad they came from this time (?trade= on this page or the landing page).
+    const wanted = initialTrade ?? fromAd;
+    const typed = Boolean(draft && (draft.businessName || draft.handle || draft.serviceName));
+    // What they typed wins; an empty draft never overrides the ad they just tapped.
+    if (draft?.tradeId && (typed || !wanted)) {
       setTradeId(draft.tradeId);
       setBusinessName(draft.businessName);
       setMethod(draft.method);
@@ -175,12 +176,19 @@ export function StartFlow({
       setStep(resumeStep);
       setRestoredStep(resumeStep);
       // Only say "we kept what you entered" when they actually entered something.
-      setResumed(Boolean(draft.businessName || draft.handle));
+      setResumed(typed);
+    } else if (wanted && !initialTrade) {
+      setTradeId(wanted);
+      setStep("business");
     }
   }
   const startOver = () => {
     setDraftChecked(true);
     writeDraft(null);
+    // Starting over means choosing again, not the trade from the ad.
+    try {
+      sessionStorage.removeItem(AD_TRADE_KEY);
+    } catch {}
     setTradeId(null);
     setBusinessName("");
     setMethod(null);
