@@ -97,7 +97,7 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
   await notifyOnce(`founder_welcome:${created.user.id}`, {
     to: { email: data.email },
     template: "founder_welcome",
-    data: { dashboardUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard` },
+    data: { appUrl: publicEnv().NEXT_PUBLIC_APP_URL },
   }).catch((err: unknown) => console.error("Founder welcome email failed", err));
 
   revalidatePath("/dashboard", "layout");

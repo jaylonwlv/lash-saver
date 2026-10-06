@@ -55,6 +55,17 @@ export const OWNER_ALERT_EMAIL = LEGAL_CONTACT_EMAIL;
 /** Signs the landing page's founder note and the founder emails to new pros; replies go to FOUNDER_EMAIL. */
 export const FOUNDER_NAME = "Jaylon";
 export const FOUNDER_EMAIL = LEGAL_CONTACT_EMAIL;
+
+/** A ready-made message for pros to send their regulars when they start taking deposits. */
+export function depositAnnouncement(windowHours: number): string {
+  const refund =
+    windowHours > 0
+      ? `you get it back if you cancel at least ${windowHours} hours before`
+      : "you get it back if you cancel before your appointment";
+  return `Hey! Quick update: to keep my schedule fair for everyone, I'm now taking a deposit to book. It goes toward your appointment, and ${refund}.
+
+When we pick a time, I'll send you a link to lock in your spot. Thank you!`;
+}
 export const LEGAL_UPDATED = "October 6, 2026";
 
 /** Graph API version for the Meta Conversions API. Meta supports each for about two years. */

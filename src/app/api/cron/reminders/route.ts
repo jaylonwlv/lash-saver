@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { cancelNote, loadAppointmentContext, payUrl } from "@/lib/appointments";
 import {
+  depositAnnouncement,
   FOUNDER_CHECKIN_AFTER_DAYS,
   FOUNDER_CHECKIN_STOP_AFTER_DAYS,
   REMINDER_OFFSETS_HOURS,
@@ -185,7 +186,7 @@ async function sendFounderCheckins(now: Date): Promise<number> {
   const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
   const { data: techs, error } = await admin
     .from("profiles")
-    .select("id, email")
+    .select("id, email, cancellation_window_hours")
     .lte("created_at", daysAgo(FOUNDER_CHECKIN_AFTER_DAYS))
     .gt("created_at", daysAgo(FOUNDER_CHECKIN_STOP_AFTER_DAYS));
   if (error) throw new Error(`Loading pros for check-ins failed: ${error.message}`);
@@ -205,7 +206,13 @@ async function sendFounderCheckins(now: Date): Promise<number> {
       const ok = await notifyOnce(logKey, {
         to: { email: tech.email },
         template: "founder_checkin",
-        data: { dashboardUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard` },
+        data: {
+          appUrl: publicEnv().NEXT_PUBLIC_APP_URL,
+          announcement: depositAnnouncement(tech.cancellation_window_hours),
+          // Only promise a trial they can get.
+          trialDays: (await trialEligible(tech.id).catch(() => false)) ? TRIAL_DAYS : null,
+          price: formatCents(SUBSCRIPTION_PRICE_CENTS).replace(".00", ""),
+        },
       });
       if (ok) sent++;
     } catch (err) {

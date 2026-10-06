@@ -84,9 +84,18 @@ export type TemplateData = {
    */
   setup_nudge_first: { nextStep: string; trialDays: number | null; dashboardUrl: string };
   setup_nudge_next_booking: { nextStep: string; trialDays: number | null; dashboardUrl: string };
-  /** Plain notes from the founder to a new pro: right after sign-up, and a week later if they haven't sent a pay link. Replies go to the founder. */
-  founder_welcome: { dashboardUrl: string };
-  founder_checkin: { dashboardUrl: string };
+  /**
+   * Plain notes from the founder to a new pro: right after sign-up, and a week later
+   * if they haven't sent a pay link. They answer the usual questions themselves and
+   * don't ask for a reply (replies still reach the founder).
+   */
+  founder_welcome: { appUrl: string };
+  founder_checkin: {
+    appUrl: string;
+    announcement: string;
+    trialDays: number | null;
+    price: string;
+  };
   /** To the tech, a few days before the first subscription charge. */
   /** `savings`: what Dibs did during the trial, e.g. "Dibs has saved you $120 so far (…)." */
   trial_ending: { endsOn: string; amount: string; billingUrl: string; savings: string | null };
@@ -151,26 +160,34 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
     text: `Next time a client asks for a time in your DMs, send a pay link instead of your Cash App. They agree to your policy, get reminders, and you keep the deposit if they don't show. ${d.nextStep} ${trialLine(d.trialDays)}This is our last setup reminder. ${d.dashboardUrl}`,
   }),
   founder_welcome: (d) => ({
-    subject: `Quick question from ${FOUNDER_NAME}`,
+    subject: `You're set up on ${APP_NAME}`,
     fromName: `${FOUNDER_NAME} at ${APP_NAME}`,
     replyTo: FOUNDER_EMAIL,
-    text: `Hi! I'm ${FOUNDER_NAME}, I built ${APP_NAME}. Thanks for signing up.
+    text: `Hi, I'm ${FOUNDER_NAME}, I built ${APP_NAME}. Thanks for signing up.
 
-Quick question: how do you handle deposits right now? Just hit reply. I read every email, and I'm happy to help you send your first pay link.
+Here's all you need to do: next time a client asks for a time in your DMs, open ${APP_NAME}, tap New appointment and send them the pay link. They agree to your policy and pay the deposit before the slot is theirs. If they don't show, you keep it.
 
-Your dashboard: ${d.dashboardUrl}
+Your dashboard: ${d.appUrl}/dashboard
+See what your client sees: ${d.appUrl}/demo
 
 ${FOUNDER_NAME}`,
   }),
   founder_checkin: (d) => ({
-    subject: "Did something get in the way?",
+    subject: "Your first pay link, sorted",
     fromName: `${FOUNDER_NAME} at ${APP_NAME}`,
     replyTo: FOUNDER_EMAIL,
-    text: `Hi, ${FOUNDER_NAME} from ${APP_NAME} again. I noticed you haven't sent your first pay link yet.
+    text: `Hi, ${FOUNDER_NAME} from ${APP_NAME}. You haven't sent your first pay link yet, so here are the answers to what usually holds people up:
 
-Was something confusing, or missing for how you work? Reply with one line and I'll fix it or help you set it up. This is the only check-in I'll send.
+Not sure how it looks to your client? Try a demo pay link (nothing is charged): ${d.appUrl}/demo
 
-${d.dashboardUrl}
+Still showing example prices? Set your own in a minute: ${d.appUrl}/dashboard/services
+
+Worried your regulars will push back? Send them this first:
+"${d.announcement}"
+
+${d.trialDays ? `Wondering about the card? You're not charged until your ${d.trialDays}-day free trial ends, and you can cancel anytime` : `Wondering about the cost? It's ${d.price}/month, and you can cancel anytime`}: ${d.appUrl}/dashboard/billing
+
+When a client asks for a time, tap New appointment and send the link: ${d.appUrl}/dashboard
 
 ${FOUNDER_NAME}`,
   }),
