@@ -16,7 +16,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * return route and the webhook can both report the same trial).
  */
 
-type MetaEvent = "CompleteRegistration" | "StartTrial" | "Subscribe";
+type MetaEvent = "CompleteRegistration" | "StartTrial" | "Subscribe" | "Purchase";
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
@@ -106,9 +106,13 @@ export async function trackSignUp(user: {
   });
 }
 
-/** A pro started the free trial, or (after it) paid for the first time. */
+/**
+ * A pro started the free trial ("StartTrial"), added their card in Checkout with or
+ * without a trial ("Purchase", for campaigns that optimize for purchases), or paid for
+ * the first time ("Subscribe").
+ */
 export async function trackSubscription(
-  event: "StartTrial" | "Subscribe",
+  event: "StartTrial" | "Purchase" | "Subscribe",
   techId: string,
   subscriptionId: string,
   { browser }: { browser: boolean },

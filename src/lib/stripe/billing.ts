@@ -255,6 +255,8 @@ export async function completeSubscriptionCheckout(
       await trackSubscription("StartTrial", techId, sub.id, { browser: !!expectedTechId });
     }
   }
+  // Card added (trial or not): Meta's Purchase, so Sales campaigns can optimize for it.
+  await trackSubscription("Purchase", techId, sub.id, { browser: !!expectedTechId });
 
   await syncSubscription(current);
   return { trialRevoked };
