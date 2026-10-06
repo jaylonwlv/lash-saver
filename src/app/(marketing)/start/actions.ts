@@ -25,8 +25,9 @@ type StartData = Extract<ReturnType<typeof startSchema.safeParse>, { success: tr
 
 /**
  * Instant sign-up: creates the pro's account from what they set up on /start and
- * signs them in right here, with no code to fetch from their inbox. They confirm
- * the email with a code later, before their first pay link (profiles.email_confirmed).
+ * signs them in right here, with no code to fetch from their inbox. Nothing waits
+ * on confirming the email: profiles.email_confirmed stays false until their first
+ * code sign-in, and the dashboard shows where alerts go so a typo can be fixed.
  *
  * An email that already has an account is never signed in this way: that would
  * let anyone into someone else's account. It gets a sign-in code instead.
@@ -62,7 +63,8 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     return { message: "We couldn't create your account. Try again in a minute.", values };
   }
 
-  // Not proven yet: this must stick before signing in, or pay links wouldn't wait for it.
+  // Not proven yet: set before signing in, so a later code sign-in by the real owner
+  // signs out anyone else (markEmailConfirmed).
   const { error: flagError } = await admin
     .from("profiles")
     .update({ email_confirmed: false })

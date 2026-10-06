@@ -11,7 +11,6 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { SubscribeCard } from "../../billing/subscribe-card";
 import { wallClockParts } from "@/lib/time";
 import { clientRecord, loadClients } from "@/lib/clients";
-import { ConfirmEmail } from "../../confirm-email/confirm-email";
 import { AppointmentForm } from "./appointment-form";
 
 export const metadata: Metadata = { title: "New appointment" };
@@ -26,7 +25,7 @@ export default async function NewAppointmentPage({
     supabase
       .from("profiles")
       .select(
-        "timezone, subscription_status, deposit_method, stripe_charges_enabled, cashapp_tag, zelle_contact, venmo_handle, email, email_confirmed",
+        "timezone, subscription_status, deposit_method, stripe_charges_enabled, cashapp_tag, zelle_contact, venmo_handle",
       )
       .eq("id", user!.id)
       .single(),
@@ -65,7 +64,7 @@ export default async function NewAppointmentPage({
           That card was already used for a free trial, so your subscription started today.
         </p>
       )}
-      {ready && profile.email_confirmed && subscribed && services.some((s) => s.is_starter) && (
+      {ready && subscribed && services.some((s) => s.is_starter) && (
         <p className="border-brand bg-surface rounded-2xl border p-4 text-sm">
           Some services still have example prices (marked <strong>example</strong> below).{" "}
           <Link href="/dashboard/services" className="text-brand underline">
@@ -74,9 +73,7 @@ export default async function NewAppointmentPage({
           first, or change the deposit for this client.
         </p>
       )}
-      {ready && !profile.email_confirmed ? (
-        <ConfirmEmail email={profile.email} next="/dashboard/appointments/new" />
-      ) : ready && !subscribed ? (
+      {ready && !subscribed ? (
         <SubscribeCard trialEligible={await trialEligible(user!.id)} timezone={profile.timezone} />
       ) : ready ? (
         <AppointmentForm

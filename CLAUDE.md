@@ -53,10 +53,11 @@ src/
                                   and signs them in on the server (generateLink + verifyOtp, nothing emailed), sets up
                                   profile, starter services and time zone, sends CompleteRegistration. An email
                                   that already has an account is never signed in this way: it gets a sign-in code.
-                                  Optional Cloudflare Turnstile + honeypot. What they've typed (never the email) is kept on the phone for 7 days so they resume where they left off. Pixel: StartSignup on arrival, StartBusinessStep (custom) on step 2, Lead on step 3. `?trade=barber` (on /start, or on the landing page via `remember-trade.tsx`) skips step 1 for ads aimed at one trade; marketing pages stay trade-neutral. profiles.email_confirmed is false until
-                                  a code or link sign-in (markEmailConfirmed); New appointment, Billing and
-                                  createAppointment / startSubscription wait for it (dashboard/confirm-email/,
-                                  which can also fix a mistyped email). /login?start=1 redirects here.
+                                  Optional Cloudflare Turnstile + honeypot. What they've typed (never the email) is kept on the phone for 7 days so they resume where they left off. Pixel: StartSignup on arrival, StartBusinessStep (custom) on step 2, Lead on step 3. `?trade=barber` (on /start, or on the landing page via `remember-trade.tsx`) skips step 1 for ads aimed at one trade; marketing pages stay trade-neutral. profiles.email_confirmed is false until their first code or link sign-in
+                                  (markEmailConfirmed, which then signs out every other session). Nothing waits on
+                                  it: no inbox trip before the first pay link or trial. While false, the dashboard
+                                  shows "Booking alerts go to … · Wrong? Fix it" (dashboard/confirm-email/).
+                                  /login?start=1 redirects here.
     (auth)/login/                 Email sign-in: 6-digit code (any browser) or link (page, form, actions). The code
                                   screen survives a reload for an hour (localStorage) and shows an "Open Gmail /
                                   Mail / Outlook" button picked from the email domain and phone (inbox.ts)
@@ -156,7 +157,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 
 - RLS is **on for every table**. Each new table needs policies in the same migration.
 - Supabase grants table-level privileges to `anon`/`authenticated` by default, so a column-level `revoke` does nothing. To limit which columns techs can write, revoke the table privilege and grant specific columns (see `20260924000000_profile_update_grants.sql`).
-- Techs write `appointments` as themselves, but only within limits (`20261007000000_appointment_write_guards.sql`): insert only a `pending_deposit` pay link when their email is confirmed and their subscription is live; update only `status`, `hold_expires_at` (to null) and `client_marked_sent_at` (to null); no deletes; never reopen a closed link. Snapshots and amounts are server-only. Keep app writes inside these limits or add a migration.
+- Techs write `appointments` as themselves, but only within limits (`20261007000000_appointment_write_guards.sql`): insert only a `pending_deposit` pay link for their own service when their subscription is live (`20261009000000` dropped the confirmed-email condition); update only `status`, `hold_expires_at` (to null) and `client_marked_sent_at` (to null); no deletes; never reopen a closed link. Snapshots and amounts are server-only. Keep app writes inside these limits or add a migration.
 - Post-sign-in redirects go through `safeNextPath` (`lib/redirects.ts`): browsers read `/\evil.com` as another site.
 - `createAdminClient()` bypasses RLS. Use it only where no tech is signed in (webhooks, cron, public booking writes after validation), and scope every query by id yourself.
 - Clients never sign in. The public menu page reads through the anon role (`public_profiles` view, active `services`). Every client write goes through server code.

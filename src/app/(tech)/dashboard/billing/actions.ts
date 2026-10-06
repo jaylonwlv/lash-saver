@@ -8,21 +8,12 @@ import {
   startSubscriptionCheckout,
 } from "@/lib/stripe/billing";
 import { stripeErrorMessage } from "@/lib/stripe/connect";
-import { createClient, getUser } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 
 /** Send the tech to Stripe Checkout to add a card and start (or restart) the subscription. */
 export async function startSubscription(): Promise<FormState> {
   const user = await getUser();
   if (!user) redirect("/login");
-  // Instant sign-ups confirm their email before the trial (and their first pay link).
-  const { data: profile } = await (
-    await createClient()
-  )
-    .from("profiles")
-    .select("email_confirmed")
-    .eq("id", user.id)
-    .single();
-  if (!profile?.email_confirmed) return { message: "Confirm your email first." };
   let url: string;
   try {
     url = await startSubscriptionCheckout(user.id);

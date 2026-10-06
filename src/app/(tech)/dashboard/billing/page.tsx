@@ -8,7 +8,6 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
 import { openBillingPortal } from "./actions";
 import { BillingButton } from "./billing-buttons";
-import { ConfirmEmail } from "../confirm-email/confirm-email";
 import { SubscribeCard } from "./subscribe-card";
 
 export const metadata: Metadata = { title: "Billing" };
@@ -19,7 +18,7 @@ export default async function BillingPage() {
   const { data: p, error } = await supabase
     .from("profiles")
     .select(
-      "timezone, stripe_customer_id, subscription_status, trial_ends_at, current_period_end, cancel_at_period_end, email, email_confirmed",
+      "timezone, stripe_customer_id, subscription_status, trial_ends_at, current_period_end, cancel_at_period_end",
     )
     .eq("id", user!.id)
     .single();
@@ -58,12 +57,7 @@ export default async function BillingPage() {
           variant={status === "past_due" ? "primary" : "secondary"}
         />
       ) : null}
-      {!subscribed &&
-        (p.email_confirmed ? (
-          <SubscribeCard trialEligible={await trialEligible(user!.id)} timezone={tz} />
-        ) : (
-          <ConfirmEmail email={p.email} next="/dashboard/billing" />
-        ))}
+      {!subscribed && <SubscribeCard trialEligible={await trialEligible(user!.id)} timezone={tz} />}
       <p className="text-muted text-sm">
         In the billing portal you can change your card, download invoices, or cancel. Cancelling
         stops new pay links at the end of your paid period or trial.

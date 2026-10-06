@@ -1,18 +1,17 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { LoginForm } from "@/app/(auth)/login/login-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
 import { changeUnconfirmedEmail } from "./actions";
 
 /**
- * Shown before the first pay link to pros who signed up instantly (/start):
- * a code to the email they gave proves it's theirs, so booking alerts reach them
- * and they can sign in on another phone or browser.
+ * For pros who signed up instantly (/start) and haven't signed in with a code yet:
+ * shows where booking alerts go, so a mistyped email gets caught without a trip to
+ * their inbox. Nothing waits on it; their first code sign-in confirms the email.
  */
-export function ConfirmEmail({ email, next }: { email: string; next: string }) {
+export function AlertsEmail({ email }: { email: string }) {
   const [changing, setChanging] = useState(false);
   const [state, action, pending] = useActionState<FormState, FormData>(async (prev, formData) => {
     const result = await changeUnconfirmedEmail(prev, formData);
@@ -20,52 +19,50 @@ export function ConfirmEmail({ email, next }: { email: string; next: string }) {
     return result;
   }, {});
 
-  return (
-    <section className="border-brand bg-surface flex flex-col gap-4 rounded-2xl border-2 p-5">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-bold">Confirm your email to send pay links</h2>
-        <p className="text-muted text-sm">
-          We&apos;ll email a code to <strong className="text-foreground">{email}</strong>. It also
-          lets you sign in on any phone, and it&apos;s where your booking alerts go.
+  if (!changing) {
+    return (
+      <div className="-my-2 flex flex-wrap items-center gap-x-2 text-sm">
+        <p className="text-muted">
+          Booking alerts go to{" "}
+          <strong className="text-foreground [overflow-wrap:anywhere]">{email}</strong>
         </p>
+        <button
+          type="button"
+          onClick={() => setChanging(true)}
+          className="text-brand inline-flex min-h-11 items-center font-medium underline"
+        >
+          Wrong? Fix it
+        </button>
       </div>
-      {changing ? (
-        <form action={action} className="flex flex-col gap-3">
-          <Input
-            id="email"
-            type="email"
-            label="Your email"
-            autoComplete="email"
-            inputMode="email"
-            defaultValue={state.values?.email ?? email}
-            error={state.errors?.email}
-            required
-          />
-          {state.message && <p className="text-danger text-sm">{state.message}</p>}
-          <Button type="submit" disabled={pending}>
-            {pending ? "Saving…" : "Save email"}
-          </Button>
-          <button
-            type="button"
-            onClick={() => setChanging(false)}
-            className="text-muted min-h-11 text-sm underline"
-          >
-            Cancel
-          </button>
-        </form>
-      ) : (
-        <>
-          {/* Keyed by email so a corrected address starts a fresh code. */}
-          <LoginForm key={email} next={next} fixedEmail={email} />
-          <button
-            type="button"
-            onClick={() => setChanging(true)}
-            className="text-brand min-h-11 text-sm font-medium underline"
-          >
-            Wrong email? Change it
-          </button>
-        </>
-      )}
-    </section>
+    );
+  }
+  return (
+    <form
+      action={action}
+      className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]"
+    >
+      <Input
+        id="email"
+        type="email"
+        label="Your email"
+        hint="Where booking alerts go, and how you sign in on another phone."
+        autoComplete="email"
+        inputMode="email"
+        defaultValue={state.values?.email ?? email}
+        error={state.errors?.email}
+        required
+      />
+      {state.message && <p className="text-danger text-sm">{state.message}</p>}
+      <Button type="submit" disabled={pending}>
+        {pending ? "Saving…" : "Save email"}
+      </Button>
+      <button
+        type="button"
+        onClick={() => setChanging(false)}
+        className="text-muted min-h-11 text-sm underline"
+      >
+        Cancel
+      </button>
+    </form>
   );
 }

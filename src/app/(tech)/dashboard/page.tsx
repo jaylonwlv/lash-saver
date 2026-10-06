@@ -16,6 +16,7 @@ import { loadSavings, savingsSummary } from "@/lib/savings";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
 import { TradePicker } from "./onboarding/trade-picker";
 import { InstallBanner } from "../install-banner";
+import { AlertsEmail } from "./confirm-email/confirm-email";
 import { SavedReplyCard } from "./saved-reply-card";
 import { startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
@@ -38,7 +39,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     supabase
       .from("profiles")
       .select(
-        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade, email_confirmed",
+        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade, email, email_confirmed",
       )
       .eq("id", user!.id)
       .single(),
@@ -133,6 +134,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           </Link>
         )}
       </section>
+      {/* Instant sign-ups: where alerts go, so a typo is caught here, not in their inbox. */}
+      {!profile.email_confirmed && <AlertsEmail email={profile.email} />}
       <InstallBanner placement="page" />
       {!firstLinkSent && <SetupProgress done={stepsDone} />}
 
@@ -348,7 +351,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                   : subscribed
                     ? "Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
                     : offerTrial
-                      ? `${profile.email_confirmed ? "Add" : "Confirm your email, then add"} a card to start your ${TRIAL_DAYS}-day free trial, then send it. You're not charged until the trial ends.`
+                      ? `Add a card to start your ${TRIAL_DAYS}-day free trial, then send it. You're not charged until the trial ends.`
                       : "Subscribe to start sending pay links."
             }
           >

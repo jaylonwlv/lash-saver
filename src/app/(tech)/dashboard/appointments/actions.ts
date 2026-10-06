@@ -39,7 +39,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     supabase
       .from("profiles")
       .select(
-        "timezone, subscription_status, deposit_method, stripe_charges_enabled, cashapp_tag, zelle_contact, venmo_handle, email_confirmed",
+        "timezone, subscription_status, deposit_method, stripe_charges_enabled, cashapp_tag, zelle_contact, venmo_handle",
       )
       .eq("id", user.id)
       .single(),
@@ -51,9 +51,6 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       .maybeSingle(),
   ]);
   if (!profile) throw new Error("Profile not found");
-  if (!profile.email_confirmed) {
-    return { message: "Confirm your email before sending pay links.", values };
-  }
   if (!canTakeDeposits(profile)) {
     return { message: "Set up deposits on your dashboard before creating pay links.", values };
   }
