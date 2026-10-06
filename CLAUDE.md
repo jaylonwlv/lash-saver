@@ -167,7 +167,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 
 **Ads measurement (Meta)**
 
-- Off unless `NEXT_PUBLIC_META_PIXEL_ID` and `META_CAPI_TOKEN` are set. The browser Pixel runs on marketing pages and sign-in only; never add it to pay links, menu pages or the dashboard.
+- Off unless `NEXT_PUBLIC_META_PIXEL_ID` and `META_CAPI_TOKEN` are set. The browser Pixel runs on marketing pages and sign-in only; never add it to pay links, menu pages or the dashboard. The snippet is inline HTML at the top of the page (`components/meta-pixel.tsx`), not a script that waits for hydration: waiting took 2–3 s on phones and lost most landing page views from ad clicks. `PixelPageViews` tracks client-side navigations only.
 - Landing "Start free" buttons go to `/login?start=1` (sign-up wording). That page fires two browser Pixel funnel events via `trackPixel` (no email): `StartSignup` (custom) on arrival and `Lead` when the code is sent.
 - Conversions go server-side through `lib/meta.ts`, for pros only (never client data): `CompleteRegistration` on a new pro's first sign-in, `StartTrial` when a trial starts, `Purchase` whenever a pro adds their card in Checkout (trial or not, value $29), `Subscribe` on the first paid period. Each has a stable `event_id` so Meta drops duplicates. Tracking failures are logged, never thrown.
 - If this changes what's shared with Meta, update the Privacy Policy.
