@@ -15,7 +15,7 @@ export function TechNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="border-line bg-surface/95 fixed inset-x-0 bottom-0 z-10 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav className="bg-ink fixed inset-x-0 bottom-0 z-10 pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto flex max-w-2xl">
         {items.map((item) => {
           // Clients lives under Appointments in the tab bar.
@@ -30,8 +30,8 @@ export function TechNav() {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-14 items-center justify-center text-sm font-medium ${
-                  active ? "text-brand" : "text-muted"
+                className={`flex min-h-14 items-center justify-center text-sm font-semibold ${
+                  active ? "text-pink" : "text-white/60"
                 }`}
               >
                 {item.label}

@@ -76,6 +76,10 @@
   --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-bricolage);
+  /* Primary buttons: the brand color unless an area sets --action (the pro's app: hot pink, black text). */
+  --color-action: var(--action, var(--brand));
+  --color-action-foreground: var(--action-foreground, var(--brand-foreground));
 }
 
 body {

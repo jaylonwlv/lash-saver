@@ -33,17 +33,19 @@ export function SavedReplyCard() {
   if (doneBefore || done) return null;
 
   return (
-    <section className="border-brand bg-surface flex flex-col gap-4 rounded-2xl border-2 p-5">
+    <section className="border-ink bg-surface flex flex-col gap-4 rounded-[22px] border-2 p-5">
       <div className="flex flex-col gap-1">
         <p className="text-brand text-xs font-semibold tracking-wide uppercase">1-minute setup</p>
-        <h2 className="text-lg font-bold">Add {APP_NAME} to your DMs</h2>
+        <h2 className="font-display text-xl font-extrabold tracking-tight">
+          Add {APP_NAME} to your DMs
+        </h2>
         <p className="text-muted text-sm">
           Save this as an Instagram quick reply. When a client asks for a time, type{" "}
           <strong className="text-foreground">{SHORTCUT}</strong> in the chat, send it, then tap New
           appointment here and share the pay link.
         </p>
       </div>
-      <CopyLink url={MESSAGE} label="Copy the message" prose />
+      <CopyLink url={MESSAGE} label="Copy the message" prose tinted />
       {showSteps ? (
         <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm">
           <li>

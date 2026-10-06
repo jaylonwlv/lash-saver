@@ -1,6 +1,7 @@
 "use client";
 
 import Image, { type StaticImageData } from "next/image";
+import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { APP_NAME } from "@/lib/config";
 import { isInAppBrowser } from "@/lib/in-app-browser";
@@ -58,7 +59,12 @@ function dismissedSnapshot(): boolean {
 /** Chrome's install prompt event (not in the DOM types). */
 type InstallPromptEvent = Event & { prompt: () => Promise<void> };
 
-export function InstallBanner() {
+/**
+ * `layout` sits above every page; the dashboard renders its own (`page`) under its
+ * pink greeting, so the header and greeting read as one band.
+ */
+export function InstallBanner({ placement }: { placement: "layout" | "page" }) {
+  const pathname = usePathname();
   const where = useSyncExternalStore(noSubscribe, whereSnapshot, serverNull);
   const dismissedBefore = useSyncExternalStore(noSubscribe, dismissedSnapshot, () => true);
   const [dismissed, setDismissed] = useState(false);
@@ -75,11 +81,15 @@ export function InstallBanner() {
   }, []);
 
   if (!where || where === "installed" || where === "desktop") return null;
+  if ((placement === "layout") === (pathname === "/dashboard")) return null;
+  const spacing = placement === "layout" ? "mb-6" : "";
 
   // Inside Instagram: always shown (it's why they keep getting signed out), but compact.
   if (where === "instagram-ios" || where === "instagram-android") {
     return (
-      <section className="bg-ink mb-6 flex flex-col gap-2 rounded-2xl p-4 text-sm text-white">
+      <section
+        className={`bg-ink flex flex-col gap-2 rounded-2xl p-4 text-sm text-white ${spacing}`}
+      >
         <p className="text-pink text-xs font-semibold tracking-wide uppercase">Stay signed in</p>
         <p className="font-semibold">
           You&apos;re in Instagram&apos;s browser, which won&apos;t keep you signed in once you
@@ -120,7 +130,7 @@ export function InstallBanner() {
 
   return (
     <>
-      <section className="bg-ink mb-6 flex flex-col gap-3 rounded-2xl p-5 text-white">
+      <section className={`bg-ink flex flex-col gap-3 rounded-2xl p-5 text-white ${spacing}`}>
         <div className="flex items-center gap-3">
           <span
             aria-hidden
@@ -242,7 +252,7 @@ function HomeScreenSteps({ ios, onClose }: { ios: boolean; onClose: () => void }
           {steps.map((step, i) => (
             <li key={i} className="flex flex-col gap-3">
               <div className="flex gap-3">
-                <span className="bg-brand text-brand-foreground flex size-8 shrink-0 items-center justify-center rounded-full font-bold">
+                <span className="bg-action text-action-foreground flex size-8 shrink-0 items-center justify-center rounded-full font-bold">
                   {i + 1}
                 </span>
                 <p className="pt-1">{step.text}</p>
@@ -266,7 +276,7 @@ function HomeScreenSteps({ ios, onClose }: { ios: boolean; onClose: () => void }
         <button
           type="button"
           onClick={onClose}
-          className="bg-brand text-brand-foreground inline-flex min-h-12 items-center justify-center rounded-xl px-4 font-semibold"
+          className="bg-action text-action-foreground inline-flex min-h-12 items-center justify-center rounded-xl px-4 font-semibold"
         >
           Got it
         </button>

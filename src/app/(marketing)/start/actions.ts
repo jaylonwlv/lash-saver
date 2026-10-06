@@ -93,7 +93,7 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     console.error("Instant sign-up: signing in failed", linkError ?? session?.error);
     return sendCode(data.email, values, READY_MESSAGE);
   }
-  await trackSignUp(session.data.user);
+  await trackSignUp(session.data.user, "/start");
   // A plain note from the founder, sent after the response so sign-up never waits on email.
   const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
   const techId = created.user.id;

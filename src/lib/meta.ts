@@ -93,16 +93,18 @@ async function send(
   }
 }
 
-/** A pro signed in for the first time (their account is under an hour old). */
-export async function trackSignUp(user: {
-  id: string;
-  email?: string | null;
-  created_at: string;
-}): Promise<void> {
+/**
+ * A pro signed in for the first time (their account is under an hour old).
+ * `sourcePath` is the page it happened on: /start for instant sign-up, else /login.
+ */
+export async function trackSignUp(
+  user: { id: string; email?: string | null; created_at: string },
+  sourcePath: "/start" | "/login" = "/login",
+): Promise<void> {
   if (Date.now() - new Date(user.created_at).getTime() > 60 * 60 * 1000) return;
   await send("CompleteRegistration", `signup-${user.id}`, user.id, user.email ?? null, {
     browser: true,
-    sourcePath: "/login",
+    sourcePath,
   });
 }
 

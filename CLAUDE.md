@@ -208,7 +208,8 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Tap targets are at least 44px (`min-h-12` on buttons and inputs). Inputs use `text-base` so iOS doesn't zoom in on focus.
 - Use single-column layouts, primary actions at the bottom within thumb reach, and respect `env(safe-area-inset-*)`.
 - Use the right `type`, `inputMode` and `autoComplete` on inputs (`email`, `tel`, `name`).
-- Use the design tokens, not raw hex colors. Brand colors are black (`ink`) and hot pink (`pink`). Marketing pages and sign-in set `data-theme="dark"` (black, hot-pink buttons with black text); a nested `data-theme="light"` gives a light band. Pay links and the dashboard stay light (deeper rose `brand`, which holds white text) with a black header.
+- Use the design tokens, not raw hex colors. Brand colors are black (`ink`) and hot pink (`pink`). Marketing pages and sign-in set `data-theme="dark"` (black, hot-pink buttons with black text); a nested `data-theme="light"` gives a light band. Pay links stay light (deeper rose `brand`, which holds white text) with a black header.
+- The pro's app ("Pink Pop"): pink header with the lowercase wordmark (`APP_NAME.toLowerCase()` + a white dot) in the display face (`font-display`, Bricolage Grotesque; page `h1`s use it too), black tab bar, and primary buttons in hot pink with black text: `(tech)/layout.tsx` sets `--action`/`--action-foreground`, which `bg-action` in `Button` reads (elsewhere it falls back to `brand`). Links stay `text-brand`: hot-pink text on cream is too faint. The dashboard's greeting continues the header as one pink band, so it renders its own `<InstallBanner placement="page" />` below it. Emoji stay neutral for every kind of pro (📅, 👥, 👋).
 - Every inner tech page starts with `<BackLink>` to its parent (Services → Dashboard, Edit service → Services). Don't rely on the bottom tab bar alone.
 
 ## Commands

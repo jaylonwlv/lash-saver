@@ -15,6 +15,7 @@ import { canSendPayLinks } from "@/lib/subscription";
 import { loadSavings, savingsSummary } from "@/lib/savings";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
 import { TradePicker } from "./onboarding/trade-picker";
+import { InstallBanner } from "../install-banner";
 import { SavedReplyCard } from "./saved-reply-card";
 import { startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
@@ -96,12 +97,43 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const offerTrial =
     !subscribed && !firstLinkSent ? await trialEligible(user!.id).catch(() => false) : false;
   const menuUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
+  const trialDaysLeft =
+    profile.subscription_status === "trialing" && profile.trial_ends_at
+      ? Math.max(
+          0,
+          Math.ceil(
+            (new Date(profile.trial_ends_at).getTime() - new Date().getTime()) / 86_400_000,
+          ),
+        )
+      : null;
+  // Everything done and no example prices left: the checklist shrinks to one line.
+  const setupComplete = allDone && firstLinkSent && !starterServices;
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">
-        Hi{profile.business_name ? `, ${profile.business_name}` : ""}
-      </h1>
+    <div className="flex flex-col gap-5">
+      {/* Continues the pink header into one band on phones. */}
+      <section className="bg-pink text-ink -mx-5 -mt-6 flex flex-col items-start gap-3 rounded-b-[28px] px-5 pt-2 pb-6 sm:mx-0 sm:mt-0 sm:rounded-[28px] sm:pt-6">
+        <h1
+          className={`${(profile.business_name?.length ?? 0) > 22 ? "text-[26px]" : "text-[32px]"} leading-[1.05] font-extrabold break-words`}
+        >
+          Hey{profile.business_name ? `, ${profile.business_name}` : ""}
+          {/* No break before the wave, so it never sits alone on a line. */}
+          {"\u00a0👋"}
+        </h1>
+        {trialDaysLeft !== null && (
+          <Link
+            href="/dashboard/billing"
+            className="bg-ink text-pink inline-flex min-h-11 items-center rounded-full px-4 text-sm font-bold"
+          >
+            {profile.cancel_at_period_end
+              ? `Trial ends ${formatDate(profile.trial_ends_at!, profile.timezone)} · cancelled`
+              : trialDaysLeft === 0
+                ? "Free trial · ends today"
+                : `Free trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left`}
+          </Link>
+        )}
+      </section>
+      <InstallBanner placement="page" />
       {!firstLinkSent && <SetupProgress done={stepsDone} />}
 
       {profile.subscription_status === "past_due" && (
@@ -113,20 +145,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           pay links.
         </Link>
       )}
-      {profile.subscription_status === "trialing" && profile.trial_ends_at && (
-        <Link
-          href="/dashboard/billing"
-          className="border-line bg-surface text-muted rounded-2xl border p-4 text-sm"
-        >
-          Free trial until {formatDate(profile.trial_ends_at, profile.timezone)}
-          {profile.cancel_at_period_end ? " (cancelled)" : ""}. Manage billing →
-        </Link>
-      )}
-
       {savings && (
-        <section className="bg-ink flex flex-col gap-2 rounded-2xl p-5 text-white">
-          <p className="text-pink text-xs font-semibold tracking-wide uppercase">Your results</p>
-          <h2 className="text-2xl font-bold">{savings.headline}</h2>
+        <section className="bg-ink flex flex-col gap-2 rounded-[22px] p-5 text-white">
+          <p className="text-pink text-xs font-bold tracking-[0.08em] uppercase">Your results</p>
+          <h2 className="font-display text-pink text-[32px] leading-[1.05] font-extrabold tracking-tight">
+            {savings.headline}
+          </h2>
           {savings.lines.length > 0 && (
             <ul className="flex flex-col gap-1 text-sm text-white/80">
               {savings.lines.map((line) => (
@@ -158,33 +182,48 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
       {allDone && menuUrl ? (
         <>
-          <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
-            <h2 className="font-semibold">Book a client</h2>
-            <p className="text-muted text-sm">
-              Agree on a time in your DMs, then create a pay link. The client pays the deposit to
-              lock in their spot.
-            </p>
-            <ButtonLink href="/dashboard/appointments/new">New appointment</ButtonLink>
-            <ButtonLink href="/dashboard/appointments" variant="secondary">
-              See appointments
-            </ButtonLink>
-            <ButtonLink href="/dashboard/clients" variant="secondary">
-              Your clients
-            </ButtonLink>
-          </section>
+          <Link
+            href="/dashboard/appointments/new"
+            className="bg-ink flex min-h-24 items-center justify-between gap-4 rounded-[22px] p-5 text-white active:opacity-90"
+          >
+            <span className="flex flex-col gap-1">
+              <span className="font-display text-[22px] leading-tight font-extrabold tracking-tight">
+                New appointment
+              </span>
+              <span className="text-sm text-white/70">
+                Agreed on a time in your DMs? Make the pay link. The deposit locks in their spot.
+              </span>
+            </span>
+            <span
+              aria-hidden
+              className="bg-pink text-ink flex size-13 shrink-0 items-center justify-center rounded-full text-3xl leading-none font-extrabold"
+            >
+              +
+            </span>
+          </Link>
+          <div className="grid grid-cols-2 gap-3">
+            <Tile href="/dashboard/appointments" emoji="📅" label="Appointments" />
+            <Tile href="/dashboard/clients" emoji="👥" label="Your clients" />
+          </div>
           <SavedReplyCard />
-          <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
-            <h2 className="font-semibold">Your menu page, for your bio</h2>
+          <section className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]">
+            <h2 className="font-display text-xl font-extrabold tracking-tight">Your menu page</h2>
             <p className="text-muted text-sm">
-              Your services, prices and policy on one page. Put it in your Instagram bio so people
-              can see what you offer, then message you to book.
+              Your services, prices and policy on one page, for your Instagram bio. People see what
+              you offer, then message you to book.
             </p>
-            <p className="bg-background rounded-xl p-3 text-sm">
-              <strong>This isn&apos;t a pay link.</strong> It doesn&apos;t book anyone or take a
-              deposit. To lock in a client, tap <strong>New appointment</strong> and send them the
-              pay link it makes.
+            <CopyLink
+              url={menuUrl}
+              display={menuUrl.replace(/^https?:\/\//, "")}
+              label="Copy menu page link"
+              tinted
+            />
+            <p className="text-muted text-sm">
+              <strong className="text-foreground">This isn&apos;t a pay link.</strong> It
+              doesn&apos;t book anyone or take a deposit. To lock in a client, tap{" "}
+              <strong className="text-foreground">New appointment</strong> and send them the pay
+              link it makes.
             </p>
-            <CopyLink url={menuUrl} label="Copy menu page link" variant="secondary" />
             <Link
               href={menuUrl}
               target="_blank"
@@ -198,99 +237,129 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         <p className="text-muted">Finish these steps to start taking deposits.</p>
       )}
 
-      <ol className="flex flex-col gap-3">
-        <Step
-          number={1}
-          title="Set up your profile"
-          status={profileDone ? "done" : "todo"}
-          description={
-            profileDone
-              ? `Your menu page is at /b/${profile.slug}.`
-              : "Your business name, menu page link and cancellation policy."
-          }
-        >
-          <ButtonLink href="/dashboard/profile" variant={profileDone ? "secondary" : "primary"}>
-            {profileDone ? "Edit profile" : "Set up profile"}
-          </ButtonLink>
-        </Step>
-
-        <Step
-          number={2}
-          title="Set up deposits"
-          status={stripeStatus}
-          description={
-            stripeStatus === "done"
-              ? manual
-                ? `Clients pay you with ${handles.map((h) => h.label).join(", ")}. You confirm each deposit.`
-                : "Clients pay by card or Apple Pay, and deposits go to your bank automatically."
-              : stripeStatus === "waiting"
-                ? "Stripe is checking your details. This usually takes a few minutes; if Stripe needs anything else, tap below."
-                : "Choose how clients pay you. Keep your Cash App, Zelle or Venmo (2 minutes), or take cards automatically with Stripe."
-          }
-        >
-          {stripeStatus === "done" ? (
-            <ButtonLink href="/dashboard/payments" variant="secondary">
-              Deposit settings
-            </ButtonLink>
-          ) : stripeStatus === "waiting" ? (
-            <StripeButton action={startStripeOnboarding} label="Check Stripe details" />
-          ) : (
-            <>
-              <ButtonLink href="/dashboard/payments">Use Cash App, Zelle or Venmo</ButtonLink>
-              <ButtonLink href="/dashboard/payments" variant="secondary">
-                Take cards with Stripe
-              </ButtonLink>
-            </>
-          )}
-        </Step>
-
-        <Step
-          number={3}
-          title="Add your services"
-          status={servicesDone ? "done" : "todo"}
-          description={
-            starterServices
-              ? `${starterServices} still ${starterServices === 1 ? "has an example price" : "have example prices"}. Edit them to match what you charge.`
-              : servicesDone
-                ? `${activeServices} service${activeServices === 1 ? "" : "s"} on your menu page.`
-                : "What you offer, how long it takes, the price and the deposit."
-          }
-        >
-          <ButtonLink
-            href={servicesDone ? "/dashboard/services" : "/dashboard/services/new"}
-            variant={servicesDone && !starterServices ? "secondary" : "primary"}
+      {setupComplete ? (
+        <section className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]">
+          <p className="flex items-center gap-3 font-bold">
+            <span
+              aria-hidden
+              className="bg-pink text-ink flex size-7 items-center justify-center rounded-full text-sm"
+            >
+              ✓
+            </span>
+            All set up
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { href: "/dashboard/profile", label: "Profile" },
+              { href: "/dashboard/payments", label: "Deposits" },
+              { href: "/dashboard/services", label: "Services" },
+              { href: "/dashboard/billing", label: "Billing" },
+            ].map((chip) => (
+              <Link
+                key={chip.href}
+                href={chip.href}
+                className="border-ink active:bg-background inline-flex min-h-11 items-center justify-center rounded-full border-2 px-4 text-sm font-semibold"
+              >
+                {chip.label}
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <ol className="flex flex-col gap-3">
+          <Step
+            number={1}
+            title="Set up your profile"
+            status={profileDone ? "done" : "todo"}
+            description={
+              profileDone
+                ? `Your menu page is at /b/${profile.slug}.`
+                : "Your business name, menu page link and cancellation policy."
+            }
           >
-            {starterServices
-              ? "Set your prices"
-              : servicesDone
-                ? "Manage services"
-                : "Add a service"}
-          </ButtonLink>
-        </Step>
-
-        <Step
-          number={4}
-          title="Send your first pay link"
-          status={firstLinkSent ? "done" : "todo"}
-          description={
-            firstLinkSent
-              ? "You're taking deposits. Make a pay link whenever you book a client."
-              : !allDone
-                ? `Unlocks after the steps above.${offerTrial ? ` Adding a card for your first pay link starts your ${TRIAL_DAYS}-day free trial.` : ""}`
-                : subscribed
-                  ? "Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
-                  : offerTrial
-                    ? `${profile.email_confirmed ? "Add" : "Confirm your email, then add"} a card to start your ${TRIAL_DAYS}-day free trial, then send it. You're not charged until the trial ends.`
-                    : "Subscribe to start sending pay links."
-          }
-        >
-          {allDone && !firstLinkSent && (
-            <ButtonLink href="/dashboard/appointments/new">
-              {subscribed ? "New appointment" : offerTrial ? "Start free trial" : "Subscribe"}
+            <ButtonLink href="/dashboard/profile" variant={profileDone ? "secondary" : "primary"}>
+              {profileDone ? "Edit profile" : "Set up profile"}
             </ButtonLink>
-          )}
-        </Step>
-      </ol>
+          </Step>
+
+          <Step
+            number={2}
+            title="Set up deposits"
+            status={stripeStatus}
+            description={
+              stripeStatus === "done"
+                ? manual
+                  ? `Clients pay you with ${handles.map((h) => h.label).join(", ")}. You confirm each deposit.`
+                  : "Clients pay by card or Apple Pay, and deposits go to your bank automatically."
+                : stripeStatus === "waiting"
+                  ? "Stripe is checking your details. This usually takes a few minutes; if Stripe needs anything else, tap below."
+                  : "Choose how clients pay you. Keep your Cash App, Zelle or Venmo (2 minutes), or take cards automatically with Stripe."
+            }
+          >
+            {stripeStatus === "done" ? (
+              <ButtonLink href="/dashboard/payments" variant="secondary">
+                Deposit settings
+              </ButtonLink>
+            ) : stripeStatus === "waiting" ? (
+              <StripeButton action={startStripeOnboarding} label="Check Stripe details" />
+            ) : (
+              <>
+                <ButtonLink href="/dashboard/payments">Use Cash App, Zelle or Venmo</ButtonLink>
+                <ButtonLink href="/dashboard/payments" variant="secondary">
+                  Take cards with Stripe
+                </ButtonLink>
+              </>
+            )}
+          </Step>
+
+          <Step
+            number={3}
+            title="Add your services"
+            status={servicesDone ? "done" : "todo"}
+            description={
+              starterServices
+                ? `${starterServices} still ${starterServices === 1 ? "has an example price" : "have example prices"}. Edit them to match what you charge.`
+                : servicesDone
+                  ? `${activeServices} service${activeServices === 1 ? "" : "s"} on your menu page.`
+                  : "What you offer, how long it takes, the price and the deposit."
+            }
+          >
+            <ButtonLink
+              href={servicesDone ? "/dashboard/services" : "/dashboard/services/new"}
+              variant={servicesDone && !starterServices ? "secondary" : "primary"}
+            >
+              {starterServices
+                ? "Set your prices"
+                : servicesDone
+                  ? "Manage services"
+                  : "Add a service"}
+            </ButtonLink>
+          </Step>
+
+          <Step
+            number={4}
+            title="Send your first pay link"
+            status={firstLinkSent ? "done" : "todo"}
+            description={
+              firstLinkSent
+                ? "You're taking deposits. Make a pay link whenever you book a client."
+                : !allDone
+                  ? `Unlocks after the steps above.${offerTrial ? ` Adding a card for your first pay link starts your ${TRIAL_DAYS}-day free trial.` : ""}`
+                  : subscribed
+                    ? "Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
+                    : offerTrial
+                      ? `${profile.email_confirmed ? "Add" : "Confirm your email, then add"} a card to start your ${TRIAL_DAYS}-day free trial, then send it. You're not charged until the trial ends.`
+                      : "Subscribe to start sending pay links."
+            }
+          >
+            {allDone && !firstLinkSent && (
+              <ButtonLink href="/dashboard/appointments/new">
+                {subscribed ? "New appointment" : offerTrial ? "Start free trial" : "Subscribe"}
+              </ButtonLink>
+            )}
+          </Step>
+        </ol>
+      )}
 
       {profileDone && !allDone && menuUrl && (
         <p className="text-muted text-sm">
@@ -316,8 +385,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
  */
 function SetupProgress({ done }: { done: number }) {
   return (
-    <section className="bg-ink flex flex-col gap-3 rounded-2xl p-5 text-white">
-      <p className="text-lg font-bold">
+    <section className="bg-ink flex flex-col gap-3 rounded-[22px] p-5 text-white">
+      <p className="font-display text-xl font-extrabold tracking-tight">
         {done} of 4 done
         {done === 3 ? <span className="text-pink"> · one step to your first pay link</span> : null}
       </p>
@@ -330,6 +399,21 @@ function SetupProgress({ done }: { done: number }) {
         ))}
       </div>
     </section>
+  );
+}
+
+/** A square shortcut on the dashboard. Labels shrink on the narrowest phones so they fit. */
+function Tile({ href, emoji, label }: { href: string; emoji: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="border-ink bg-surface active:bg-background flex min-h-24 flex-col justify-between gap-3 rounded-[18px] border-2 p-4"
+    >
+      <span aria-hidden className="text-2xl leading-none">
+        {emoji}
+      </span>
+      <span className="text-base font-bold max-[359px]:text-sm">{label}</span>
+    </Link>
   );
 }
 
@@ -353,24 +437,22 @@ function Step({
   children: ReactNode;
 }) {
   return (
-    <li className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
-      <div className="flex items-start justify-between gap-3">
+    <li className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
             aria-hidden
             className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-              status === "done"
-                ? "bg-success text-brand-foreground"
-                : "bg-background text-foreground"
+              status === "done" ? "bg-pink text-ink" : "bg-background text-foreground"
             }`}
           >
             {status === "done" ? "✓" : number}
           </span>
-          <h2 className="font-semibold">{title}</h2>
+          <h2 className="font-display text-lg font-bold tracking-tight">{title}</h2>
         </div>
         <span
           className={`shrink-0 text-xs font-medium ${
-            status === "done" ? "text-success" : "text-muted"
+            status === "done" ? "text-foreground" : "text-muted"
           }`}
         >
           {statusLabel[status]}

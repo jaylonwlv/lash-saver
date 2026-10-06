@@ -9,11 +9,17 @@ export function CopyLink({
   label = "Copy link",
   prose = false,
   variant = "primary",
+  tinted = false,
+  display,
 }: {
   url: string;
   label?: string;
   prose?: boolean;
   variant?: "primary" | "secondary";
+  /** Pink box instead of a grey one. */
+  tinted?: boolean;
+  /** What to show, if not the copied text itself (e.g. a link without "https://"). */
+  display?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -30,9 +36,9 @@ export function CopyLink({
   return (
     <div className="flex flex-col gap-3">
       <p
-        className={`border-line bg-background rounded-xl border px-4 py-3 text-sm select-all ${prose ? "whitespace-pre-line" : "break-all"}`}
+        className={`rounded-xl px-4 py-3 text-sm select-all ${tinted ? "bg-pink/15 font-semibold" : "border-line bg-background border"} ${prose ? "whitespace-pre-line" : "break-all"}`}
       >
-        {url}
+        {display ?? url}
       </p>
       <Button type="button" variant={variant} onClick={copy}>
         {copied ? "Copied!" : label}
