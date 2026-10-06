@@ -16,6 +16,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
   description: "Deposits and no-show protection for pros who book through Instagram DMs.",
+  // Added to the Home Screen, Dibs opens full screen with a black status bar.
+  appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {

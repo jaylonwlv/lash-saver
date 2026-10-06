@@ -53,6 +53,9 @@ src/
                                   Mail / Outlook" button picked from the email domain and phone (inbox.ts)
     auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
+    (tech)/install-banner.tsx     Pros sign up inside Instagram's browser, whose sign-in doesn't carry over: banner
+                                  says open in Safari / Chrome (Android intent link), then "Add to Home Screen"
+                                  (dismissible); hidden once running from the Home Screen. manifest.ts + public/icon-*.png
     (tech)/dashboard/             Tech home: setup checklist (profile → Stripe → services), menu page link
     (tech)/dashboard/onboarding/  First-visit "What do you do?" picker: one tap saves profiles.trade and, for a pro
                                   with no services, adds that trade's starter menu (services.is_starter, shown as

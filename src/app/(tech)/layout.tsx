@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { APP_NAME } from "@/lib/config";
 import { getUser } from "@/lib/supabase/server";
+import { InstallBanner } from "./install-banner";
 import { TechNav } from "./nav";
 
 export default async function TechLayout({ children }: LayoutProps<"/">) {
@@ -19,6 +20,7 @@ export default async function TechLayout({ children }: LayoutProps<"/">) {
       </header>
       {/* Bottom padding clears the fixed tab bar. */}
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+        <InstallBanner />
         {children}
       </main>
       <TechNav />
