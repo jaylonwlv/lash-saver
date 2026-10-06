@@ -49,11 +49,24 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     email_confirm: true,
   });
   if (createError || !created.user) {
-    if (createError?.code === "email_exists" || createError?.status === 422) {
+    if (
+      createError?.code === "email_exists" ||
+      /already been registered/i.test(createError?.message ?? "")
+    ) {
       return sendCode(data.email, values);
     }
     console.error("Instant sign-up: creating the user failed", createError);
     return { message: "We couldn't create your account. Try again in a minute.", values };
+  }
+
+  // Not proven yet: this must stick before signing in, or pay links wouldn't wait for it.
+  const { error: flagError } = await admin
+    .from("profiles")
+    .update({ email_confirmed: false })
+    .eq("id", created.user.id);
+  if (flagError) {
+    console.error(`Instant sign-up: flagging ${created.user.id} unconfirmed failed`, flagError);
+    return sendCode(data.email, values, READY_MESSAGE);
   }
 
   // A failure here leaves the dashboard checklist to finish setup; the account is still good.
@@ -75,7 +88,7 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     : null;
   if (!session || session.error || !session.data.user) {
     console.error("Instant sign-up: signing in failed", linkError ?? session?.error);
-    return sendCode(data.email, values);
+    return sendCode(data.email, values, READY_MESSAGE);
   }
   await trackSignUp(session.data.user);
 
@@ -83,14 +96,20 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
   redirect("/dashboard");
 }
 
-/** Emails a sign-in code; the page then shows the code form. */
-async function sendCode(email: string, values: Record<string, string>): Promise<StartState> {
+const READY_MESSAGE = "Your account is ready. We emailed you a code to sign in.";
+
+/** Emails a sign-in code; the page then shows the code form (with `message`, if given). */
+async function sendCode(
+  email: string,
+  values: Record<string, string>,
+  message?: string,
+): Promise<StartState> {
   const form = new FormData();
   form.set("email", email);
   form.set("next", "/dashboard");
   const sent = await sendMagicLink({}, form);
   if (sent.error) return { message: sent.error, values };
-  return { existing: email, values };
+  return { existing: email, values, ...(message ? { message } : {}) };
 }
 
 async function setUpAccount(
@@ -108,7 +127,6 @@ async function setUpAccount(
     ...(trade
       ? { cancellation_window_hours: trade.windowHours, policy_text: trade.policyText }
       : {}),
-    email_confirmed: false,
   };
 
   // The menu page link comes from the business name; add a number if it's taken.

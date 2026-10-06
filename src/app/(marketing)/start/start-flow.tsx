@@ -98,8 +98,11 @@ export function StartFlow({
   }, [step]);
   // A server error on a business field: show it where it can be fixed (once per response).
   const [seenState, setSeenState] = useState(state);
+  // Turnstile tokens work once: a fresh widget after every reply gives the next try a new one.
+  const [attempt, setAttempt] = useState(0);
   if (state !== seenState) {
     setSeenState(state);
+    setAttempt((n) => n + 1);
     setClearedServer([]);
     if (Object.keys(state.errors ?? {}).some((k) => BUSINESS_FIELDS.includes(k))) {
       setStep("business");
@@ -114,7 +117,9 @@ export function StartFlow({
   if (state.existing) {
     return (
       <section className="flex flex-col gap-4 pt-6">
-        <h1 className="text-2xl font-bold">Welcome back</h1>
+        <h1 className="text-2xl font-bold">
+          {state.message ? "Check your email" : "Welcome back"}
+        </h1>
         <p className="text-muted">
           {state.message ?? "That email already has an account, so we sent you a sign-in code."}
         </p>
@@ -365,7 +370,7 @@ export function StartFlow({
           error={errors.email}
           required
         />
-        {turnstileSiteKey && <Turnstile siteKey={turnstileSiteKey} />}
+        {turnstileSiteKey && <Turnstile key={attempt} siteKey={turnstileSiteKey} />}
         {state.message && <p className="text-danger text-sm">{state.message}</p>}
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save and continue"}
