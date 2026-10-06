@@ -29,6 +29,7 @@ export class ResendEmailNotifier implements Notifier {
       subject: message.subject,
       text: message.text,
       html: message.html,
+      attachments: message.attachments,
     });
 
     if (error) return { ok: false, channel: this.channel, error: error.message };

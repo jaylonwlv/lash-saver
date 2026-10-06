@@ -66,7 +66,7 @@ export function depositAnnouncement(windowHours: number): string {
 
 When we pick a time, I'll send you a link to lock in your spot. Thank you!`;
 }
-export const LEGAL_UPDATED = "October 6, 2026";
+export const LEGAL_UPDATED = "October 7, 2026";
 
 /** Graph API version for the Meta Conversions API. Meta supports each for about two years. */
 export const META_GRAPH_API_VERSION = "v23.0";

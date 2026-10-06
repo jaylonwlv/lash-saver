@@ -3,6 +3,7 @@
 import Image, { type StaticImageData } from "next/image";
 import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { APP_NAME } from "@/lib/config";
+import { isInAppBrowser } from "@/lib/in-app-browser";
 import stepAddToHomeScreen from "./images/home-screen-step-2.jpg";
 import stepAdd from "./images/home-screen-step-3.jpg";
 
@@ -30,8 +31,7 @@ function whereSnapshot(): Where {
   if (standalone) return "installed";
   const ios = /iPhone|iPad|iPod/i.test(ua);
   const android = /Android/i.test(ua);
-  // Instagram's and Facebook's in-app browsers.
-  if (/Instagram|FBAN|FBAV|FB_IAB/i.test(ua)) {
+  if (isInAppBrowser(ua)) {
     if (ios) return "instagram-ios";
     if (android) return "instagram-android";
   }

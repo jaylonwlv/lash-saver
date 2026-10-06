@@ -16,6 +16,8 @@ export type RenderedMessage = {
   fromName?: string;
   /** Where replies go, instead of EMAIL_REPLY_TO. */
   replyTo?: string;
+  /** Email only (texts can't carry files), e.g. a calendar invite. */
+  attachments?: { filename: string; content: string; contentType: string }[];
 };
 
 export type SendResult =

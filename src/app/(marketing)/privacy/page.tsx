@@ -113,6 +113,12 @@ export default function PrivacyPage() {
             and payment handles are shown to their clients.
           </li>
           <li>
+            <strong>Calendars you choose to use:</strong> a client who adds their appointment to
+            their calendar, or a pro who subscribes their calendar (such as Apple Calendar or Google
+            Calendar) to their appointments, sends those appointment details to that calendar
+            provider. A pro&apos;s calendar link is private and can be reset in the app at any time.
+          </li>
+          <li>
             <strong>Service providers</strong> who run parts of {APP_NAME} for us, under their own
             privacy and security commitments: Supabase (database and sign-in), Vercel (hosting),
             Stripe (payments and billing), Resend (email), Cloudflare (a check on the sign-up page

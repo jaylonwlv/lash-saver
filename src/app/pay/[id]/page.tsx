@@ -14,6 +14,7 @@ import { formatCents } from "@/lib/money";
 import { formatWhen } from "@/lib/time";
 import { MANUAL_APP_LABEL, manualHandles, paymentAppUrl } from "@/lib/payments";
 import { cancelByClient, clientSentDeposit, payDeposit } from "./actions";
+import { AddToCalendar } from "./add-to-calendar";
 import { CancelForm } from "./cancel-form";
 import { ManualPayForm } from "./manual-pay-form";
 import { PayForm } from "./pay-form";
@@ -92,6 +93,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
           <Notice tone="success">
             Your {formatCents(deposit)} deposit is paid. We emailed your confirmation. See you then!
           </Notice>
+          {upcoming && <AddToCalendar href={`/pay/${a.id}/calendar`} />}
           {upcoming && (
             <section className="flex flex-col gap-3">
               <h2 className="font-semibold">Can&apos;t make it?</h2>

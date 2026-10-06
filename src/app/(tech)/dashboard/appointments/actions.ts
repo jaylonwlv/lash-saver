@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
-import { cancelNote, loadAppointmentContext, payUrl } from "@/lib/appointments";
+import { cancelNote, clientCalendar, loadAppointmentContext, payUrl } from "@/lib/appointments";
 import { PAY_LINK_VALID_HOURS } from "@/lib/config";
 import { fieldErrors, formValues, type FormState } from "@/lib/forms";
 import { formatCents } from "@/lib/money";
@@ -297,6 +297,7 @@ export async function confirmManualDeposit(appointmentId: string): Promise<FormS
         amount: formatCents(appointment.deposit_cents),
         cancelNote: cancelNote(ctx),
         detailsUrl: payUrl(appointmentId),
+        calendar: clientCalendar(ctx),
       },
     });
   }
@@ -349,4 +350,20 @@ export async function markRefundSent(appointmentId: string): Promise<FormState> 
   if (error) throw new Error(`Marking refund sent failed: ${error.message}`);
   if (!data?.length) return { message: "There's no refund waiting on this appointment." };
   done(appointmentId);
+}
+
+/** New private calendar feed link; calendars on the old one stop updating. */
+export async function resetCalendarFeed(): Promise<FormState> {
+  const user = await getUser();
+  if (!user) redirect("/login");
+  const { error } = await (await createClient()).rpc("reset_calendar_token");
+  if (error) {
+    console.error("Resetting calendar feed failed", error);
+    return { message: "Couldn't reset it. Try again." };
+  }
+  revalidatePath("/dashboard/appointments");
+  return {
+    message:
+      "New link made. Remove the old calendar from your phone, then add it again with the buttons above.",
+  };
 }

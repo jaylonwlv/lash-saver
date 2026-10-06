@@ -1,5 +1,7 @@
 import "server-only";
+import { buildCalendar } from "@/lib/calendar";
 import { publicEnv } from "@/lib/env.public";
+import { formatCents } from "@/lib/money";
 import { formatWhen } from "@/lib/time";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Enums, Tables } from "@/lib/supabase/database.types";
@@ -137,4 +139,30 @@ export async function loadSettledDeposit(appointmentId: string) {
     .limit(1)
     .maybeSingle();
   return data;
+}
+
+/** Phone alert on the client's calendar event: in time to leave, on top of our 48h and 24h emails. */
+const CLIENT_ALARM_MINUTES = 120;
+
+/** Calendar event uids: stable per appointment, so adding it twice updates one event. */
+export const calendarUid = (appointmentId: string) =>
+  `${appointmentId}@${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}`;
+
+/** The client's booked appointment as an .ics file, with their cancel-by note and pay link. */
+export function clientCalendar(ctx: AppointmentContext): string {
+  const { appointment: a, tech, serviceName } = ctx;
+  const business = tech.business_name ?? "your provider";
+  const deposit = a.deposit_cents ? `${formatCents(a.deposit_cents)} deposit paid. ` : "";
+  return buildCalendar([
+    {
+      uid: calendarUid(a.id),
+      start: new Date(a.starts_at),
+      end: new Date(a.ends_at),
+      summary: `${serviceName} with ${business}`,
+      description: `${deposit}${cancelNote(ctx)}\n\nDetails, policy or cancel: ${payUrl(a.id)}`,
+      url: payUrl(a.id),
+      alarmMinutesBefore: CLIENT_ALARM_MINUTES,
+      status: "CONFIRMED",
+    },
+  ]);
 }

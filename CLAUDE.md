@@ -86,6 +86,11 @@ src/
                                   the phone's share sheet (Instagram, iMessage…); Copy message / Copy the link only as fallbacks
     (tech)/dashboard/clients/     Client list and [key] detail (record + appointments), built from appointments
     b/[slug]/page.tsx             Public menu page: services, how to book (DM), policy
+    pay/[id]/calendar/route.ts    The booked appointment as an .ics (Add to my calendar on the pay page; also attached
+                                  to the booking_confirmed email, so Apple Mail offers to add it). 2-hour phone alert.
+    api/calendar/[token]/         A pro's private calendar feed (/api/calendar/<profiles.calendar_token>.ics) for Apple
+                                  Calendar (webcal://) or Google Calendar: confirmed, waiting and past 60 days. The card is at
+                                  the bottom of Appointments; Reset link calls reset_calendar_token() (techs can't set it)
     pay/[id]/                     Public pay page: details, policy + agree checkbox → Stripe Checkout
     api/stripe/connect/webhook/   Connect events (account.updated)
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
@@ -94,6 +99,8 @@ src/
   components/meta-pixel.tsx       Meta Pixel; rendered by (marketing)/layout.tsx and the login page only
   lib/
     config.ts                     App constants (name, pay link validity, checkout lifetime, reminders)
+    calendar.ts                   .ics building (escaping, 75-byte folding, alarms); no server deps
+    in-app-browser.ts             isInAppBrowser(userAgent): Instagram / Facebook browsers
     time.ts                       Time zones: zonedTimeToUtc, wallClockParts, formatWhen (Intl only)
     appointments.ts               Status labels, payability, policySummary, cancellationTerms,
                                   cancelNote, loadAppointmentContext, loadSettledDeposit

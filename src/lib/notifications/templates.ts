@@ -20,6 +20,8 @@ export type TemplateData = {
     amount: string;
     cancelNote: string;
     detailsUrl: string;
+    /** The booking as an .ics file, attached so a tap adds it to their calendar. */
+    calendar?: string;
   };
   /** To the tech, when a client pays. */
   tech_deposit_paid: {
@@ -128,6 +130,17 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   booking_confirmed: (d) => ({
     subject: `You're booked with ${d.businessName}`,
     text: `You're booked! ${d.serviceName} with ${d.businessName} on ${d.when}. Your ${d.amount} deposit is paid. ${d.cancelNote} Details, policy or cancel: ${d.detailsUrl}`,
+    ...(d.calendar
+      ? {
+          attachments: [
+            {
+              filename: "appointment.ics",
+              content: d.calendar,
+              contentType: "text/calendar; charset=utf-8; method=PUBLISH",
+            },
+          ],
+        }
+      : {}),
   }),
   tech_deposit_paid: (d) => ({
     subject: `${d.clientName} paid their ${d.amount} deposit`,

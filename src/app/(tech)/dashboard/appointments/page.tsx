@@ -3,9 +3,12 @@ import Link from "next/link";
 import { BackLink } from "@/components/ui/back-link";
 import { ButtonLink } from "@/components/ui/button";
 import { STATUS_LABEL, payability } from "@/lib/appointments";
+import { publicEnv } from "@/lib/env.public";
 import type { Tables } from "@/lib/supabase/database.types";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatWhen } from "@/lib/time";
+import { resetCalendarFeed } from "./actions";
+import { CalendarFeed } from "./calendar-feed";
 
 export const metadata: Metadata = { title: "Appointments" };
 
@@ -33,7 +36,7 @@ export default async function AppointmentsPage() {
 
   const [{ data: profile }, { data: rows, error }, { data: services }, { data: owed }] =
     await Promise.all([
-      supabase.from("profiles").select("timezone").eq("id", user!.id).single(),
+      supabase.from("profiles").select("timezone, calendar_token").eq("id", user!.id).single(),
       supabase
         .from("appointments")
         .select(
@@ -113,6 +116,10 @@ export default async function AppointmentsPage() {
       <Section title="Upcoming" rows={upcoming} tz={tz} serviceName={serviceName} />
       <Section title="Waiting for deposit" rows={waiting} tz={tz} serviceName={serviceName} />
       <Section title={`Past ${PAST_DAYS} days`} rows={past} tz={tz} serviceName={serviceName} />
+      <CalendarFeed
+        feedUrl={`${publicEnv().NEXT_PUBLIC_APP_URL}/api/calendar/${profile.calendar_token}.ics`}
+        reset={resetCalendarFeed}
+      />
     </div>
   );
 }

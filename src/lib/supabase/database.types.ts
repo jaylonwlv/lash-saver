@@ -46,6 +46,8 @@ type ProfileRow = Timestamps & {
   trade: TradeId | null;
   /** False after instant sign-up until the pro confirms their email with a code. */
   email_confirmed: boolean;
+  /** Key for the private calendar feed; server-made (reset_calendar_token). */
+  calendar_token: string;
 };
 
 type ServiceRow = Timestamps & {
@@ -179,7 +181,9 @@ export type Database = {
         Relationships: [];
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      reset_calendar_token: { Args: Record<string, never>; Returns: string };
+    };
     Enums: {
       appointment_status:
         | "pending_deposit"
