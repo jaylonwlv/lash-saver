@@ -2,6 +2,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { markEmailConfirmed } from "@/lib/email-confirmed";
 import { trackSignUp } from "@/lib/meta";
+import { safeNextPath } from "@/lib/redirects";
 import { createClient } from "@/lib/supabase/server";
 
 const OTP_TYPES: readonly string[] = ["email", "magiclink", "signup", "invite", "recovery"];
@@ -14,9 +15,7 @@ const OTP_TYPES: readonly string[] = ["email", "magiclink", "signup", "invite", 
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
-  const nextParam = searchParams.get("next") ?? "/dashboard";
-  // Only allow same-site relative redirects.
-  const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/dashboard";
+  const next = safeNextPath(searchParams.get("next"));
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const code = searchParams.get("code");

@@ -2,7 +2,11 @@
 
 import { redirect } from "next/navigation";
 import type { FormState } from "@/lib/forms";
-import { billingPortalUrl, startSubscriptionCheckout } from "@/lib/stripe/billing";
+import {
+  AlreadySubscribedError,
+  billingPortalUrl,
+  startSubscriptionCheckout,
+} from "@/lib/stripe/billing";
 import { stripeErrorMessage } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
 
@@ -23,6 +27,9 @@ export async function startSubscription(): Promise<FormState> {
   try {
     url = await startSubscriptionCheckout(user.id);
   } catch (err) {
+    if (err instanceof AlreadySubscribedError) {
+      return { message: "You're already subscribed. Refresh the page to see your plan." };
+    }
     console.error("Starting subscription checkout failed", err);
     return { message: stripeErrorMessage(err) };
   }

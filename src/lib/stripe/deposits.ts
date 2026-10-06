@@ -41,6 +41,8 @@ export async function createDepositCheckout(appointmentId: string): Promise<stri
 
   const state = payability(a);
   if (state !== "ok") throw new PayError(state);
+  // Manual appointments are paid in the pro's own app, never by card here.
+  if (a.payment_method === "manual") throw new PayError("closed");
   if (!tech.stripe_charges_enabled || !tech.stripe_account_id) throw new PayError("tech_not_ready");
   if (!a.deposit_cents) throw new Error(`Appointment ${a.id} has no deposit amount`);
 
@@ -198,9 +200,12 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
     .eq("appointment_id", appointmentId)
     .neq("id", depositId)
     .in("status", [...SETTLED]);
+  // An expired link paid late (checkout was open when the hold ended) still books,
+  // unless the appointment time has already passed.
   const bookable =
     ctx !== null &&
     (ctx.appointment.status === "pending_deposit" || ctx.appointment.status === "expired") &&
+    new Date(ctx.appointment.starts_at) > new Date() &&
     !otherSettled?.length;
 
   const paidAt = new Date().toISOString();

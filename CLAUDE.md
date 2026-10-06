@@ -149,6 +149,8 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 
 - RLS is **on for every table**. Each new table needs policies in the same migration.
 - Supabase grants table-level privileges to `anon`/`authenticated` by default, so a column-level `revoke` does nothing. To limit which columns techs can write, revoke the table privilege and grant specific columns (see `20260924000000_profile_update_grants.sql`).
+- Techs write `appointments` as themselves, but only within limits (`20261007000000_appointment_write_guards.sql`): insert only a `pending_deposit` pay link when their email is confirmed and their subscription is live; update only `status`, `hold_expires_at` (to null) and `client_marked_sent_at` (to null); no deletes; never reopen a closed link. Snapshots and amounts are server-only. Keep app writes inside these limits or add a migration.
+- Post-sign-in redirects go through `safeNextPath` (`lib/redirects.ts`): browsers read `/\evil.com` as another site.
 - `createAdminClient()` bypasses RLS. Use it only where no tech is signed in (webhooks, cron, public booking writes after validation), and scope every query by id yourself.
 - Clients never sign in. The public menu page reads through the anon role (`public_profiles` view, active `services`). Every client write goes through server code.
 - Migrations are append-only. Never edit a migration that has been applied; add a new one. After schema changes, run `npm run db:types`.

@@ -128,10 +128,28 @@ export async function trialEligible(techId: string): Promise<boolean> {
   return !(await claimedByOthers(techId, await signals(profile)));
 }
 
+/** Subscriptions that still bill (or will): starting another would double-charge. */
+const LIVE_STATUSES = new Set<Stripe.Subscription.Status>([
+  "trialing",
+  "active",
+  "past_due",
+  "unpaid",
+  "incomplete",
+]);
+
+export class AlreadySubscribedError extends Error {
+  constructor() {
+    super("Already subscribed");
+  }
+}
+
 /** Stripe Checkout URL to add a card and start the subscription (with a trial if eligible). */
 export async function startSubscriptionCheckout(techId: string): Promise<string> {
   const profile = await loadProfile(techId);
   const customer = await ensureCustomer(profile);
+  // Never a second subscription: a stale page or a second tab would bill them twice.
+  const live = await getStripe().subscriptions.list({ customer, status: "all", limit: 10 });
+  if (live.data.some((s) => LIVE_STATUSES.has(s.status))) throw new AlreadySubscribedError();
   const withTrial = await trialEligible(techId);
   const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
 

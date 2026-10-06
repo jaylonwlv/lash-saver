@@ -5,12 +5,10 @@ import { z } from "zod";
 import { publicEnv } from "@/lib/env.public";
 import { markEmailConfirmed } from "@/lib/email-confirmed";
 import { trackSignUp } from "@/lib/meta";
+import { safeNextPath } from "@/lib/redirects";
 import { createClient } from "@/lib/supabase/server";
 
-const nextPath = z
-  .string()
-  .refine((p) => p.startsWith("/") && !p.startsWith("//"))
-  .catch("/dashboard");
+const nextPath = z.unknown().transform((p) => safeNextPath(p));
 
 const emailSchema = z.object({ email: z.email(), next: nextPath });
 const codeSchema = z.object({

@@ -81,7 +81,8 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     .lt("starts_at", endsAt.toISOString())
     .gt("ends_at", startsAt.toISOString())
     .or(
-      `status.eq.confirmed,and(status.eq.pending_deposit,hold_expires_at.gt."${now.toISOString()}")`,
+      // A client who says they sent a manual deposit keeps the slot after the link expires.
+      `status.eq.confirmed,and(status.eq.pending_deposit,hold_expires_at.gt."${now.toISOString()}"),and(status.eq.pending_deposit,client_marked_sent_at.not.is.null)`,
     )
     .limit(1)
     .maybeSingle();
@@ -269,12 +270,15 @@ export async function confirmManualDeposit(appointmentId: string): Promise<FormS
       });
   if (depositError) throw new Error(`Recording deposit failed: ${depositError.message}`);
 
-  const { error } = await supabase
+  const { data: confirmed, error } = await supabase
     .from("appointments")
     .update({ status: "confirmed", hold_expires_at: null })
     .eq("id", appointmentId)
-    .in("status", ["pending_deposit", "expired"]);
+    .in("status", ["pending_deposit", "expired"])
+    .select("id");
   if (error) throw new Error(`Confirming appointment failed: ${error.message}`);
+  // A double tap: the other request confirmed it and emailed the client.
+  if (!confirmed?.length) done(appointmentId);
 
   const ctx = await loadAppointmentContext(appointmentId);
   if (ctx) {

@@ -2,8 +2,8 @@ import { z } from "zod";
 import { optionalText } from "@/lib/forms";
 import { dollarsToCents } from "@/lib/money";
 
-/** Stripe's minimum card charge in USD. */
-const MIN_DEPOSIT_CENTS = 50;
+/** Same floor as a pay link's deposit (MIN_APPOINTMENT_DEPOSIT_CENTS), so every service can be booked. */
+const MIN_DEPOSIT_CENTS = 100;
 const MAX_PRICE_CENTS = 1_000_000;
 
 const money = (label: string) =>
@@ -24,7 +24,7 @@ export const serviceSchema = z
     duration_minutes: z.coerce.number().int().min(5).max(600),
     price: money("price").pipe(z.number().max(MAX_PRICE_CENTS, "That price is too high.")),
     deposit: money("deposit").pipe(
-      z.number().min(MIN_DEPOSIT_CENTS, "The deposit must be at least $0.50."),
+      z.number().min(MIN_DEPOSIT_CENTS, "The deposit must be at least $1."),
     ),
   })
   .refine((s) => s.deposit <= s.price, {

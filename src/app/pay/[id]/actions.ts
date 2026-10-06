@@ -98,12 +98,15 @@ export async function cancelByClient(
     };
   }
 
-  const { error } = await createAdminClient()
+  const { data: cancelled, error } = await createAdminClient()
     .from("appointments")
     .update({ status: "cancelled_by_client" })
     .eq("id", a.id)
-    .eq("status", "confirmed");
+    .eq("status", "confirmed")
+    .select("id");
   if (error) throw new Error(`Cancelling appointment failed: ${error.message}`);
+  // A double tap: the other request cancelled it and sends the emails.
+  if (!cancelled?.length) redirect(`/pay/${a.id}`);
 
   const when = formatWhen(a.starts_at, tech.timezone);
   const amountText = formatCents(amount ?? a.deposit_cents ?? 0);
@@ -186,7 +189,7 @@ export async function clientSentDeposit(
 
   const admin = createAdminClient();
   const now = new Date().toISOString();
-  const { error } = await admin
+  const { data: marked, error } = await admin
     .from("appointments")
     .update({
       client_marked_sent_at: now,
@@ -195,8 +198,12 @@ export async function clientSentDeposit(
       cancellation_window_hours_snapshot: tech.cancellation_window_hours,
     })
     .eq("id", a.id)
-    .eq("status", "pending_deposit");
+    .eq("status", "pending_deposit")
+    .is("client_marked_sent_at", null)
+    .select("id");
   if (error) throw new Error(`Recording sent deposit failed: ${error.message}`);
+  // Already marked as sent (a double tap or a resubmit): the pro was told once.
+  if (!marked?.length) redirect(`/pay/${a.id}`);
 
   // One pending manual deposit per appointment; replace an earlier attempt.
   await admin
@@ -205,7 +212,7 @@ export async function clientSentDeposit(
     .eq("appointment_id", a.id)
     .eq("method", "manual")
     .eq("status", "pending");
-  await admin.from("deposits").insert({
+  const { error: depositError } = await admin.from("deposits").insert({
     appointment_id: a.id,
     tech_id: tech.id,
     amount_cents: a.deposit_cents ?? 0,
@@ -214,6 +221,7 @@ export async function clientSentDeposit(
     manual_app: app.data,
     status: "pending",
   });
+  if (depositError) console.error(`Recording manual deposit for ${a.id} failed`, depositError);
 
   await notifyForAppointment({
     appointmentId: a.id,
