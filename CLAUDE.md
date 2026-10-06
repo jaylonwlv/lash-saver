@@ -53,7 +53,7 @@ src/
                                   and signs them in on the server (generateLink + verifyOtp, nothing emailed), sets up
                                   profile, starter services and time zone, sends CompleteRegistration. An email
                                   that already has an account is never signed in this way: it gets a sign-in code.
-                                  Optional Cloudflare Turnstile + honeypot. What they've typed (never the email) is kept on the phone for 7 days so they resume where they left off. Pixel: StartSignup on arrival, StartBusinessStep (custom) on step 2, Lead on step 3. profiles.email_confirmed is false until
+                                  Optional Cloudflare Turnstile + honeypot. What they've typed (never the email) is kept on the phone for 7 days so they resume where they left off. Pixel: StartSignup on arrival, StartBusinessStep (custom) on step 2, Lead on step 3. `?trade=barber` (on /start, or on the landing page via `remember-trade.tsx`) skips step 1 for ads aimed at one trade; marketing pages stay trade-neutral. profiles.email_confirmed is false until
                                   a code or link sign-in (markEmailConfirmed); New appointment, Billing and
                                   createAppointment / startSubscription wait for it (dashboard/confirm-email/,
                                   which can also fix a mistyped email). /login?start=1 redirects here.
@@ -65,6 +65,8 @@ src/
     (tech)/install-banner.tsx     Pros sign up inside Instagram's browser, whose sign-in doesn't carry over: banner
                                   says open in Safari / Chrome (Android intent link), then "Add to Home Screen"
                                   (dismissible); hidden once running from the Home Screen. manifest.ts + public/icon-*.png
+    (tech)/dashboard/saved-reply-card.tsx  "Add Dibs to your DMs": a ready-made Instagram saved reply (shortcut "dibs")
+                                  so the booking DM itself prompts a pay link; dismissed per phone.
     (tech)/dashboard/             Tech home: "N of 4 done" progress, setup checklist (profile → deposits → services →
                                   first pay link), menu page link
     (tech)/dashboard/onboarding/  First-visit "What do you do?" picker: one tap saves profiles.trade and, for a pro
@@ -173,6 +175,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - One trial per person. `trial_claims` stores card and payout-bank fingerprints, normalized email (Gmail dots and +tags removed), Instagram handle and Cash App / Zelle / Venmo handles when a trial starts. A match with another tech means no trial is offered; a reused card found after Checkout ends the trial immediately (`trial_end: "now"`).
 - New pros get a plain-text **founder welcome** from `/start` (`founder_welcome`, from "FOUNDER_NAME at APP_NAME", replies to `FOUNDER_EMAIL`, no app footer), and the cron sends one **founder check-in** 7–10 days after sign-up if they haven't sent a pay link (`founder_checkin`: answers to the usual blockers with links, and the `depositAnnouncement` for their regulars). Neither asks for a reply; replies still reach the founder. Both go through `notifyOnce` (`notifications/log.ts`), logged as `<template>:<tech id>`.
 - The daily cron also sends two setup reminders to pros with no card yet (`setup_nudge_first` about a day after sign-up, `setup_nudge_next_booking` about three days after; `SETUP_NUDGE_*` in `config.ts`), each once (`notification_log` template `<template>:<tech id>`). They name what's left (`lib/setup.ts`) and mention the trial only if `trialEligible`. The dashboard checklist ends with step 4, "Send your first pay link", which starts the trial.
+- The Stripe billing portal (`portalConfigurationId`, `PORTAL_VERSION`) asks why on cancel (reasons in the Stripe dashboard); no discount offers. Bump `PORTAL_VERSION` to push changed settings to the existing configuration.
 - The daily cron emails techs `TRIAL_ENDING_NOTICE_DAYS` before the first charge, once per subscription (`notification_log` template `trial_ending:<sub id>`). The email opens with what Dibs did for them in the trial (`lib/savings.ts`); if that lookup fails, the email still goes out.
 - Enforce the pay-link gate on the server (`createAppointment`), not only in the UI.
 

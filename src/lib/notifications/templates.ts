@@ -193,7 +193,7 @@ ${FOUNDER_NAME}`,
   }),
   trial_ending: (d) => ({
     subject: `Your ${APP_NAME} trial ends ${d.endsOn}`,
-    text: `${d.savings ? `${d.savings} ` : ""}Your free trial ends ${d.endsOn}. After that it's ${d.amount}/month on the card you added, so your pay links and reminders keep working. Nothing to do if you're staying. To change your card or cancel: ${d.billingUrl}`,
+    text: `${d.savings ? `${d.savings} ` : ""}Your free trial ends ${d.endsOn}. After that it's ${d.amount}/month on the card you added, so your pay links and reminders keep working. Nothing to do if you're staying. If you cancel, you can't send new pay links after ${d.endsOn}, and no-shows go back to costing you. To change your card or cancel: ${d.billingUrl}`,
   }),
   subscription_payment_failed: (d) => ({
     subject: `Your ${APP_NAME} payment didn't go through`,

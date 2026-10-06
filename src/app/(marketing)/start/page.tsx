@@ -22,8 +22,10 @@ const DEFAULT_WINDOW_HOURS = 48;
  * before giving an email, then saves it and is signed in straight away. Every
  * "Start free" button lands here.
  */
-export default async function StartPage() {
+export default async function StartPage({ searchParams }: PageProps<"/start">) {
   if (await getUser()) redirect("/dashboard");
+  // An ad aimed at one trade can link here with ?trade=barber to skip step 1.
+  const { trade } = await searchParams;
 
   const trades: TradeOption[] = TRADES.map((t) => ({
     id: t.id,
@@ -62,6 +64,11 @@ export default async function StartPage() {
           trades={trades}
           other={other}
           turnstileSiteKey={publicEnv().NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+          initialTrade={
+            typeof trade === "string"
+              ? [...trades, other].find((t) => t.id === trade)?.id
+              : undefined
+          }
         />
       </main>
     </div>

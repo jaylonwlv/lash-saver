@@ -15,6 +15,7 @@ import { canSendPayLinks } from "@/lib/subscription";
 import { loadSavings, savingsSummary } from "@/lib/savings";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
 import { TradePicker } from "./onboarding/trade-picker";
+import { SavedReplyCard } from "./saved-reply-card";
 import { startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
 
@@ -171,6 +172,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               Your clients
             </ButtonLink>
           </section>
+          <SavedReplyCard />
           <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5">
             <h2 className="font-semibold">Your menu page, for your bio</h2>
             <p className="text-muted text-sm">

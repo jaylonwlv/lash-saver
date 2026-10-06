@@ -276,23 +276,54 @@ export async function billingPortalUrl(techId: string): Promise<string> {
 
 let portalConfigId: string | undefined;
 
-/** Our portal settings, created once in the Stripe account and reused. */
+/**
+ * Our portal settings, created once in the Stripe account and reused. Bump
+ * PORTAL_VERSION when they change: an older copy is updated in place.
+ * Cancelling asks why (no discount offers); the answer shows on the subscription in
+ * the Stripe dashboard (cancellation details).
+ */
+const PORTAL_VERSION = "2";
+const PORTAL_FEATURES: Stripe.BillingPortal.ConfigurationCreateParams.Features = {
+  customer_update: { enabled: true, allowed_updates: ["email"] },
+  invoice_history: { enabled: true },
+  payment_method_update: { enabled: true },
+  subscription_cancel: {
+    enabled: true,
+    mode: "at_period_end",
+    cancellation_reason: {
+      enabled: true,
+      options: [
+        "unused",
+        "too_expensive",
+        "missing_features",
+        "too_complex",
+        "switched_service",
+        "other",
+      ],
+    },
+  },
+};
+
 async function portalConfigurationId(): Promise<string> {
   if (portalConfigId) return portalConfigId;
   const stripe = getStripe();
+  const metadata = { app: "lash-saver", version: PORTAL_VERSION };
   const existing = await stripe.billingPortal.configurations.list({ active: true, limit: 20 });
   const ours = existing.data.find((c) => c.metadata?.app === "lash-saver");
-  if (ours) return (portalConfigId = ours.id);
+  if (ours) {
+    if (ours.metadata?.version !== PORTAL_VERSION) {
+      await stripe.billingPortal.configurations.update(ours.id, {
+        features: PORTAL_FEATURES,
+        metadata,
+      });
+    }
+    return (portalConfigId = ours.id);
+  }
 
   const created = await stripe.billingPortal.configurations.create({
-    metadata: { app: "lash-saver" },
+    metadata,
     business_profile: { headline: `${APP_NAME}: manage your subscription` },
-    features: {
-      customer_update: { enabled: true, allowed_updates: ["email"] },
-      invoice_history: { enabled: true },
-      payment_method_update: { enabled: true },
-      subscription_cancel: { enabled: true, mode: "at_period_end" },
-    },
+    features: PORTAL_FEATURES,
   });
   return (portalConfigId = created.id);
 }

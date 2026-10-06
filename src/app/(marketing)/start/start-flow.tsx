@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { TRIAL_DAYS } from "@/lib/config";
 import { dollarsToCents, formatCents } from "@/lib/money";
 import type { TradeId } from "@/lib/supabase/database.types";
+import { AD_TRADE_KEY } from "../remember-trade";
 import { createAccount, type StartState } from "./actions";
 import type { PayMethod } from "./schema";
 
@@ -71,6 +72,13 @@ function draftSnapshot(): string | null {
     return null;
   }
 }
+function adTradeSnapshot(): string | null {
+  try {
+    return sessionStorage.getItem(AD_TRADE_KEY);
+  } catch {
+    return null;
+  }
+}
 function writeDraft(draft: Draft | null) {
   try {
     if (draft) localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -113,13 +121,16 @@ export function StartFlow({
   trades,
   other,
   turnstileSiteKey,
+  initialTrade,
 }: {
   trades: TradeOption[];
   other: TradeOption;
   turnstileSiteKey: string | undefined;
+  /** From an ad aimed at one trade (?trade=): skip "What do you do?". */
+  initialTrade?: TradeId;
 }) {
-  const [step, setStep] = useState<Step>("trade");
-  const [tradeId, setTradeId] = useState<TradeId | null>(null);
+  const [step, setStep] = useState<Step>(initialTrade ? "business" : "trade");
+  const [tradeId, setTradeId] = useState<TradeId | null>(initialTrade ?? null);
   const [businessName, setBusinessName] = useState("");
   const [method, setMethod] = useState<PayMethod | null>(null);
   const [handle, setHandle] = useState("");
@@ -135,17 +146,21 @@ export function StartFlow({
   // Pick up where they left off: only a draft from before this visit, applied once on
   // arrival. Any tap here ends that, so the page's own saving never overwrites typing.
   const savedDraft = useSyncExternalStore(noSubscribe, draftSnapshot, serverNull);
+  // A trade remembered from an ad link to the landing page (see RememberTrade).
+  const adTrade = useSyncExternalStore(noSubscribe, adTradeSnapshot, serverNull);
   const [draftChecked, setDraftChecked] = useState(false);
   const [resumed, setResumed] = useState(false);
   // Where a returning visitor was put back: their first visit already counted those
   // funnel steps, so they aren't sent again.
   const [restoredStep, setRestoredStep] = useState<Step | null>(null);
-  if (!draftChecked && savedDraft) {
+  if (!draftChecked && (savedDraft || adTrade)) {
     setDraftChecked(true);
-    const draft = parseDraft(
-      savedDraft,
-      [...trades, other].map((t) => t.id),
-    );
+    const tradeIds = [...trades, other].map((t) => t.id);
+    const draft = parseDraft(savedDraft, tradeIds);
+    if (!draft?.tradeId && !tradeId && adTrade && tradeIds.includes(adTrade as TradeId)) {
+      setTradeId(adTrade as TradeId);
+      setStep("business");
+    }
     if (draft?.tradeId) {
       setTradeId(draft.tradeId);
       setBusinessName(draft.businessName);
@@ -159,7 +174,8 @@ export function StartFlow({
         draft.step === "save" && draft.businessName && draft.method ? "save" : "business";
       setStep(resumeStep);
       setRestoredStep(resumeStep);
-      setResumed(true);
+      // Only say "we kept what you entered" when they actually entered something.
+      setResumed(Boolean(draft.businessName || draft.handle));
     }
   }
   const startOver = () => {
