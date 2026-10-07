@@ -16,6 +16,7 @@ import { MANUAL_APP_LABEL, manualHandles, paymentAppUrl } from "@/lib/payments";
 import { cancelByClient, clientSentDeposit, payDeposit } from "./actions";
 import { AddToCalendar } from "./add-to-calendar";
 import { CancelForm } from "./cancel-form";
+import type { ContactAsk } from "./contact-fields";
 import { ManualPayForm } from "./manual-pay-form";
 import { PayForm } from "./pay-form";
 
@@ -52,8 +53,12 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
   const manual = a.payment_method === "manual";
   const waitingOnPro = manual && a.status === "pending_deposit" && a.client_marked_sent_at;
   const note = `Deposit ${serviceName} ${when}`.slice(0, 60);
-  // Sent with just a name: the client adds their own email or phone before paying.
-  const askContact = !a.client_email && !a.client_phone;
+  // Sent without an email: the client adds theirs before paying (and a phone if that's missing too).
+  const askContact: ContactAsk = a.client_email
+    ? null
+    : a.client_phone
+      ? "email"
+      : "email_and_phone";
   const messageTech = dm ? (
     <a href={dm} className="text-brand underline">
       message {business}

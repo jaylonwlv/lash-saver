@@ -11,7 +11,7 @@ import {
   policySummary,
 } from "@/lib/appointments";
 import { MANUAL_APP_LABEL, manualHandles } from "@/lib/payments";
-import { fieldErrors, formValues, optionalEmail, optionalText, type FormState } from "@/lib/forms";
+import { fieldErrors, formValues, optionalText, type FormState } from "@/lib/forms";
 import { formatCents } from "@/lib/money";
 import { notifyForAppointment } from "@/lib/notifications/log";
 import { stripeErrorMessage } from "@/lib/stripe/connect";
@@ -31,10 +31,15 @@ const PAY_ERROR_MESSAGE: Record<PayError["reason"], string> = {
 };
 
 const contactSchema = z
-  .object({ client_email: optionalEmail, client_phone: optionalText(30) })
-  .refine((c) => c.client_email || c.client_phone, {
-    path: ["client_email"],
-    message: "Add your email or phone so we can send your confirmation.",
+  .object({
+    client_email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(1, "Add your email so we can send your confirmation and reminders.")
+      .pipe(z.email("Enter a valid email.")),
+    // Only shown when the pro left the phone out too.
+    client_phone: z.string().default("").pipe(optionalText(30)),
   })
   .refine((c) => !c.client_phone || c.client_phone.replace(/\D/g, "").length >= 7, {
     path: ["client_phone"],
@@ -42,26 +47,30 @@ const contactSchema = z
   });
 
 /**
- * A pay link sent with just the client's name: the client adds their own email or
- * phone before paying, so confirmations and reminders reach them. Returns a form
- * error to show, or null once there's a way to reach them.
+ * A pay link sent without the client's email: the client adds it (and a phone, if
+ * the pro left that out too) before paying, so the confirmation and reminders reach
+ * them. Returns a form error to show, or null once there's an email.
  */
 async function saveClientContact(
   ctx: NonNullable<Awaited<ReturnType<typeof loadAppointmentContext>>>,
   formData: FormData,
 ): Promise<FormState | null> {
   const a = ctx.appointment;
-  if (a.client_email || a.client_phone) return null;
+  if (a.client_email) return null;
   const values = formValues(formData);
   const parsed = contactSchema.safeParse(values);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
+  // Never overwrite a phone the pro entered.
+  const update =
+    a.client_phone || !parsed.data.client_phone
+      ? { client_email: parsed.data.client_email }
+      : parsed.data;
   const { error } = await createAdminClient()
     .from("appointments")
-    .update(parsed.data)
+    .update(update)
     .eq("id", a.id)
     .eq("status", "pending_deposit")
-    .is("client_email", null)
-    .is("client_phone", null);
+    .is("client_email", null);
   if (error) throw new Error(`Saving client contact failed: ${error.message}`);
   return null;
 }

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { FormState } from "@/lib/forms";
-import { ContactFields } from "./contact-fields";
+import { ContactFields, type ContactAsk } from "./contact-fields";
 import type { ManualApp } from "@/lib/supabase/database.types";
 
 export type PayOption = { app: ManualApp; label: string; handle: string; url: string | null };
@@ -12,13 +12,13 @@ export type PayOption = { app: ManualApp; label: string; handle: string; url: st
 export function ManualPayForm({
   action,
   amount,
-  askContact = false,
+  askContact = null,
   options,
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   amount: string;
-  /** The pro didn't add the client's email or phone: ask for it here. */
-  askContact?: boolean;
+  /** The pro didn't add the client's email: ask for it here. */
+  askContact?: ContactAsk;
   options: PayOption[];
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {});
@@ -37,7 +37,7 @@ export function ManualPayForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      {askContact && <ContactFields state={state} />}
+      {askContact && <ContactFields ask={askContact} state={state} />}
       <label className="flex min-h-12 cursor-pointer items-start gap-3">
         <input
           type="checkbox"
