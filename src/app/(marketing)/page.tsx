@@ -10,6 +10,7 @@ import {
   FOUNDER_NAME,
   LEGAL_CONTACT_EMAIL,
   PROCESSING_FEE_LABEL,
+  REMINDER_OFFSETS_HOURS,
   SUBSCRIPTION_PRICE_CENTS,
   TRIAL_DAYS,
   TRIAL_ENDING_NOTICE_DAYS,
@@ -254,7 +255,7 @@ export default function HomePage() {
               </ClientPerk>
               <ClientPerk
                 title="A calendar invite + reminders"
-                body="One tap adds it to their calendar, and reminders go out 48 and 24 hours before."
+                body={`One tap adds it to their calendar, and reminders go out ${REMINDER_OFFSETS_HOURS.join(" and ")} hours before.`}
               >
                 <p className="text-brand text-xs font-semibold">SATURDAY</p>
                 <p className="font-semibold">Appointment with Studio Nova</p>

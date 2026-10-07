@@ -28,6 +28,10 @@ export type ClientOption = {
 };
 
 const sameEmail = (a: string | null, b: string) => !!a && a === b.trim().toLowerCase();
+const sameName = (a: string, b: string) => {
+  const norm = (x: string) => x.trim().toLowerCase().replace(/\s+/g, " ");
+  return norm(b).includes(" ") && norm(a) === norm(b);
+};
 const sameHandle = (a: string | null, b: string) =>
   !!a && !!b.trim() && a.toLowerCase() === b.trim().replace(/^@/, "").toLowerCase();
 
@@ -81,7 +85,11 @@ export function AppointmentForm({
   // Their record, whether picked from the list or typed in by hand.
   const match =
     clients.find((c) => c.key === picked) ??
-    clients.find((c) => sameEmail(c.email, email) || sameHandle(c.instagram, instagram));
+    clients.find((c) => sameEmail(c.email, email) || sameHandle(c.instagram, instagram)) ??
+    // Name only (a quick pay link): same full name is likely the same client.
+    (!email.trim() && !phone.trim() && !instagram.trim()
+      ? clients.find((c) => sameName(c.name, name))
+      : undefined);
 
   function pick(key: string) {
     setPicked(key);
@@ -95,7 +103,8 @@ export function AppointmentForm({
     const last = c?.lastServiceId ? services.find((x) => x.id === c.lastServiceId) : undefined;
     if (last) {
       setServiceId(last.id);
-      setDeposit(depositInput(c?.lastDepositCents ?? last.depositCents));
+      // Never above today's price (it may have dropped since).
+      setDeposit(depositInput(Math.min(c?.lastDepositCents ?? last.depositCents, last.priceCents)));
     }
   }
 
@@ -113,8 +122,8 @@ export function AppointmentForm({
   const service = services.find((s) => s.id === serviceId) ?? services[0];
   const [deposit, setDeposit] = useState(
     v.deposit ??
-      (initial?.lastDepositCents && initial.lastServiceId === firstService
-        ? depositInput(initial.lastDepositCents)
+      (initial?.lastDepositCents && initial.lastServiceId === firstService && service
+        ? depositInput(Math.min(initial.lastDepositCents, service.priceCents))
         : service
           ? depositInput(service.depositCents)
           : ""),

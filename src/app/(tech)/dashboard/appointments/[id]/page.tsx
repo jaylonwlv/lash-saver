@@ -196,7 +196,7 @@ export default async function AppointmentPage({
                 @{a.client_instagram}
               </a>
             )}
-            {!a.client_email && (
+            {!a.client_email && a.status === "pending_deposit" && (
               <span className="text-muted">They add their email when they pay.</span>
             )}
           </span>

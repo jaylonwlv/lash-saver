@@ -85,7 +85,11 @@ export async function payDeposit(
     return { message: PAY_ERROR_MESSAGE.closed };
   }
   if (formData.get("agree") !== "on") {
-    return { errors: { agree: "Please agree to the deposit policy to continue." } };
+    // Keep what they typed (their email): React clears the form after an action.
+    return {
+      errors: { agree: "Please agree to the deposit policy to continue." },
+      values: formValues(formData),
+    };
   }
   const ctx = await loadAppointmentContext(appointmentId);
   if (!ctx) return { message: PAY_ERROR_MESSAGE.closed };
@@ -220,7 +224,11 @@ export async function clientSentDeposit(
 ): Promise<FormState> {
   if (!z.uuid().safeParse(appointmentId).success) return { message: PAY_ERROR_MESSAGE.closed };
   if (formData.get("agree") !== "on") {
-    return { errors: { agree: "Please agree to the deposit policy to continue." } };
+    // Keep what they typed (their email): React clears the form after an action.
+    return {
+      errors: { agree: "Please agree to the deposit policy to continue." },
+      values: formValues(formData),
+    };
   }
   const ctx = await loadAppointmentContext(appointmentId);
   if (!ctx || ctx.appointment.payment_method !== "manual") {

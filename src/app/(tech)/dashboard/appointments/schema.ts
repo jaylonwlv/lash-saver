@@ -29,7 +29,7 @@ export const appointmentSchema = z.object({
     .trim()
     .min(1, "Enter the client's name.")
     .max(80, "Keep it under 80 characters."),
-  /** Optional: when blank, the client adds their own email or phone on the pay page. */
+  /** Optional: when blank, the client adds their own email on the pay page. */
   client_email: optionalEmail,
   client_phone: optionalText(30),
   client_instagram: instagramHandle,

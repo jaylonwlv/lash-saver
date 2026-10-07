@@ -24,6 +24,7 @@ export function PayForm({
         <input
           type="checkbox"
           name="agree"
+          defaultChecked={state.values?.agree === "on"}
           className="accent-brand mt-0.5 size-6 shrink-0"
           aria-invalid={state.errors?.agree ? true : undefined}
           aria-describedby={state.errors?.agree ? "agree-message" : undefined}
