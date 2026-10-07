@@ -28,6 +28,13 @@ export type ClientOption = {
 };
 
 const sameEmail = (a: string | null, b: string) => !!a && a === b.trim().toLowerCase();
+// Same rule as phoneDigits in lib/clients.ts (server-only): drop a US "+1".
+const digits = (x: string) => {
+  const d = x.replace(/\D/g, "");
+  return d.length === 11 && d.startsWith("1") ? d.slice(1) : d;
+};
+const samePhone = (a: string | null, b: string) =>
+  !!a && digits(b).length >= 7 && digits(a) === digits(b);
 const sameName = (a: string, b: string) => {
   const norm = (x: string) => x.trim().toLowerCase().replace(/\s+/g, " ");
   return norm(b).includes(" ") && norm(a) === norm(b);
@@ -85,7 +92,12 @@ export function AppointmentForm({
   // Their record, whether picked from the list or typed in by hand.
   const match =
     clients.find((c) => c.key === picked) ??
-    clients.find((c) => sameEmail(c.email, email) || sameHandle(c.instagram, instagram)) ??
+    clients.find(
+      (c) =>
+        sameEmail(c.email, email) ||
+        sameHandle(c.instagram, instagram) ||
+        samePhone(c.phone, phone),
+    ) ??
     // Name only (a quick pay link): same full name is likely the same client.
     (!email.trim() && !phone.trim() && !instagram.trim()
       ? clients.find((c) => sameName(c.name, name))

@@ -5,7 +5,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { ButtonLink } from "@/components/ui/button";
 import { STATUS_LABEL } from "@/lib/appointments";
 import {
-  clientKey,
+  clientMatcher,
   clientRecord,
   isFlaky,
   loadClientAppointments,
@@ -30,7 +30,10 @@ export default async function ClientPage({ params }: PageProps<"/dashboard/clien
     loadClientAppointments(supabase, user!.id),
     supabase.from("services").select("id, name").eq("tech_id", user!.id),
   ]);
-  const theirs = appointments.filter((a) => clientKey(a) === key);
+  // Old phone links ("p:…") still open the client once their email is known.
+  const { keyOf, resolve } = clientMatcher(appointments);
+  const canonical = resolve(key);
+  const theirs = appointments.filter((a) => keyOf(a) === canonical);
   const client = summarizeClients(theirs, forfeited)[0];
   if (!client) notFound();
   const timezone = profile?.timezone ?? "America/Chicago";

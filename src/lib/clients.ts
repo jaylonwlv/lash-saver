@@ -5,7 +5,7 @@ import type { Database, Tables } from "@/lib/supabase/database.types";
 /*
  * A pro's client list, built from their appointments (no separate table, nothing
  * extra collected). Clients are matched by email, or by phone for appointments
- * without one. Each carries their record: visits, no-shows and late cancels, so
+ * without one (joined to the email client who used that phone; see clientMatcher). Each carries their record: visits, no-shows and late cancels, so
  * New appointment can warn about repeat no-shows before a slot is given away.
  */
 
@@ -41,11 +41,49 @@ type ClientAppointment = Pick<
   | "deposit_cents"
 >;
 
-export function clientKey(a: { client_email: string | null; client_phone: string | null }) {
-  const email = a.client_email?.trim().toLowerCase();
-  if (email) return `e:${email}`;
-  const digits = a.client_phone?.replace(/\D/g, "");
-  return digits ? `p:${digits}` : null;
+const emailOf = (a: { client_email: string | null }) =>
+  a.client_email?.trim().toLowerCase() || null;
+/** Digits only, without a US "+1", so "+1 (702) 555-0199" and "702.555.0199" match. */
+export function phoneDigits(phone: string | null | undefined): string | null {
+  const d = phone?.replace(/\D/g, "") ?? "";
+  return (d.length === 11 && d.startsWith("1") ? d.slice(1) : d) || null;
+}
+const phoneOf = (a: { client_phone: string | null }) => phoneDigits(a.client_phone);
+
+/**
+ * Who each appointment belongs to. Email decides. An appointment with only a phone
+ * joins the client who used that phone with their email (a pro who typed just the
+ * number, then the client added their email on the pay page). A phone seen with
+ * two or more emails (a parent booking for two kids) stays its own client, so
+ * different people are never merged.
+ */
+export function clientMatcher(
+  appointments: { client_email: string | null; client_phone: string | null }[],
+) {
+  const emailsByPhone = new Map<string, Set<string>>();
+  for (const a of appointments) {
+    const email = emailOf(a);
+    const phone = phoneOf(a);
+    if (!email || !phone) continue;
+    const set = emailsByPhone.get(phone) ?? new Set<string>();
+    set.add(email);
+    emailsByPhone.set(phone, set);
+  }
+  /** "p:<digits>" → the client's email key when that phone belongs to exactly one. */
+  const resolve = (key: string) => {
+    if (!key.startsWith("p:")) return key;
+    const phone = phoneDigits(key.slice(2));
+    if (!phone) return key;
+    const emails = emailsByPhone.get(phone);
+    return emails?.size === 1 ? `e:${[...emails][0]}` : `p:${phone}`;
+  };
+  const keyOf = (a: { client_email: string | null; client_phone: string | null }) => {
+    const email = emailOf(a);
+    if (email) return `e:${email}`;
+    const phone = phoneOf(a);
+    return phone ? resolve(`p:${phone}`) : null;
+  };
+  return { keyOf, resolve };
 }
 
 /** Repeat no-shows and late cancels: worth a bigger deposit next time. */
@@ -88,9 +126,10 @@ export function summarizeClients(
   forfeited: Set<string>,
   now = new Date(),
 ): ClientSummary[] {
+  const { keyOf } = clientMatcher(appointments);
   const byKey = new Map<string, ClientSummary>();
   for (const a of appointments) {
-    const key = clientKey(a);
+    const key = keyOf(a);
     if (!key) continue;
     let c = byKey.get(key);
     if (!c) {
@@ -111,6 +150,7 @@ export function summarizeClients(
       };
       byKey.set(key, c);
     }
+    c.email ??= a.client_email;
     c.instagram ??= a.client_instagram;
     c.phone ??= a.client_phone;
     if (a.status === "completed") c.visits++;
@@ -123,6 +163,17 @@ export function summarizeClients(
       c.upcoming++;
   }
   return [...byKey.values()];
+}
+
+/** The client a link points at; an old "p:<digits>" link finds them once their email is known. */
+export function findClient(clients: ClientSummary[], key: string | undefined) {
+  if (!key) return undefined;
+  return (
+    clients.find((c) => c.key === key) ??
+    (key.startsWith("p:")
+      ? clients.find((c) => phoneDigits(c.phone) === phoneDigits(key.slice(2)))
+      : undefined)
+  );
 }
 
 export async function loadClients(

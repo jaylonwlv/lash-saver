@@ -10,7 +10,7 @@ import { canSendPayLinks } from "@/lib/subscription";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { SubscribeCard } from "../../billing/subscribe-card";
 import { wallClockParts } from "@/lib/time";
-import { clientRecord, loadClients } from "@/lib/clients";
+import { clientRecord, findClient, loadClients } from "@/lib/clients";
 import { AppointmentForm } from "./appointment-form";
 
 export const metadata: Metadata = { title: "New appointment" };
@@ -106,7 +106,9 @@ export default async function NewAppointmentPage({
           today={wallClockParts(new Date(), profile.timezone).date}
           timeZoneLabel={profile.timezone.replace(/_/g, " ")}
           cardFees={profile.deposit_method === "stripe"}
-          initialClientKey={typeof client === "string" ? client : undefined}
+          initialClientKey={
+            findClient(clients, typeof client === "string" ? client : undefined)?.key
+          }
           defaultServiceId={lastBooked?.service_id ?? undefined}
           clients={clients.map((c) => ({
             key: c.key,

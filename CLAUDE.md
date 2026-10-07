@@ -127,8 +127,10 @@ src/
     subscription.ts               canSendPayLinks(status), normalizeEmail (no server deps)
     setup.ts                      setupState + nextStepSentence: what's left before the first pay link (no server deps)
     payments.ts                   Manual deposits: manualHandles, canTakeDeposits, paymentAppUrl (no server deps)
-    clients.ts                    Client list from appointments (matched by email, else phone): visits,
-                                  no-shows, late cancels; clientKey, isFlaky, clientRecord. No clients table.
+    clients.ts                    Client list from appointments (matched by email; a phone-only appointment
+                                  joins the one email seen with that phone, never two; "+1" ignored): visits,
+                                  no-shows, late cancels; clientMatcher, findClient (old "p:" links), isFlaky,
+                                  clientRecord. No clients table.
     savings.ts                    loadSavings + savingsSummary: deposits kept from no-shows/late cancels (minus
                                   disputes lost), early cancels, show rate. Dashboard "Your results" card and the
                                   trial-ending email.
