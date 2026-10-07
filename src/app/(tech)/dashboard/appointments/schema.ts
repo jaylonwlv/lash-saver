@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { instagramHandle, optionalText } from "@/lib/forms";
+import { instagramHandle, optionalEmail, optionalText } from "@/lib/forms";
 import { dollarsToCents } from "@/lib/money";
 
 /** A deposit has to be worth something; $0 pay links aren't a thing. */
@@ -29,7 +29,8 @@ export const appointmentSchema = z.object({
     .trim()
     .min(1, "Enter the client's name.")
     .max(80, "Keep it under 80 characters."),
-  client_email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email.")),
+  /** Optional: when blank, the client adds their own email or phone on the pay page. */
+  client_email: optionalEmail,
   client_phone: optionalText(30),
   client_instagram: instagramHandle,
   notes: optionalText(500),

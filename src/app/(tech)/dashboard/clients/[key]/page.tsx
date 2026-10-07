@@ -61,7 +61,7 @@ export default async function ClientPage({ params }: PageProps<"/dashboard/clien
       )}
 
       <ButtonLink href={`/dashboard/appointments/new?client=${encodeURIComponent(client.key)}`}>
-        New appointment for {client.name.split(" ")[0]}
+        Book {client.name.split(" ")[0]} again
       </ButtonLink>
 
       <section className="flex flex-col gap-3">

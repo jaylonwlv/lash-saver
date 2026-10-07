@@ -38,7 +38,18 @@ export default async function NewAppointmentPage({
   ]);
   if (error || !profile) throw new Error(`Loading services failed: ${error?.message}`);
 
-  const clients = await loadClients(supabase, user!.id);
+  const [clients, { data: lastBooked }] = await Promise.all([
+    loadClients(supabase, user!.id),
+    // The service they booked most recently is the likeliest next one.
+    supabase
+      .from("appointments")
+      .select("service_id")
+      .eq("tech_id", user!.id)
+      .not("service_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
   const depositsReady = canTakeDeposits(profile);
   const ready = depositsReady && services.length > 0;
   const subscribed = canSendPayLinks(profile.subscription_status);
@@ -96,6 +107,7 @@ export default async function NewAppointmentPage({
           timeZoneLabel={profile.timezone.replace(/_/g, " ")}
           cardFees={profile.deposit_method === "stripe"}
           initialClientKey={typeof client === "string" ? client : undefined}
+          defaultServiceId={lastBooked?.service_id ?? undefined}
           clients={clients.map((c) => ({
             key: c.key,
             name: c.name,
@@ -104,6 +116,8 @@ export default async function NewAppointmentPage({
             phone: c.phone,
             record: clientRecord(c),
             missed: c.noShows + c.lateCancels,
+            lastServiceId: c.lastServiceId,
+            lastDepositCents: c.lastDepositCents,
           }))}
           services={services.map((s) => ({
             id: s.id,

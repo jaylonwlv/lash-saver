@@ -232,6 +232,49 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* What clients get */}
+        <section className="bg-surface border-line border-y">
+          <div className="mx-auto w-full max-w-5xl px-5 py-14">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Your clients get the full experience.
+            </h2>
+            <p className="text-muted mt-2 max-w-2xl">
+              A Cash App request says &ldquo;send money.&rdquo; A {APP_NAME} pay link says you run a
+              real business: every booking comes with a confirmation, a calendar invite, reminders
+              and an easy way to cancel instead of ghosting.
+            </p>
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <ClientPerk
+                title="A confirmation email"
+                body="The moment their deposit is in, with the time, the price and when they can still cancel."
+              >
+                <p className="text-muted text-xs">From: Studio Nova</p>
+                <p className="font-semibold">You&apos;re booked with Studio Nova</p>
+                <p className="text-muted text-sm">Sat at 2:00 PM · $40 deposit paid</p>
+              </ClientPerk>
+              <ClientPerk
+                title="A calendar invite + reminders"
+                body="One tap adds it to their calendar, and reminders go out 48 and 24 hours before."
+              >
+                <p className="text-brand text-xs font-semibold">SATURDAY</p>
+                <p className="font-semibold">Appointment with Studio Nova</p>
+                <p className="text-muted text-sm">2:00 – 3:00 PM · alert 2 hours before</p>
+              </ClientPerk>
+              <ClientPerk
+                title="One tap to cancel"
+                body="Can't make it? They cancel from the same link, and your policy decides the refund."
+              >
+                <p className="text-muted text-sm">
+                  Can&apos;t make it? Cancel by Thu 2:00 PM to get your deposit back.
+                </p>
+                <span className="border-line bg-surface text-foreground mt-1 inline-flex min-h-10 items-center justify-center rounded-xl border px-4 text-sm font-semibold">
+                  Cancel my appointment
+                </span>
+              </ClientPerk>
+            </div>
+          </div>
+        </section>
+
         {/* Founder note */}
         <section className="mx-auto w-full max-w-2xl px-5 pb-4">
           <figure className="border-line bg-surface flex flex-col gap-4 rounded-3xl border p-6">
@@ -458,6 +501,27 @@ function Phone({
         fetchPriority={eager ? "high" : undefined}
         className="h-auto w-full"
       />
+    </div>
+  );
+}
+
+/** A small mock of something the client receives, with what it is underneath. */
+function ClientPerk({
+  title,
+  body,
+  children,
+}: {
+  title: string;
+  body: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div data-theme="light" className="flex flex-col gap-1 rounded-2xl p-4 shadow-lg">
+        {children}
+      </div>
+      <p className="font-semibold">{title}</p>
+      <p className="text-muted text-sm">{body}</p>
     </div>
   );
 }

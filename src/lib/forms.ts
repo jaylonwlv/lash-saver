@@ -37,6 +37,14 @@ export const optionalText = (max: number) =>
     .max(max, `Keep this under ${max} characters.`)
     .transform((v) => (v === "" ? null : v));
 
+/** Optional email, lowercased; empty becomes null. */
+export const optionalEmail = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.union([z.literal(""), z.email("Enter a valid email.")]))
+  .transform((v) => (v === "" ? null : v));
+
 /** Optional Instagram handle: strips a leading "@", validates, empty becomes null. */
 export const instagramHandle = z
   .string()

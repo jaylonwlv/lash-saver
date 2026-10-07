@@ -23,6 +23,9 @@ export type ClientSummary = {
   upcoming: number;
   /** Start of their most recent appointment (any status but expired). */
   lastAt: string | null;
+  /** Their most recent service and deposit, so "Book again" starts from them. */
+  lastServiceId: string | null;
+  lastDepositCents: number | null;
 };
 
 type ClientAppointment = Pick<
@@ -35,6 +38,7 @@ type ClientAppointment = Pick<
   | "starts_at"
   | "status"
   | "service_id"
+  | "deposit_cents"
 >;
 
 export function clientKey(a: { client_email: string | null; client_phone: string | null }) {
@@ -57,7 +61,7 @@ export async function loadClientAppointments(
     supabase
       .from("appointments")
       .select(
-        "id, client_name, client_email, client_phone, client_instagram, starts_at, status, service_id",
+        "id, client_name, client_email, client_phone, client_instagram, starts_at, status, service_id, deposit_cents",
       )
       .eq("tech_id", techId)
       .neq("status", "expired")
@@ -102,6 +106,8 @@ export function summarizeClients(
         earlyCancels: 0,
         upcoming: 0,
         lastAt: a.starts_at,
+        lastServiceId: a.service_id,
+        lastDepositCents: a.deposit_cents,
       };
       byKey.set(key, c);
     }

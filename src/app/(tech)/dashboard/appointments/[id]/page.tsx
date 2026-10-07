@@ -196,6 +196,9 @@ export default async function AppointmentPage({
                 @{a.client_instagram}
               </a>
             )}
+            {!a.client_email && !a.client_phone && (
+              <span className="text-muted">They add their email or phone when they pay.</span>
+            )}
           </span>
         </Detail>
         {a.notes && <Detail label="Notes">{a.notes}</Detail>}

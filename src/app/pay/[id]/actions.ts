@@ -11,7 +11,7 @@ import {
   policySummary,
 } from "@/lib/appointments";
 import { MANUAL_APP_LABEL, manualHandles } from "@/lib/payments";
-import type { FormState } from "@/lib/forms";
+import { fieldErrors, formValues, optionalEmail, optionalText, type FormState } from "@/lib/forms";
 import { formatCents } from "@/lib/money";
 import { notifyForAppointment } from "@/lib/notifications/log";
 import { stripeErrorMessage } from "@/lib/stripe/connect";
@@ -30,6 +30,42 @@ const PAY_ERROR_MESSAGE: Record<PayError["reason"], string> = {
   tech_not_ready: "Your provider can't take payments yet. Please let them know.",
 };
 
+const contactSchema = z
+  .object({ client_email: optionalEmail, client_phone: optionalText(30) })
+  .refine((c) => c.client_email || c.client_phone, {
+    path: ["client_email"],
+    message: "Add your email or phone so we can send your confirmation.",
+  })
+  .refine((c) => !c.client_phone || c.client_phone.replace(/\D/g, "").length >= 7, {
+    path: ["client_phone"],
+    message: "Enter a full phone number.",
+  });
+
+/**
+ * A pay link sent with just the client's name: the client adds their own email or
+ * phone before paying, so confirmations and reminders reach them. Returns a form
+ * error to show, or null once there's a way to reach them.
+ */
+async function saveClientContact(
+  ctx: NonNullable<Awaited<ReturnType<typeof loadAppointmentContext>>>,
+  formData: FormData,
+): Promise<FormState | null> {
+  const a = ctx.appointment;
+  if (a.client_email || a.client_phone) return null;
+  const values = formValues(formData);
+  const parsed = contactSchema.safeParse(values);
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
+  const { error } = await createAdminClient()
+    .from("appointments")
+    .update(parsed.data)
+    .eq("id", a.id)
+    .eq("status", "pending_deposit")
+    .is("client_email", null)
+    .is("client_phone", null);
+  if (error) throw new Error(`Saving client contact failed: ${error.message}`);
+  return null;
+}
+
 /** Client agreed to the policy: send them to Stripe Checkout for the deposit. */
 export async function payDeposit(
   appointmentId: string,
@@ -42,6 +78,10 @@ export async function payDeposit(
   if (formData.get("agree") !== "on") {
     return { errors: { agree: "Please agree to the deposit policy to continue." } };
   }
+  const ctx = await loadAppointmentContext(appointmentId);
+  if (!ctx) return { message: PAY_ERROR_MESSAGE.closed };
+  const contactError = await saveClientContact(ctx, formData);
+  if (contactError) return contactError;
 
   let url: string;
   try {
@@ -180,6 +220,9 @@ export async function clientSentDeposit(
   const { appointment: a, tech } = ctx;
   const state = payability(a);
   if (state !== "ok") return { message: PAY_ERROR_MESSAGE[state] };
+
+  const contactError = await saveClientContact(ctx, formData);
+  if (contactError) return contactError;
 
   const handles = manualHandles(tech);
   const app = manualAppSchema.safeParse(formData.get("app") ?? handles[0]?.app);

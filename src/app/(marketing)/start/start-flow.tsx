@@ -713,7 +713,8 @@ function PayLinkPreview({
       <figcaption className="text-muted text-center text-xs">
         {example
           ? "Example client, time and price. You set your real prices after you save."
-          : "Example client and time. You make a pay link for each booking."}
+          : "Example client and time. You make a pay link for each booking."}{" "}
+        Once they pay, your client also gets a confirmation email, a calendar invite and reminders.
       </figcaption>
     </figure>
   );

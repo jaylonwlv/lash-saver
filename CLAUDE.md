@@ -81,8 +81,14 @@ src/
     (tech)/dashboard/stripe/      Onboarding + Express dashboard actions; refresh/ and return/ routes
     (tech)/dashboard/billing/     Subscription status, subscribe/trial card, Stripe billing portal; return/ route after Checkout
     (tech)/dashboard/appointments/ List (needs action / upcoming / waiting / past), new, [id] detail. New
-                                  appointment has a returning-client picker that fills their details and
-                                  warns about past no-shows / late cancels before the deposit field
+                                  appointment needs only the client's name: email / phone / Instagram are folded
+                                  away ("+ Add their email or phone"), and when left blank the client adds their
+                                  own on the pay page (pay/[id]/contact-fields.tsx, saveClientContact) before
+                                  paying (`20261010000000` dropped the contact check). Contactless appointments
+                                  stay out of the client list until then. A returning-client picker (and "Book
+                                  … again" on a client's page) fills their details, last service and deposit, and
+                                  warns about past no-shows / late cancels; new clients default to the last
+                                  service booked
                                   The detail page sends the pay link with a ready-made DM (share-pay-link.tsx): Share opens
                                   the phone's share sheet (Instagram, iMessage…); Copy message / Copy the link only as fallbacks
     (tech)/dashboard/clients/     Client list and [key] detail (record + appointments), built from appointments

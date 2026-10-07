@@ -22,6 +22,9 @@ export type ClientOption = {
   phone: string | null;
   record: string;
   missed: number;
+  /** Their last service and deposit: picking them starts from there. */
+  lastServiceId: string | null;
+  lastDepositCents: number | null;
 };
 
 const sameEmail = (a: string | null, b: string) => !!a && a === b.trim().toLowerCase();
@@ -35,11 +38,14 @@ export function AppointmentForm({
   cardFees,
   clients,
   initialClientKey,
+  defaultServiceId,
 }: {
   services: ServiceOption[];
   clients: ClientOption[];
   /** From a client's page ("New appointment for …"): start with their details. */
   initialClientKey?: string;
+  /** The service the pro booked most recently: the likeliest next one. */
+  defaultServiceId?: string;
   today: string;
   timeZoneLabel: string;
   /** Deposits go through Stripe, so show what the pro receives after the card fee. */
@@ -58,6 +64,20 @@ export function AppointmentForm({
     v.client_instagram ?? (initial?.instagram ? `@${initial.instagram}` : ""),
   );
   const [phone, setPhone] = useState(v.client_phone ?? initial?.phone ?? "");
+  // Contact details are optional: left blank, the client adds them on the pay page.
+  const [showContact, setShowContact] = useState(
+    Boolean(
+      v.client_email ||
+      v.client_phone ||
+      v.client_instagram ||
+      e.client_email ||
+      e.client_phone ||
+      e.client_instagram ||
+      initial?.email ||
+      initial?.phone ||
+      initial?.instagram,
+    ),
+  );
   // Their record, whether picked from the list or typed in by hand.
   const match =
     clients.find((c) => c.key === picked) ??
@@ -70,13 +90,35 @@ export function AppointmentForm({
     setEmail(c?.email ?? "");
     setInstagram(c?.instagram ? `@${c.instagram}` : "");
     setPhone(c?.phone ?? "");
+    if (c?.email || c?.phone || c?.instagram) setShowContact(true);
+    // Book again: start from their last service and deposit.
+    const last = c?.lastServiceId ? services.find((x) => x.id === c.lastServiceId) : undefined;
+    if (last) {
+      setServiceId(last.id);
+      setDeposit(depositInput(c?.lastDepositCents ?? last.depositCents));
+    }
   }
 
   // The deposit starts at the service's default and follows the service picker,
   // but the pro can change it for this one client (a regular, a holiday slot).
-  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
+  const has = (id: string | null | undefined) => !!id && services.some((s) => s.id === id);
+  const firstService = has(v.service_id)
+    ? v.service_id
+    : has(initial?.lastServiceId)
+      ? initial!.lastServiceId!
+      : has(defaultServiceId)
+        ? defaultServiceId!
+        : (services[0]?.id ?? "");
+  const [serviceId, setServiceId] = useState(firstService);
   const service = services.find((s) => s.id === serviceId) ?? services[0];
-  const [deposit, setDeposit] = useState(service ? depositInput(service.depositCents) : "");
+  const [deposit, setDeposit] = useState(
+    v.deposit ??
+      (initial?.lastDepositCents && initial.lastServiceId === firstService
+        ? depositInput(initial.lastDepositCents)
+        : service
+          ? depositInput(service.depositCents)
+          : ""),
+  );
   const depositCents = dollarsToCents(deposit);
   const depositHint = !service
     ? undefined
@@ -117,41 +159,57 @@ export function AppointmentForm({
         value={name}
         onChange={(event) => setName(event.target.value)}
         error={e.client_name}
+        hint={
+          showContact
+            ? undefined
+            : "Just their name is enough. They add their own email on the pay link."
+        }
         required
       />
-      <Input
-        id="client_email"
-        label="Client email"
-        type="email"
-        inputMode="email"
-        autoComplete="off"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-        error={e.client_email}
-        hint="We email their confirmation here."
-        required
-      />
-      <Input
-        id="client_instagram"
-        label="Client Instagram (optional)"
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck={false}
-        placeholder="@theirhandle"
-        value={instagram}
-        onChange={(event) => setInstagram(event.target.value)}
-        error={e.client_instagram}
-      />
-      <Input
-        id="client_phone"
-        label="Client phone (optional)"
-        type="tel"
-        inputMode="tel"
-        autoComplete="off"
-        value={phone}
-        onChange={(event) => setPhone(event.target.value)}
-        error={e.client_phone}
-      />
+      {!showContact && (
+        <button
+          type="button"
+          onClick={() => setShowContact(true)}
+          className="text-brand -mt-3 inline-flex min-h-11 items-center self-start text-sm font-medium underline"
+        >
+          + Add their email or phone (optional)
+        </button>
+      )}
+      {/* Always submitted (empty when skipped), so the form posts the same fields. */}
+      <div hidden={!showContact} className="flex flex-col gap-5">
+        <Input
+          id="client_email"
+          label="Client email (optional)"
+          type="email"
+          inputMode="email"
+          autoComplete="off"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          error={e.client_email}
+          hint="Leave blank and they add it on the pay link."
+        />
+        <Input
+          id="client_instagram"
+          label="Client Instagram (optional)"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="@theirhandle"
+          value={instagram}
+          onChange={(event) => setInstagram(event.target.value)}
+          error={e.client_instagram}
+        />
+        <Input
+          id="client_phone"
+          label="Client phone (optional)"
+          type="tel"
+          inputMode="tel"
+          autoComplete="off"
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+          error={e.client_phone}
+        />
+      </div>
       {match &&
         (match.missed > 0 ? (
           <p className="border-danger bg-surface rounded-2xl border p-4 text-sm" role="status">
@@ -169,7 +227,7 @@ export function AppointmentForm({
       <Select
         id="service_id"
         label="Service"
-        defaultValue={v.service_id ?? services[0]?.id}
+        value={serviceId}
         error={e.service_id}
         onChange={(event) => {
           const next = services.find((s) => s.id === event.target.value);

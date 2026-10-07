@@ -52,6 +52,8 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
   const manual = a.payment_method === "manual";
   const waitingOnPro = manual && a.status === "pending_deposit" && a.client_marked_sent_at;
   const note = `Deposit ${serviceName} ${when}`.slice(0, 60);
+  // Sent with just a name: the client adds their own email or phone before paying.
+  const askContact = !a.client_email && !a.client_phone;
   const messageTech = dm ? (
     <a href={dm} className="text-brand underline">
       message {business}
@@ -144,6 +146,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
             <ManualPayForm
               action={clientSentDeposit.bind(null, a.id)}
               amount={formatCents(deposit)}
+              askContact={askContact}
               options={manualHandles(tech).map((h) => ({
                 ...h,
                 label: MANUAL_APP_LABEL[h.app],
@@ -151,7 +154,11 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
               }))}
             />
           ) : (
-            <PayForm action={payDeposit.bind(null, a.id)} amount={formatCents(deposit)} />
+            <PayForm
+              action={payDeposit.bind(null, a.id)}
+              amount={formatCents(deposit)}
+              askContact={askContact}
+            />
           )}
         </>
       ) : a.status === "cancelled_by_tech" ? (
