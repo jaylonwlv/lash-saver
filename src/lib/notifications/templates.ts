@@ -92,7 +92,12 @@ export type TemplateData = {
    * don't ask for a reply (replies still reach the founder).
    */
   /** needsHandle: they skipped their Cash App, Zelle or Venmo at sign-up. */
-  founder_welcome: { appUrl: string; needsHandle?: boolean };
+  /**
+   * needsHandle: they skipped their Cash App, Zelle or Venmo at sign-up.
+   * signInUrl: a one-tap sign-in link (most sign up in Instagram's browser, which
+   * forgets them; tapping this in Mail opens their own browser signed in).
+   */
+  founder_welcome: { appUrl: string; needsHandle?: boolean; signInUrl?: string };
   founder_checkin: {
     appUrl: string;
     announcement: string;
@@ -187,7 +192,7 @@ Then `
     : "Here's all you need to do: "
 }next time a client asks for a time in your DMs, open ${APP_NAME}, tap New appointment and send them the pay link. They agree to your policy and pay the deposit before the slot is theirs. If they don't show, you keep it.
 
-Your dashboard: ${d.appUrl}/dashboard
+${d.signInUrl ? `Open ${APP_NAME} on your phone, already signed in (one tap): ${d.signInUrl}` : `Your dashboard: ${d.appUrl}/dashboard`}
 See what your client sees: ${d.appUrl}/demo
 
 ${FOUNDER_NAME}`,

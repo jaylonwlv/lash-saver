@@ -63,7 +63,18 @@ type InstallPromptEvent = Event & { prompt: () => Promise<void> };
  * `layout` sits above every page; the dashboard renders its own (`page`) under its
  * pink greeting, so the header and greeting read as one band.
  */
-export function InstallBanner({ placement }: { placement: "layout" | "page" }) {
+export function InstallBanner({
+  placement,
+  payLinkSent,
+}: {
+  placement: "layout" | "page";
+  /**
+   * Whether they've made a pay link yet. Inside Instagram the "leave this browser"
+   * banner waits until then: right after sign-up it sent people off to sign in again
+   * before they'd seen anything work (the welcome email's link covers leaving early).
+   */
+  payLinkSent: boolean;
+}) {
   const pathname = usePathname();
   const where = useSyncExternalStore(noSubscribe, whereSnapshot, serverNull);
   const dismissedBefore = useSyncExternalStore(noSubscribe, dismissedSnapshot, () => true);
@@ -84,8 +95,10 @@ export function InstallBanner({ placement }: { placement: "layout" | "page" }) {
   if ((placement === "layout") === (pathname === "/dashboard")) return null;
   const spacing = placement === "layout" ? "mb-6" : "";
 
-  // Inside Instagram: always shown (it's why they keep getting signed out), but compact.
+  // Inside Instagram: shown once they've made a pay link (it's why they keep getting
+  // signed out), but compact.
   if (where === "instagram-ios" || where === "instagram-android") {
+    if (!payLinkSent) return null;
     return (
       <section
         className={`bg-ink flex flex-col gap-2 rounded-2xl p-4 text-sm text-white ${spacing}`}

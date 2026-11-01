@@ -10,7 +10,7 @@ import { SLUG_PATTERN, slugFromName } from "@/app/(tech)/dashboard/profile/schem
 import { serverEnv } from "@/lib/env";
 import { fieldErrors, formValues, type FormState } from "@/lib/forms";
 import { trackSignUp } from "@/lib/meta";
-import { notifyOnce } from "@/lib/notifications/log";
+import { alreadyLogged, notifyOnce } from "@/lib/notifications/log";
 import { publicEnv } from "@/lib/env.public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
@@ -99,13 +99,36 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
   // A plain note from the founder, sent after the response so sign-up never waits on email.
   const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
   const techId = created.user.id;
-  after(() =>
-    notifyOnce(`founder_welcome:${techId}`, {
+  after(async () => {
+    if (await alreadyLogged(`founder_welcome:${techId}`)) return;
+    // Most pros sign up in Instagram's browser, which forgets them once they leave. A
+    // sign-in link in the email opens their own browser signed in, with no code to type.
+    // (Made after the sign-in above used its token; a new link replaces any older one.)
+    let signInUrl: string | undefined;
+    try {
+      const { data: welcomeLink } = await admin.auth.admin.generateLink({
+        type: "magiclink",
+        email: data.email,
+      });
+      const hash = welcomeLink?.properties?.hashed_token;
+      if (hash) {
+        const url = new URL("/auth/callback", appUrl);
+        url.search = new URLSearchParams({
+          token_hash: hash,
+          type: "email",
+          next: "/dashboard",
+        }).toString();
+        signInUrl = url.toString();
+      }
+    } catch (err) {
+      console.error("Welcome sign-in link failed; sending the email without it", err);
+    }
+    await notifyOnce(`founder_welcome:${techId}`, {
       to: { email: data.email },
       template: "founder_welcome",
-      data: { appUrl, needsHandle: data.method !== "stripe" && !data.handles },
-    }).catch((err: unknown) => console.error("Founder welcome email failed", err)),
-  );
+      data: { appUrl, needsHandle: data.method !== "stripe" && !data.handles, signInUrl },
+    }).catch((err: unknown) => console.error("Founder welcome email failed", err));
+  });
 
   revalidatePath("/dashboard", "layout");
   redirect("/dashboard");

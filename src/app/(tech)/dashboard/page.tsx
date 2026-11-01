@@ -136,7 +136,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       </section>
       {/* Instant sign-ups: where alerts go, so a typo is caught here, not in their inbox. */}
       {!profile.email_confirmed && <AlertsEmail email={profile.email} />}
-      <InstallBanner placement="page" />
+      <InstallBanner placement="page" payLinkSent={firstLinkSent} />
       {!firstLinkSent && <SetupProgress done={stepsDone} />}
 
       {profile.subscription_status === "past_due" && (
