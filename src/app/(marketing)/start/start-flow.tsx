@@ -240,10 +240,13 @@ export function StartFlow({
   const [attempt, setAttempt] = useState(0);
   // A quick tap (or email autofill) can beat Turnstile's token: wait for it briefly.
   const [checking, setChecking] = useState(false);
+  // Still no token after the wait: Cloudflare may want them to tap its box first.
+  const [checkHint, setCheckHint] = useState(false);
   const tokenWaited = useRef(false);
   if (state !== seenState) {
     setSeenState(state);
     setAttempt((n) => n + 1);
+    setCheckHint(false);
     setClearedServer([]);
     if (Object.keys(state.errors ?? {}).some((k) => BUSINESS_FIELDS.includes(k))) {
       setStep("business");
@@ -521,19 +524,32 @@ export function StartFlow({
             setChecking(true);
             const started = Date.now();
             const poll = () => {
-              if (token() || Date.now() - started > 4000) {
+              // They went back a step meanwhile: drop this wait, the next tap starts over.
+              if (!form.isConnected) {
+                tokenWaited.current = false;
+                setChecking(false);
+                return;
+              }
+              if (token()) {
                 tokenWaited.current = true;
                 // Re-enable the button now, so the click below isn't on a disabled button.
                 flushSync(() => setChecking(false));
                 // requestSubmit is missing before iOS 16; clicking the button does the same.
                 if (typeof form.requestSubmit === "function") form.requestSubmit();
                 else form.querySelector<HTMLButtonElement>("button[type=submit]")?.click();
+              } else if (Date.now() - started > 4000) {
+                // Don't submit without a token (it would fail): let them finish Cloudflare's
+                // check. Their next tap submits either way, so a broken widget never traps them.
+                tokenWaited.current = true;
+                setChecking(false);
+                setCheckHint(true);
               } else setTimeout(poll, 200);
             };
             poll();
             return;
           }
           tokenWaited.current = false;
+          setCheckHint(false);
           writeDraft(null);
         }}
         className="flex flex-col gap-4"
@@ -573,6 +589,12 @@ export function StartFlow({
         />
         {turnstileSiteKey && <Turnstile key={attempt} siteKey={turnstileSiteKey} />}
         {state.message && <p className="text-danger text-sm">{state.message}</p>}
+        {checkHint && (
+          <p className="text-muted text-sm" role="status">
+            Still checking you&apos;re a person. If a box appeared above, tap it, then tap Save and
+            continue again.
+          </p>
+        )}
         <Button type="submit" disabled={pending || checking}>
           {pending ? "Saving…" : checking ? "One sec…" : "Save and continue"}
         </Button>
