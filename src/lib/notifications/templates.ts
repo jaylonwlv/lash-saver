@@ -97,7 +97,13 @@ export type TemplateData = {
    * signInUrl: a one-tap sign-in link (most sign up in Instagram's browser, which
    * forgets them; tapping this in Mail opens their own browser signed in).
    */
-  founder_welcome: { appUrl: string; needsHandle?: boolean; signInUrl?: string };
+  founder_welcome: {
+    appUrl: string;
+    needsHandle?: boolean;
+    signInUrl?: string;
+    /** What the second pay link needs, so the trial card isn't a surprise: trial days, or null (no trial: price). */
+    nextLink?: { trialDays: number | null; price: string };
+  };
   founder_checkin: {
     appUrl: string;
     announcement: string;
@@ -191,7 +197,13 @@ ${
 Then `
     : "Here's all you need to do: "
 }next time a client asks for a time in your DMs, open ${APP_NAME}, tap New appointment and send them the pay link. They agree to your policy and pay the deposit before the slot is theirs. If they don't show, you keep it.
-
+${
+  d.nextLink
+    ? `
+Your first pay link doesn't need a card. ${d.nextLink.trialDays ? `When you send your second, you'll add one to start your ${d.nextLink.trialDays}-day free trial ($0 that day, cancel anytime).` : `To send more after that, it's ${d.nextLink.price}/month, cancel anytime.`}
+`
+    : ""
+}
 ${d.signInUrl ? `Open ${APP_NAME} on your phone, already signed in (one tap): ${d.signInUrl}` : `Your dashboard: ${d.appUrl}/dashboard`}
 See what your client sees: ${d.appUrl}/demo
 

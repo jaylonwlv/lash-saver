@@ -354,7 +354,7 @@ export function StartFlow({
           ))}
         </ul>
         <p className="text-muted text-center text-sm">
-          Free for {TRIAL_DAYS} days. No card to sign up.
+          Free for {TRIAL_DAYS} days. No card to sign up or for your first pay link.
         </p>
       </section>
     );

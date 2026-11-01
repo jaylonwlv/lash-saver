@@ -7,11 +7,14 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { sendMagicLink } from "@/app/(auth)/login/actions";
 import { SLUG_PATTERN, slugFromName } from "@/app/(tech)/dashboard/profile/schema";
+import { SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
 import { serverEnv } from "@/lib/env";
 import { fieldErrors, formValues, type FormState } from "@/lib/forms";
 import { trackSignUp } from "@/lib/meta";
 import { alreadyLogged, notifyOnce } from "@/lib/notifications/log";
 import { publicEnv } from "@/lib/env.public";
+import { formatCents } from "@/lib/money";
+import { trialEligible } from "@/lib/stripe/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -126,7 +129,15 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     await notifyOnce(`founder_welcome:${techId}`, {
       to: { email: data.email },
       template: "founder_welcome",
-      data: { appUrl, needsHandle: data.method !== "stripe" && !data.handles, signInUrl },
+      data: {
+        appUrl,
+        needsHandle: data.method !== "stripe" && !data.handles,
+        signInUrl,
+        nextLink: {
+          trialDays: (await trialEligible(techId).catch(() => false)) ? TRIAL_DAYS : null,
+          price: formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, ""),
+        },
+      },
     }).catch((err: unknown) => console.error("Founder welcome email failed", err));
   });
 

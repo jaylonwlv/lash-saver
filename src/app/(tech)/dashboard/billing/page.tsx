@@ -57,7 +57,21 @@ export default async function BillingPage() {
           variant={status === "past_due" ? "primary" : "secondary"}
         />
       ) : null}
-      {!subscribed && <SubscribeCard trialEligible={await trialEligible(user!.id)} timezone={tz} />}
+      {!subscribed && (
+        <SubscribeCard
+          trialEligible={await trialEligible(user!.id)}
+          // Their first pay link needs no card; after it, this card is for the next one.
+          sentFirst={
+            ((
+              await supabase
+                .from("appointments")
+                .select("id", { count: "exact", head: true })
+                .eq("tech_id", user!.id)
+            ).count ?? 0) > 0
+          }
+          timezone={tz}
+        />
+      )}
       <p className="text-muted text-sm">
         In the billing portal you can change your card, download invoices, or cancel. Cancelling
         stops new pay links at the end of your paid period or trial.

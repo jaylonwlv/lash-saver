@@ -3,8 +3,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
-import { APP_NAME } from "@/lib/config";
+import { APP_NAME, SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
+import { formatCents } from "@/lib/money";
+import { trialEligible } from "@/lib/stripe/billing";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
@@ -94,6 +96,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     Boolean,
   ).length;
   const menuUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
+  // Their first pay link is out without a card; the next one asks for it. Say so on the
+  // button that leads there, so the trial card is never a surprise.
+  const nextNeedsCard = firstLinkSent && !subscribed;
+  const eligible = nextNeedsCard ? await trialEligible(user!.id).catch(() => false) : false;
+  const monthly = `${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month`;
   const trialDaysLeft =
     profile.subscription_status === "trialing" && profile.trial_ends_at
       ? Math.max(
@@ -190,7 +197,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                 New appointment
               </span>
               <span className="text-sm text-white/70">
-                Agreed on a time in your DMs? Make the pay link. The deposit locks in their spot.
+                {nextNeedsCard
+                  ? eligible
+                    ? `Your next pay link needs your card. It starts your ${TRIAL_DAYS}-day free trial ($0 today).`
+                    : `Your next pay link needs a subscription (${monthly}, cancel anytime).`
+                  : "Agreed on a time in your DMs? Make the pay link. The deposit locks in their spot."}
               </span>
             </span>
             <span

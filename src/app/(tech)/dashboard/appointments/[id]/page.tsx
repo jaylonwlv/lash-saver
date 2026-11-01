@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BackLink } from "@/components/ui/back-link";
+import { ButtonLink } from "@/components/ui/button";
+import { SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
 import { STATUS_LABEL, payability, payUrl } from "@/lib/appointments";
 import { formatDuration } from "@/lib/format";
 import { formatCents, processingFeeCents, techPayoutCents } from "@/lib/money";
+import { trialEligible } from "@/lib/stripe/billing";
+import { canSendPayLinks } from "@/lib/subscription";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDayTime, formatWhen } from "@/lib/time";
 import { MANUAL_APP_LABEL } from "@/lib/payments";
@@ -43,7 +47,7 @@ export default async function AppointmentPage({
   const supabase = await createClient();
   const [{ data: a }, { data: profile }, { data: deposits }] = await Promise.all([
     supabase.from("appointments").select("*").eq("id", id).maybeSingle(),
-    supabase.from("profiles").select("timezone").eq("id", user!.id).single(),
+    supabase.from("profiles").select("timezone, subscription_status").eq("id", user!.id).single(),
     supabase
       .from("deposits")
       .select("status, amount_cents, paid_at, method, manual_app, dispute_status, created_at")
@@ -62,6 +66,10 @@ export default async function AppointmentPage({
 
   const tz = profile.timezone;
   const payState = payability(a);
+  // Just made without a subscription, so it was their first (the only one allowed):
+  // say now, calmly, that the next one needs a card, so the trial card is no surprise.
+  const nextNeedsCard = Boolean(isNew) && !canSendPayLinks(profile.subscription_status);
+  const eligible = nextNeedsCard ? await trialEligible(user!.id).catch(() => false) : false;
   const started = new Date(a.starts_at) <= new Date();
   const deposit = deposits?.find((d) => d.status !== "pending");
   const claimed = deposits?.find((d) => d.status === "pending" && d.method === "manual");
@@ -142,6 +150,20 @@ export default async function AppointmentPage({
               url: payUrl(a.id),
             })}
           />
+        </section>
+      )}
+
+      {nextNeedsCard && (
+        <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5 text-sm">
+          <p>
+            <strong>Heads up for next time:</strong>{" "}
+            {eligible
+              ? `your next pay link needs your card. Adding it starts your ${TRIAL_DAYS}-day free trial: $0 today, then ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month after the trial. Cancel anytime.`
+              : `to send more pay links after this one, you'll subscribe for ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month. Cancel anytime.`}
+          </p>
+          <ButtonLink href="/dashboard/billing" variant="secondary">
+            {eligible ? "Add my card now" : "See billing"}
+          </ButtonLink>
         </section>
       )}
 
