@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { flushSync } from "react-dom";
 import { CodeForm } from "@/app/(auth)/login/login-form";
 import { trackPixel } from "@/components/meta-pixel";
 import { Button } from "@/components/ui/button";
@@ -237,6 +238,9 @@ export function StartFlow({
   const [seenState, setSeenState] = useState(state);
   // Turnstile tokens work once: a fresh widget after every reply gives the next try a new one.
   const [attempt, setAttempt] = useState(0);
+  // A quick tap (or email autofill) can beat Turnstile's token: wait for it briefly.
+  const [checking, setChecking] = useState(false);
+  const tokenWaited = useRef(false);
   if (state !== seenState) {
     setSeenState(state);
     setAttempt((n) => n + 1);
@@ -506,7 +510,34 @@ export function StartFlow({
         example={tradeId !== "other"}
       />
 
-      <form action={action} onSubmit={() => writeDraft(null)} className="flex flex-col gap-4">
+      <form
+        action={action}
+        onSubmit={(e) => {
+          const form = e.currentTarget;
+          const token = () =>
+            (form.elements.namedItem("cf-turnstile-response") as HTMLInputElement | null)?.value;
+          if (turnstileSiteKey && !token() && !tokenWaited.current) {
+            e.preventDefault();
+            setChecking(true);
+            const started = Date.now();
+            const poll = () => {
+              if (token() || Date.now() - started > 4000) {
+                tokenWaited.current = true;
+                // Re-enable the button now, so the click below isn't on a disabled button.
+                flushSync(() => setChecking(false));
+                // requestSubmit is missing before iOS 16; clicking the button does the same.
+                if (typeof form.requestSubmit === "function") form.requestSubmit();
+                else form.querySelector<HTMLButtonElement>("button[type=submit]")?.click();
+              } else setTimeout(poll, 200);
+            };
+            poll();
+            return;
+          }
+          tokenWaited.current = false;
+          writeDraft(null);
+        }}
+        className="flex flex-col gap-4"
+      >
         <input type="hidden" name="trade" value={trade.id} />
         <input type="hidden" name="business_name" value={businessName} />
         <input type="hidden" name="method" value={method} />
@@ -542,8 +573,8 @@ export function StartFlow({
         />
         {turnstileSiteKey && <Turnstile key={attempt} siteKey={turnstileSiteKey} />}
         {state.message && <p className="text-danger text-sm">{state.message}</p>}
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save and continue"}
+        <Button type="submit" disabled={pending || checking}>
+          {pending ? "Saving…" : checking ? "One sec…" : "Save and continue"}
         </Button>
         <p className="text-muted text-center text-xs">
           Free for {TRIAL_DAYS} days. No card to sign up: you add one before your first pay link. By
