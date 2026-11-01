@@ -80,7 +80,7 @@ export type TemplateData = {
     appointmentUrl: string;
   };
   /**
-   * To a tech who signed up but hasn't added a card yet (so can't send pay links), about a
+   * To a tech who signed up but hasn't sent a pay link or added a card yet, about a
    * day and three days after sign-up. `nextStep` names what's left; `trialDays` is null
    * when they can't get a free trial.
    */
@@ -210,7 +210,7 @@ Still showing example prices? Set your own in a minute: ${d.appUrl}/dashboard/se
 Worried your regulars will push back? Send them this first:
 "${d.announcement}"
 
-${d.trialDays ? `Wondering about the card? You're not charged until your ${d.trialDays}-day free trial ends, and you can cancel anytime` : `Wondering about the cost? It's ${d.price}/month, and you can cancel anytime`}: ${d.appUrl}/dashboard/billing
+${d.trialDays ? `Wondering about the card? Your first pay link doesn't need one. After that, you're not charged until your ${d.trialDays}-day free trial ends, and you can cancel anytime` : `Wondering about the cost? Your first pay link is included; after that it's ${d.price}/month, and you can cancel anytime`}: ${d.appUrl}/dashboard/billing
 
 When a client asks for a time, tap New appointment and send the link: ${d.appUrl}/dashboard
 
@@ -273,6 +273,6 @@ export function render<T extends TemplateId>(template: T, data: TemplateData[T])
 
 function trialLine(trialDays: number | null): string {
   return trialDays
-    ? `Your ${trialDays}-day free trial starts when you add a card for your first pay link; you're not charged until it ends. `
+    ? `Your first pay link needs no card. Your ${trialDays}-day free trial starts when you add one for the next, and you're not charged until it ends. `
     : "";
 }

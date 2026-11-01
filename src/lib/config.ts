@@ -24,7 +24,7 @@ export const PROCESSING_FEE_BPS = 350; // 3.5%
 export const PROCESSING_FEE_FIXED_CENTS = 30;
 export const PROCESSING_FEE_LABEL = "3.5% + 30¢";
 
-/** Tech subscription. The trial starts when the tech adds a card, before their first pay link. */
+/** Tech subscription. The first pay link needs no card; the trial starts when the tech adds one for the second. */
 export const SUBSCRIPTION_PRICE_CENTS = 2900;
 export const TRIAL_DAYS = 30;
 export const SUBSCRIPTION_NAME = APP_NAME;
@@ -66,7 +66,7 @@ export function depositAnnouncement(windowHours: number): string {
 
 When we pick a time, I'll send you a link to lock in your spot. Thank you!`;
 }
-export const LEGAL_UPDATED = "October 7, 2026";
+export const LEGAL_UPDATED = "November 1, 2026";
 
 /** Graph API version for the Meta Conversions API. Meta supports each for about two years. */
 export const META_GRAPH_API_VERSION = "v23.0";

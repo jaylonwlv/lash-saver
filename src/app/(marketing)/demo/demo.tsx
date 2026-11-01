@@ -223,8 +223,8 @@ export function DemoPayPage({ policy }: { policy: string }) {
           </p>
           <ButtonLink href={SIGN_UP}>Start free for {TRIAL_DAYS} days</ButtonLink>
           <p className="text-muted text-center text-xs">
-            No card to sign up. You add one before your first pay link and aren&apos;t charged until
-            the trial ends.
+            No card to sign up or for your first pay link. You add one for the next and aren&apos;t
+            charged until the trial ends.
           </p>
         </section>
 

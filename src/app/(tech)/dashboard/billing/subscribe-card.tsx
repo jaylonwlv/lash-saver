@@ -19,10 +19,13 @@ const wholeDollars = (cents: number) => formatCents(cents).replace(/\.00$/, "");
  */
 export function SubscribeCard({
   trialEligible,
+  sentFirst = false,
   timezone,
   topService,
 }: {
   trialEligible: boolean;
+  /** They've sent their first pay link (it needs no card); this card is for the next. */
+  sentFirst?: boolean;
   timezone: string;
   /** Their priciest service, for "one no-show costs you more than a month of Dibs". */
   topService?: { name: string; priceCents: number } | null;
@@ -46,7 +49,11 @@ export function SubscribeCard({
       />
       <div className="relative flex flex-col gap-2">
         <p className="text-pink text-xs font-bold tracking-[0.08em] uppercase">
-          {trialEligible ? "Last step before your first pay link" : "Subscribe to send pay links"}
+          {sentFirst
+            ? "Your first pay link is out"
+            : trialEligible
+              ? `${TRIAL_DAYS} days free`
+              : "Subscribe to send pay links"}
         </p>
         <h2 className="font-display text-[34px] leading-[1.02] font-extrabold tracking-tight">
           {/* Non-breaking hyphen: "no-" never ends a line. */}
@@ -54,7 +61,7 @@ export function SubscribeCard({
         </h2>
         <p className="text-white/75">
           {trialEligible
-            ? `Start your ${TRIAL_DAYS}-day free trial and send your first pay link in under a minute.`
+            ? `Start your ${TRIAL_DAYS}-day free trial and send your ${sentFirst ? "next" : "first"} pay link in under a minute.`
             : "Pick up where you left off and send your next pay link in under a minute."}
         </p>
       </div>

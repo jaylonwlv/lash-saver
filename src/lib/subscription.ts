@@ -10,6 +10,18 @@ export function canSendPayLinks(status: string | null | undefined): boolean {
   return status ? SENDING_ALLOWED.has(status) : false;
 }
 
+/**
+ * Whether a pro may create a pay link now: always with a live subscription, and once
+ * without one, for their very first (they add a card for the second, which starts the
+ * trial). Mirrors the "techs create pay links" policy (20261011000000).
+ */
+export function canCreatePayLink(
+  status: string | null | undefined,
+  payLinksSoFar: number,
+): boolean {
+  return canSendPayLinks(status) || payLinksSoFar === 0;
+}
+
 /** Gmail ignores dots and +tags; everyone ignores +tags and case. */
 export function normalizeEmail(email: string): string {
   const [rawLocal, rawDomain = ""] = email.trim().toLowerCase().split("@");

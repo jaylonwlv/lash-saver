@@ -46,8 +46,8 @@ const START = `Start free for ${TRIAL_DAYS} days`;
 // Every "Start free" goes to instant sign-up (StartSignup and Lead Pixel events fire there).
 const SIGN_UP = "/start";
 const ANNOUNCEMENT = depositAnnouncement(48);
-const HERO_NOTE = `Then ${price}/month, cancel anytime. You add a card before your first pay link, and you're not charged until the trial ends.`;
-const CARD_NOTE = `You add a card before your first pay link. You're not charged until the trial ends.`;
+const HERO_NOTE = `Then ${price}/month, cancel anytime. No card for your first pay link; you add one for the next, and you're not charged until the trial ends.`;
+const CARD_NOTE = `No card for your first pay link. You add one for the next, and you're not charged until the trial ends.`;
 
 export default function HomePage() {
   return (
@@ -409,9 +409,10 @@ export default function HomePage() {
                 anytime from your billing page.
               </Faq>
               <Faq q="Do I need a card to try it?">
-                Not to sign up. You add a card when you&apos;re ready to send your first pay link,
-                and you won&apos;t be charged until your {TRIAL_DAYS}-day trial ends. We email you{" "}
-                {TRIAL_ENDING_NOTICE_DAYS} days before it ends, and you can cancel from your phone.
+                Not to sign up, and not for your first pay link. You add a card when you send your
+                second, and you won&apos;t be charged until your {TRIAL_DAYS}-day trial ends. We
+                email you {TRIAL_ENDING_NOTICE_DAYS} days before it ends, and you can cancel from
+                your phone.
               </Faq>
             </div>
           </div>

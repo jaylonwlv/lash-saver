@@ -71,8 +71,9 @@ export default function TermsPage() {
       <Section title="4. Subscription and free trial">
         <ul>
           <li>
-            Creating pay links requires a subscription: {price} per month after a {TRIAL_DAYS}-day
-            free trial. You add a card to start the trial and won&apos;t be charged until it ends.
+            Your first pay link doesn&apos;t need a subscription. Creating more requires one:{" "}
+            {price} per month after a {TRIAL_DAYS}-day free trial. You add a card to start the trial
+            and won&apos;t be charged until it ends.
           </li>
           <li>
             The subscription renews automatically every month and your card is charged each period

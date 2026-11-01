@@ -21,7 +21,7 @@ import {
   settleDeposit,
 } from "@/lib/stripe/deposits";
 import { createClient, getUser } from "@/lib/supabase/server";
-import { canSendPayLinks } from "@/lib/subscription";
+import { canCreatePayLink } from "@/lib/subscription";
 import { formatWhen, zonedTimeToUtc } from "@/lib/time";
 import { appointmentIdSchema, appointmentSchema } from "./schema";
 
@@ -35,7 +35,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
   const input = parsed.data;
 
   const supabase = await createClient();
-  const [{ data: profile }, { data: service }] = await Promise.all([
+  const [{ data: profile }, { data: service }, { count: payLinksSoFar }] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -49,12 +49,17 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       .select("id, duration_minutes, price_cents, deposit_cents, is_active")
       .eq("id", input.service_id)
       .maybeSingle(),
+    // Their first pay link needs no card (see canCreatePayLink).
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("tech_id", user.id),
   ]);
   if (!profile) throw new Error("Profile not found");
   if (!canTakeDeposits(profile)) {
     return { message: "Set up deposits on your dashboard before creating pay links.", values };
   }
-  if (!canSendPayLinks(profile.subscription_status)) {
+  if (!canCreatePayLink(profile.subscription_status, payLinksSoFar ?? 0)) {
     return { message: "Start your free trial or subscribe to send pay links.", values };
   }
   if (!service?.is_active) return { errors: { service_id: "Pick a service." }, values };

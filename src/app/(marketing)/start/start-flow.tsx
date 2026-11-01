@@ -611,8 +611,8 @@ export function StartFlow({
           {pending ? "Saving…" : checking ? "One sec…" : "Save my pay link"}
         </Button>
         <p className="text-muted text-center text-xs">
-          Free for {TRIAL_DAYS} days. No card to sign up: you add one before your first pay link. By
-          continuing you agree to the{" "}
+          Free for {TRIAL_DAYS} days. No card to sign up or for your first pay link. By continuing
+          you agree to the{" "}
           <Link href="/terms" className="underline">
             Terms
           </Link>{" "}

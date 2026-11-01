@@ -3,14 +3,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
-import { APP_NAME, TRIAL_DAYS } from "@/lib/config";
+import { APP_NAME } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { syncAccountStatus } from "@/lib/stripe/connect";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
 import { manualHandles } from "@/lib/payments";
 import { setupState } from "@/lib/setup";
-import { trialEligible } from "@/lib/stripe/billing";
 import { canSendPayLinks } from "@/lib/subscription";
 import { loadSavings, savingsSummary } from "@/lib/savings";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
@@ -91,12 +90,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const allDone = setup.ready;
   const subscribed = canSendPayLinks(profile.subscription_status);
   const firstLinkSent = (payLinks ?? 0) > 0;
-  // Only promise a trial they can get; if the check fails, just don't mention it.
   const stepsDone = [profileDone, stripeStatus === "done", servicesDone, firstLinkSent].filter(
     Boolean,
   ).length;
-  const offerTrial =
-    !subscribed && !firstLinkSent ? await trialEligible(user!.id).catch(() => false) : false;
   const menuUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
   const trialDaysLeft =
     profile.subscription_status === "trialing" && profile.trial_ends_at
@@ -349,18 +345,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               firstLinkSent
                 ? "You're taking deposits. Make a pay link whenever you book a client."
                 : !allDone
-                  ? `Unlocks after the steps above.${offerTrial ? ` Adding a card for your first pay link starts your ${TRIAL_DAYS}-day free trial.` : ""}`
+                  ? "Unlocks after the steps above. No card needed for your first one."
                   : subscribed
                     ? "Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
-                    : offerTrial
-                      ? `Add a card to start your ${TRIAL_DAYS}-day free trial, then send it. You're not charged until the trial ends.`
-                      : "Subscribe to start sending pay links."
+                    : "No card needed for your first one. Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
             }
           >
             {allDone && !firstLinkSent && (
-              <ButtonLink href="/dashboard/appointments/new">
-                {subscribed ? "New appointment" : offerTrial ? "Start free trial" : "Subscribe"}
-              </ButtonLink>
+              <ButtonLink href="/dashboard/appointments/new">New appointment</ButtonLink>
             )}
           </Step>
         </ol>

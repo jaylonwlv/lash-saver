@@ -249,6 +249,13 @@ async function sendSetupNudges(now: Date): Promise<number> {
         ageHours < SETUP_NUDGE_NEXT_AFTER_HOURS ? "setup_nudge_first" : "setup_nudge_next_booking";
       const logKey = `${template}:${tech.id}`;
       if (await alreadyLogged(logKey)) continue;
+      // They've sent their first pay link (it needs no card): these are about that one.
+      const { count: payLinks, error: linksError } = await admin
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("tech_id", tech.id);
+      if (linksError) throw new Error(linksError.message);
+      if ((payLinks ?? 0) > 0) continue;
 
       const { count, error: servicesError } = await admin
         .from("services")
