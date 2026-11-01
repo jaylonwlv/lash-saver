@@ -69,7 +69,8 @@ export default async function AppointmentPage({
   // Just made without a subscription, so it was their first (the only one allowed):
   // say now, calmly, that the next one needs a card, so the trial card is no surprise.
   const nextNeedsCard = Boolean(isNew) && !canSendPayLinks(profile.subscription_status);
-  const eligible = nextNeedsCard ? await trialEligible(user!.id).catch(() => false) : false;
+  // null: the check failed, so the note doesn't promise or rule out a trial.
+  const eligible = nextNeedsCard ? await trialEligible(user!.id).catch(() => null) : false;
   const started = new Date(a.starts_at) <= new Date();
   const deposit = deposits?.find((d) => d.status !== "pending");
   const claimed = deposits?.find((d) => d.status === "pending" && d.method === "manual");
@@ -157,12 +158,14 @@ export default async function AppointmentPage({
         <section className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-5 text-sm">
           <p>
             <strong>Heads up for next time:</strong>{" "}
-            {eligible
-              ? `your next pay link needs your card. Adding it starts your ${TRIAL_DAYS}-day free trial: $0 today, then ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month after the trial. Cancel anytime.`
+            {eligible !== false
+              ? eligible === null
+                ? "your next pay link needs your card."
+                : `your next pay link needs your card. Adding it starts your ${TRIAL_DAYS}-day free trial: $0 today, then ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month after the trial. Cancel anytime.`
               : `to send more pay links after this one, you'll subscribe for ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month. Cancel anytime.`}
           </p>
           <ButtonLink href="/dashboard/billing" variant="secondary">
-            {eligible ? "Add my card now" : "See billing"}
+            {eligible !== false ? "Add my card now" : "See billing"}
           </ButtonLink>
         </section>
       )}

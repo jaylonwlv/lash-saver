@@ -60,7 +60,13 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     return { message: "Set up deposits on your dashboard before creating pay links.", values };
   }
   if (!canCreatePayLink(profile.subscription_status, payLinksSoFar ?? 0)) {
-    return { message: "Start your free trial or subscribe to send pay links.", values };
+    return {
+      message:
+        (payLinksSoFar ?? 0) > 0
+          ? "Your first pay link is already out. Add your card on Billing (it starts your free trial if you're eligible), then send this one."
+          : "Start your free trial or subscribe to send pay links.",
+      values,
+    };
   }
   if (!service?.is_active) return { errors: { service_id: "Pick a service." }, values };
   if (input.deposit > service.price_cents) {

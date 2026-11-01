@@ -62,7 +62,12 @@ export default async function NewAppointmentPage({
   // Their first pay link needs no card; the card (and the trial) comes with the second.
   const paywalled = ready && !canCreatePayLink(profile.subscription_status, payLinksSoFar ?? 0);
   const firstWithoutCard = ready && !subscribed && !paywalled;
-  const eligible = paywalled || firstWithoutCard ? await trialEligible(user!.id) : false;
+  // null: the check failed, so say nothing about a trial either way (and still show the form).
+  const eligible = paywalled
+    ? await trialEligible(user!.id)
+    : firstWithoutCard
+      ? await trialEligible(user!.id).catch(() => null)
+      : false;
 
   return (
     <div className="flex flex-col gap-6">
@@ -93,9 +98,11 @@ export default async function NewAppointmentPage({
       {firstWithoutCard && (
         <p className="border-line bg-surface rounded-2xl border p-4 text-sm">
           <strong>Your first pay link doesn&apos;t need a card.</strong>{" "}
-          {eligible
+          {eligible === true
             ? `When you send your next one, you'll add a card to start your ${TRIAL_DAYS}-day free trial.`
-            : `To send more after this one, you'll subscribe for ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month.`}
+            : eligible === false
+              ? `To send more after this one, you'll subscribe for ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month.`
+              : "When you send your next one, you'll add your card."}
         </p>
       )}
       {ready && !paywalled && services.some((s) => s.is_starter) && (
@@ -109,7 +116,7 @@ export default async function NewAppointmentPage({
       )}
       {paywalled ? (
         <SubscribeCard
-          trialEligible={eligible}
+          trialEligible={eligible === true}
           sentFirst={sentBefore}
           timezone={profile.timezone}
           // Services are ordered by price, so the last is their priciest.

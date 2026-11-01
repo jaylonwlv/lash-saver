@@ -133,10 +133,14 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
         appUrl,
         needsHandle: data.method !== "stripe" && !data.handles,
         signInUrl,
-        nextLink: {
-          trialDays: (await trialEligible(techId).catch(() => false)) ? TRIAL_DAYS : null,
-          price: formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, ""),
-        },
+        nextLink: await trialEligible(techId).then(
+          (eligible) => ({
+            trialDays: eligible ? TRIAL_DAYS : null,
+            price: formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, ""),
+          }),
+          // Unknown: the landing page and /start already said it; don't guess here.
+          () => undefined,
+        ),
       },
     }).catch((err: unknown) => console.error("Founder welcome email failed", err));
   });

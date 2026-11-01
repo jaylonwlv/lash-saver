@@ -99,7 +99,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   // Their first pay link is out without a card; the next one asks for it. Say so on the
   // button that leads there, so the trial card is never a surprise.
   const nextNeedsCard = firstLinkSent && !subscribed;
-  const eligible = nextNeedsCard ? await trialEligible(user!.id).catch(() => false) : false;
+  const eligible = nextNeedsCard ? await trialEligible(user!.id).catch(() => null) : false;
   const monthly = `${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month`;
   const trialDaysLeft =
     profile.subscription_status === "trialing" && profile.trial_ends_at
@@ -198,9 +198,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               </span>
               <span className="text-sm text-white/70">
                 {nextNeedsCard
-                  ? eligible
+                  ? eligible === true
                     ? `Your next pay link needs your card. It starts your ${TRIAL_DAYS}-day free trial ($0 today).`
-                    : `Your next pay link needs a subscription (${monthly}, cancel anytime).`
+                    : eligible === false
+                      ? `Your next pay link needs a subscription (${monthly}, cancel anytime).`
+                      : "Your next pay link needs your card."
                   : "Agreed on a time in your DMs? Make the pay link. The deposit locks in their spot."}
               </span>
             </span>
