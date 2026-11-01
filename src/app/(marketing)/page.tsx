@@ -73,7 +73,7 @@ export default function HomePage() {
               {TRIAL_DAYS} days free · No card to sign up
             </p>
             <h1 className="text-[2.5rem] leading-[1.05] font-bold tracking-tight md:text-6xl">
-              Stop losing money to <span className="whitespace-nowrap">no-shows.</span>
+              No more getting ghosted by <span className="whitespace-nowrap">clients. 👻</span>
             </h1>
             <p className="text-muted text-lg">
               Send a deposit link in your DMs or texts. Clients agree to your policy and pay before
@@ -85,6 +85,9 @@ export default function HomePage() {
                 Try a demo pay link
               </ButtonLink>
             </div>
+            <p className="text-lg font-semibold">
+              no more &ldquo;omw&rdquo; from <span className="whitespace-nowrap">the couch 🛋️</span>
+            </p>
             <p className="text-muted text-sm">{HERO_NOTE}</p>
           </div>
           <HeroVisual />
