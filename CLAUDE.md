@@ -48,7 +48,8 @@ src/
                                   the product: update them, and LEGAL_UPDATED in config.ts, when data, fees,
                                   providers or billing change. No ad trackers on pay links or menu pages
                                   (the Privacy Policy says so); a Meta Pixel belongs on marketing pages only.
-    (marketing)/start/            Instant sign-up: trade → business name + payment handle (or Card) → preview of their
+    (marketing)/start/            Instant sign-up: trade → business name + payment method (handle optional: a blank one shows the
+                                  preview without it, and the dashboard's deposits step asks for it later) → preview of their
                                   pay link → email. createAccount (actions.ts) creates the user with the admin API
                                   and signs them in on the server (generateLink + verifyOtp, nothing emailed), sets up
                                   profile, starter services and time zone, sends CompleteRegistration. An email

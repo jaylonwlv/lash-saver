@@ -296,7 +296,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                   : "Clients pay by card or Apple Pay, and deposits go to your bank automatically."
                 : stripeStatus === "waiting"
                   ? "Stripe is checking your details. This usually takes a few minutes; if Stripe needs anything else, tap below."
-                  : "Choose how clients pay you. Keep your Cash App, Zelle or Venmo (2 minutes), or take cards automatically with Stripe."
+                  : manual && profile.trade
+                    ? "Add your Cash App, Zelle or Venmo so clients know where to send the deposit (1 minute). Or take cards with Stripe."
+                    : "Choose how clients pay you. Keep your Cash App, Zelle or Venmo (2 minutes), or take cards automatically with Stripe."
             }
           >
             {stripeStatus === "done" ? (

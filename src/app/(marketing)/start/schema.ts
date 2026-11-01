@@ -40,7 +40,8 @@ export const startSchema = z
   })
   .transform((v, ctx) => {
     let handles: z.infer<typeof manualPaymentsSchema> | null = null;
-    if (v.method !== "stripe") {
+    // A blank handle is fine: they add it from the dashboard before their first pay link.
+    if (v.method !== "stripe" && v.handle !== "") {
       const parsed = manualPaymentsSchema.safeParse({
         cashapp_tag: "",
         zelle_contact: "",

@@ -346,8 +346,7 @@ export function StartFlow({
       const problems: Record<string, string> = {};
       if (!businessName.trim()) problems.business_name = "Enter your business name.";
       if (!method) problems.method = "Choose how clients pay you.";
-      else if (method !== "stripe" && !handle.trim())
-        problems.handle = `Enter ${current?.field.toLowerCase() ?? "your handle"}.`;
+      // The handle is optional here: they see their pay link first and can add it later.
       if (tradeId === "other") {
         if (!serviceName.trim()) problems.service_name = "Enter a service.";
         if (dollarsToCents(servicePrice) === null)
@@ -405,7 +404,7 @@ export function StartFlow({
         {current && current.id !== "stripe" && (
           <Input
             id="handle"
-            label={current.field}
+            label={`${current.field} (optional)`}
             value={handle}
             onChange={(e) => {
               setHandle(e.target.value);
@@ -417,7 +416,7 @@ export function StartFlow({
             autoCorrect="off"
             spellCheck={false}
             inputMode={current.id === "zelle" ? "email" : "text"}
-            hint="Clients send the deposit here. No fees."
+            hint="Clients send the deposit here, no fees. Not handy? Add it later."
           />
         )}
         {current?.id === "stripe" && (
