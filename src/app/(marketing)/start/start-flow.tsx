@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TRIAL_DAYS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
+import { isInAppBrowser } from "@/lib/in-app-browser";
 import { dollarsToCents, formatCents } from "@/lib/money";
 import type { TradeId } from "@/lib/supabase/database.types";
 import { AD_TRADE_KEY } from "../remember-trade";
@@ -36,16 +37,18 @@ const METHODS: { id: PayMethod; label: string; field: string; placeholder: strin
   { id: "stripe", label: "Card", field: "", placeholder: "" },
 ];
 
-// Fields that live on step 2; a server error on them sends the pro back there.
-const BUSINESS_FIELDS = [
-  "business_name",
-  "handle",
-  "service_name",
-  "service_price",
-  "service_deposit",
-];
+// "Something else" has no starter menu, so it asks for one service on its own step
+// ("business"); a server error on those fields sends the pro back there.
+const SERVICE_FIELDS = ["service_name", "service_price", "service_deposit"];
 
+/*
+ * trade → (Something else: its service) → save. The save step shows their pay link
+ * first, then "Make it yours": business name, how clients pay, email.
+ */
 type Step = "trade" | "business" | "save";
+/** Where a chosen trade goes next: straight to the pay link, unless it needs a service. */
+const afterTrade = (id: TradeId): Step => (id === "other" ? "business" : "save");
+const DEFAULT_METHOD: PayMethod = "cashapp";
 
 /*
  * What they've entered so far, kept on this phone so someone who leaves (a DM, a
@@ -116,8 +119,9 @@ function parseDraft(raw: string | null, tradeIds: string[]): Draft | null {
 }
 
 /**
- * /start: what do you do → your business → your pay link + save. Nothing is
- * saved until the last step, which creates the account and signs the pro in.
+ * /start: what do you do → your pay link → make it yours (name, payment, email).
+ * Nothing is saved until the last step, which creates the account and signs the
+ * pro in.
  */
 export function StartFlow({
   trades,
@@ -131,10 +135,11 @@ export function StartFlow({
   /** From an ad aimed at one trade (?trade=): skip "What do you do?". */
   initialTrade?: TradeId;
 }) {
-  const [step, setStep] = useState<Step>(initialTrade ? "business" : "trade");
+  const [step, setStep] = useState<Step>(initialTrade ? afterTrade(initialTrade) : "trade");
   const [tradeId, setTradeId] = useState<TradeId | null>(initialTrade ?? null);
   const [businessName, setBusinessName] = useState("");
-  const [method, setMethod] = useState<PayMethod | null>(null);
+  // Pre-selected so the pay link shows right away; one tap changes it.
+  const [method, setMethod] = useState<PayMethod>(DEFAULT_METHOD);
   const [handle, setHandle] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
@@ -167,21 +172,21 @@ export function StartFlow({
     if (draft?.tradeId && (typed || !wanted)) {
       setTradeId(draft.tradeId);
       setBusinessName(draft.businessName);
-      setMethod(draft.method);
+      setMethod(draft.method ?? DEFAULT_METHOD);
       setHandle(draft.handle);
       setServiceName(draft.serviceName);
       setServicePrice(draft.servicePrice);
       setServiceDeposit(draft.serviceDeposit);
-      // The save step needs the business details; otherwise resume on them.
-      const resumeStep =
-        draft.step === "save" && draft.businessName && draft.method ? "save" : "business";
+      // Something else needs its service first; everyone else resumes on their pay link.
+      const resumeStep: Step =
+        draft.tradeId === "other" && draft.step !== "save" ? "business" : "save";
       setStep(resumeStep);
       setRestoredStep(resumeStep);
       // Only say "we kept what you entered" when they actually entered something.
       setResumed(typed);
     } else if (wanted && !initialTrade) {
       setTradeId(wanted);
-      setStep("business");
+      setStep(afterTrade(wanted));
     }
   }
   const startOver = () => {
@@ -193,7 +198,7 @@ export function StartFlow({
     } catch {}
     setTradeId(null);
     setBusinessName("");
-    setMethod(null);
+    setMethod(DEFAULT_METHOD);
     setHandle("");
     setServiceName("");
     setServicePrice("");
@@ -220,18 +225,26 @@ export function StartFlow({
   );
   const errors = { ...serverErrors, ...localErrors };
 
-  // Ad funnel: arrived (StartSignup), then reached the save step (Lead).
+  // Ad funnel: arrived (StartSignup), chose what they do (StartBusinessStep), saw their
+  // pay link (Lead), tapped save but a field stopped them (StartBusinessBlocked), sent
+  // it (StartSubmit); the server then sends CompleteRegistration. Each says whether it
+  // happened in Instagram's or Facebook's browser, to compare with Safari or Chrome.
+  const funnel = (event: string, extra: Record<string, string> = {}) => {
+    const params = { in_app: isInAppBrowser(navigator.userAgent) ? "yes" : "no", ...extra };
+    trackPixel(event, { custom: event !== "Lead", params });
+  };
   useEffect(() => {
-    trackPixel("StartSignup", { custom: true });
+    funnel("StartSignup");
+    // Runs once on arrival.
   }, []);
   useEffect(() => {
-    if (step === "business" && !businessSent.current && restoredStep === null) {
+    if (step !== "trade" && !businessSent.current && restoredStep === null) {
       businessSent.current = true;
-      trackPixel("StartBusinessStep", { custom: true });
+      funnel("StartBusinessStep");
     }
     if (step === "save" && !leadSent.current && restoredStep !== "save") {
       leadSent.current = true;
-      trackPixel("Lead");
+      funnel("Lead");
     }
   }, [step, restoredStep]);
   // A server error on a business field: show it where it can be fixed (once per response).
@@ -248,7 +261,7 @@ export function StartFlow({
     setAttempt((n) => n + 1);
     setCheckHint(false);
     setClearedServer([]);
-    if (Object.keys(state.errors ?? {}).some((k) => BUSINESS_FIELDS.includes(k))) {
+    if (Object.keys(state.errors ?? {}).some((k) => SERVICE_FIELDS.includes(k))) {
       setStep("business");
     }
   }
@@ -300,10 +313,10 @@ export function StartFlow({
     );
   }
 
-  if (step === "trade") {
+  if (step === "trade" || !trade) {
     return (
       <section className="flex flex-col gap-4">
-        <Progress step={1} />
+        <Progress step={1} of={tradeId === "other" ? 3 : 2} />
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold">What do you do?</h1>
           <p className="text-muted">
@@ -319,7 +332,7 @@ export function StartFlow({
                 onClick={() => {
                   setDraftChecked(true);
                   setTradeId(t.id);
-                  go("business");
+                  go(afterTrade(t.id));
                 }}
                 className="border-line bg-surface active:border-brand flex min-h-16 w-full items-center gap-3 rounded-xl border p-3 text-left"
               >
@@ -347,132 +360,65 @@ export function StartFlow({
     );
   }
 
-  if (step === "business" || !trade || !method) {
-    const current = METHODS.find((m) => m.id === method);
+  if (step === "business") {
+    // Something else: one service, so the pay link has a price and deposit to show.
     const next = () => {
       const problems: Record<string, string> = {};
-      if (!businessName.trim()) problems.business_name = "Enter your business name.";
-      if (!method) problems.method = "Choose how clients pay you.";
-      // The handle is optional here: they see their pay link first and can add it later.
-      if (tradeId === "other") {
-        if (!serviceName.trim()) problems.service_name = "Enter a service.";
-        if (dollarsToCents(servicePrice) === null)
-          problems.service_price = "Enter the price, like 60.";
-        if (dollarsToCents(serviceDeposit) === null)
-          problems.service_deposit = "Enter the deposit, like 20.";
-      }
+      if (!serviceName.trim()) problems.service_name = "Enter a service.";
+      if (dollarsToCents(servicePrice) === null)
+        problems.service_price = "Enter the price, like 60.";
+      if (dollarsToCents(serviceDeposit) === null)
+        problems.service_deposit = "Enter the deposit, like 20.";
       setLocalErrors(problems);
-      if (!Object.keys(problems).length) go("save");
+      if (Object.keys(problems).length) {
+        funnel("StartBusinessBlocked", { fields: Object.keys(problems).join(",") });
+      } else go("save");
     };
     return (
       <section className="flex flex-col gap-5">
         <Back onClick={() => go("trade")} />
-        <Progress step={2} />
+        <Progress step={2} of={3} />
         {resumed && <ResumedNote onStartOver={startOver} />}
-        <h1 className="text-2xl font-bold">Your business</h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold">Your most popular service</h1>
+          <p className="text-muted">It goes on your pay link. You can add the rest later.</p>
+        </div>
         <Input
-          id="business_name"
-          label="Business name"
-          autoComplete="organization"
-          value={businessName}
+          id="service_name"
+          label="Service"
+          value={serviceName}
           onChange={(e) => {
-            setBusinessName(e.target.value);
-            clear("business_name");
+            setServiceName(e.target.value);
+            clear("service_name");
           }}
-          error={errors.business_name}
-          placeholder="Studio Nova"
+          error={errors.service_name}
         />
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1.5 text-sm font-medium">How do clients pay you?</legend>
-          <div className="grid grid-cols-4 gap-2">
-            {METHODS.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                aria-pressed={method === m.id}
-                onClick={() => {
-                  setMethod(m.id);
-                  setHandle("");
-                  clear("method");
-                  clear("handle");
-                }}
-                className={`min-h-12 rounded-xl border px-1 text-sm font-semibold ${
-                  method === m.id
-                    ? "border-brand bg-brand text-brand-foreground"
-                    : "border-line bg-surface"
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-          {errors.method && <p className="text-danger text-sm">{errors.method}</p>}
-        </fieldset>
-        {current && current.id !== "stripe" && (
+        <div className="grid grid-cols-2 gap-3">
           <Input
-            id="handle"
-            label={`${current.field} (optional)`}
-            value={handle}
+            id="service_price"
+            label="Price ($)"
+            inputMode="decimal"
+            value={servicePrice}
             onChange={(e) => {
-              setHandle(e.target.value);
-              clear("handle");
+              setServicePrice(e.target.value);
+              clear("service_price");
             }}
-            error={errors.handle}
-            placeholder={current.placeholder}
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            inputMode={current.id === "zelle" ? "email" : "text"}
-            hint="Clients send the deposit here, no fees. Not handy? Add it later."
+            error={errors.service_price}
+            placeholder="60"
           />
-        )}
-        {current?.id === "stripe" && (
-          <p className="bg-surface border-line rounded-xl border p-3 text-sm">
-            Clients pay by card, Apple Pay or Google Pay through Stripe. You&apos;ll connect your
-            bank right after this (about 5 minutes).
-          </p>
-        )}
-        {tradeId === "other" && (
-          <div className="flex flex-col gap-4">
-            <p className="text-sm font-medium">Your most popular service</p>
-            <Input
-              id="service_name"
-              label="Service"
-              value={serviceName}
-              onChange={(e) => {
-                setServiceName(e.target.value);
-                clear("service_name");
-              }}
-              error={errors.service_name}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                id="service_price"
-                label="Price ($)"
-                inputMode="decimal"
-                value={servicePrice}
-                onChange={(e) => {
-                  setServicePrice(e.target.value);
-                  clear("service_price");
-                }}
-                error={errors.service_price}
-                placeholder="60"
-              />
-              <Input
-                id="service_deposit"
-                label="Deposit ($)"
-                inputMode="decimal"
-                value={serviceDeposit}
-                onChange={(e) => {
-                  setServiceDeposit(e.target.value);
-                  clear("service_deposit");
-                }}
-                error={errors.service_deposit}
-                placeholder="20"
-              />
-            </div>
-          </div>
-        )}
+          <Input
+            id="service_deposit"
+            label="Deposit ($)"
+            inputMode="decimal"
+            value={serviceDeposit}
+            onChange={(e) => {
+              setServiceDeposit(e.target.value);
+              clear("service_deposit");
+            }}
+            error={errors.service_deposit}
+            placeholder="20"
+          />
+        </div>
         <Button type="button" onClick={next}>
           See my pay link
         </Button>
@@ -480,7 +426,9 @@ export function StartFlow({
     );
   }
 
-  // Step 3: their pay link, then save.
+  // Their pay link, then "Make it yours" and save.
+  const current = METHODS.find((m) => m.id === method);
+  const isOther = tradeId === "other";
   const service =
     tradeId === "other"
       ? {
@@ -492,19 +440,18 @@ export function StartFlow({
   const methodLabel = METHODS.find((m) => m.id === method)?.label ?? "";
   return (
     <section className="flex flex-col gap-5">
-      <Back onClick={() => go("business")} />
-      <Progress step={3} />
+      <Back onClick={() => go(isOther ? "business" : "trade")} />
+      <Progress step={isOther ? 3 : 2} of={isOther ? 3 : 2} />
       {resumed && <ResumedNote onStartOver={startOver} />}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold">Here&apos;s your pay link</h1>
         <p className="text-muted">
-          Send it in your DMs. Your client taps it and lands on this page, with your name, prices
-          and policy.
+          Send it in your DMs. Your client taps it and lands on this page. Make it yours below.
         </p>
       </div>
 
       <PayLinkPreview
-        businessName={businessName.trim()}
+        businessName={businessName.trim() || "Your business"}
         service={service}
         policy={trade.policy}
         method={method}
@@ -517,6 +464,13 @@ export function StartFlow({
         action={action}
         onSubmit={(e) => {
           const form = e.currentTarget;
+          if (!businessName.trim()) {
+            e.preventDefault();
+            setLocalErrors((errs) => ({ ...errs, business_name: "Enter your business name." }));
+            funnel("StartBusinessBlocked", { fields: "business_name" });
+            form.querySelector<HTMLInputElement>("#business_name")?.focus();
+            return;
+          }
           const token = () =>
             (form.elements.namedItem("cf-turnstile-response") as HTMLInputElement | null)?.value;
           if (turnstileSiteKey && !token() && !tokenWaited.current) {
@@ -550,14 +504,13 @@ export function StartFlow({
           }
           tokenWaited.current = false;
           setCheckHint(false);
+          funnel("StartSubmit");
           writeDraft(null);
         }}
         className="flex flex-col gap-4"
       >
         <input type="hidden" name="trade" value={trade.id} />
-        <input type="hidden" name="business_name" value={businessName} />
         <input type="hidden" name="method" value={method} />
-        <input type="hidden" name="handle" value={handle} />
         <input type="hidden" name="service_name" value={serviceName} />
         <input type="hidden" name="service_price" value={servicePrice} />
         <input type="hidden" name="service_deposit" value={serviceDeposit} />
@@ -572,15 +525,74 @@ export function StartFlow({
           <input id="website" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
         </div>
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-bold">Save it and start sending</h2>
-          <p className="text-muted text-sm">
-            Where should we send booking alerts? You&apos;re in straight away.
-          </p>
+          <h2 className="text-lg font-bold">Make it yours</h2>
+          <p className="text-muted text-sm">Your name goes at the top of every pay link.</p>
         </div>
+        <Input
+          id="business_name"
+          label="Business name"
+          autoComplete="organization"
+          value={businessName}
+          onChange={(e) => {
+            setBusinessName(e.target.value);
+            clear("business_name");
+          }}
+          error={errors.business_name}
+          placeholder="Studio Nova"
+        />
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1.5 text-sm font-medium">How do clients pay you?</legend>
+          <div className="grid grid-cols-4 gap-2">
+            {METHODS.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                aria-pressed={method === m.id}
+                onClick={() => {
+                  setMethod(m.id);
+                  setHandle("");
+                  clear("handle");
+                }}
+                className={`min-h-12 rounded-xl border px-1 text-sm font-semibold ${
+                  method === m.id
+                    ? "border-brand bg-brand text-brand-foreground"
+                    : "border-line bg-surface"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        {current && current.id !== "stripe" && (
+          <Input
+            id="handle"
+            label={`${current.field} (optional)`}
+            value={handle}
+            onChange={(e) => {
+              setHandle(e.target.value);
+              clear("handle");
+            }}
+            error={errors.handle}
+            placeholder={current.placeholder}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode={current.id === "zelle" ? "email" : "text"}
+            hint="Clients send the deposit here, no fees. Not handy? Add it later."
+          />
+        )}
+        {current?.id === "stripe" && (
+          <p className="bg-surface border-line rounded-xl border p-3 text-sm">
+            Clients pay by card, Apple Pay or Google Pay through Stripe. You&apos;ll connect your
+            bank right after this (about 5 minutes).
+          </p>
+        )}
         <Input
           id="email"
           type="email"
-          label="Email"
+          label="Your email"
+          hint="For booking alerts. You're in straight away, no code."
           autoComplete="email"
           inputMode="email"
           defaultValue={state.values?.email}
@@ -591,12 +603,12 @@ export function StartFlow({
         {state.message && <p className="text-danger text-sm">{state.message}</p>}
         {checkHint && (
           <p className="text-muted text-sm" role="status">
-            Still checking you&apos;re a person. If a box appeared above, tap it, then tap Save and
-            continue again.
+            Still checking you&apos;re a person. If a box appeared above, tap it, then tap Save my
+            pay link again.
           </p>
         )}
         <Button type="submit" disabled={pending || checking}>
-          {pending ? "Saving…" : checking ? "One sec…" : "Save and continue"}
+          {pending ? "Saving…" : checking ? "One sec…" : "Save my pay link"}
         </Button>
         <p className="text-muted text-center text-xs">
           Free for {TRIAL_DAYS} days. No card to sign up: you add one before your first pay link. By
@@ -639,10 +651,10 @@ function ResumedNote({ onStartOver }: { onStartOver: () => void }) {
   );
 }
 
-function Progress({ step }: { step: 1 | 2 | 3 }) {
+function Progress({ step, of }: { step: number; of: number }) {
   return (
-    <div className="flex items-center gap-2" aria-label={`Step ${step} of 3`}>
-      {[1, 2, 3].map((n) => (
+    <div className="flex items-center gap-2" aria-label={`Step ${step} of ${of}`}>
+      {Array.from({ length: of }, (_, i) => i + 1).map((n) => (
         <span
           key={n}
           aria-hidden

@@ -48,13 +48,14 @@ src/
                                   the product: update them, and LEGAL_UPDATED in config.ts, when data, fees,
                                   providers or billing change. No ad trackers on pay links or menu pages
                                   (the Privacy Policy says so); a Meta Pixel belongs on marketing pages only.
-    (marketing)/start/            Instant sign-up: trade → business name + payment method (handle optional: a blank one shows the
-                                  preview without it, and the dashboard's deposits step asks for it later) → preview of their
-                                  pay link → email. createAccount (actions.ts) creates the user with the admin API
+    (marketing)/start/            Instant sign-up, value first: trade → their pay link right away (placeholder name, Cash App
+                                  pre-selected) with "Make it yours" below it: business name, payment method (handle optional;
+                                  the dashboard's deposits step asks for a missing one), email. "Something else" adds one step
+                                  for its service first. createAccount (actions.ts) creates the user with the admin API
                                   and signs them in on the server (generateLink + verifyOtp, nothing emailed), sets up
                                   profile, starter services and time zone, sends CompleteRegistration. An email
                                   that already has an account is never signed in this way: it gets a sign-in code.
-                                  Optional Cloudflare Turnstile + honeypot. What they've typed (never the email) is kept on the phone for 7 days so they resume where they left off. Pixel: StartSignup on arrival, StartBusinessStep (custom) on step 2, Lead on step 3. `?trade=barber` (on /start, or on the landing page via `remember-trade.tsx`) skips step 1 for ads aimed at one trade; marketing pages stay trade-neutral. profiles.email_confirmed is false until their first code or link sign-in
+                                  Optional Cloudflare Turnstile + honeypot. What they've typed (never the email) is kept on the phone for 7 days so they resume where they left off. Pixel (each with in_app yes/no): StartSignup on arrival, StartBusinessStep (custom) once a trade is chosen, Lead when the pay link shows, StartBusinessBlocked (custom, `fields`) when a required field stops them, StartSubmit (custom) when the form is sent. `?trade=barber` (on /start, or on the landing page via `remember-trade.tsx`) skips step 1 for ads aimed at one trade; marketing pages stay trade-neutral. profiles.email_confirmed is false until their first code or link sign-in
                                   (markEmailConfirmed, which then signs out every other session). Nothing waits on
                                   it: no inbox trip before the first pay link or trial. While false, the dashboard
                                   shows "Booking alerts go to … · Wrong? Fix it" (dashboard/confirm-email/).

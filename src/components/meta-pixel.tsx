@@ -39,10 +39,14 @@ export function MetaPixel({ pixelId }: { pixelId: string | undefined }) {
  * fbq as the page loads (events queue until Meta's script arrives); this waits
  * briefly in case it hasn't run yet. With no Pixel it does nothing.
  */
-export function trackPixel(event: string, { custom = false } = {}) {
+export function trackPixel(
+  event: string,
+  { custom = false, params }: { custom?: boolean; params?: Record<string, string> } = {},
+) {
   let tries = 0;
   const send = () => {
-    if (window.fbq) window.fbq(custom ? "trackCustom" : "track", event);
+    if (window.fbq)
+      window.fbq(custom ? "trackCustom" : "track", event, ...(params ? [params] : []));
     else if (tries++ < 25) setTimeout(send, 200);
   };
   send();
