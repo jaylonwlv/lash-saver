@@ -135,7 +135,9 @@ export default async function NewAppointmentPage({
               ? "Add a service first, so the pay link knows the price and deposit."
               : "Set up deposits first (Cash App, Zelle, Venmo or Stripe), so clients can pay."}
           </p>
-          <ButtonLink href="/dashboard">Go to dashboard</ButtonLink>
+          <ButtonLink href={depositsReady ? "/dashboard/services/new" : "/dashboard/payments"}>
+            {depositsReady ? "Add a service" : "Set up deposits"}
+          </ButtonLink>
         </div>
       )}
     </div>

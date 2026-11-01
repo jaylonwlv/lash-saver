@@ -103,7 +103,7 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     notifyOnce(`founder_welcome:${techId}`, {
       to: { email: data.email },
       template: "founder_welcome",
-      data: { appUrl },
+      data: { appUrl, needsHandle: data.method !== "stripe" && !data.handles },
     }).catch((err: unknown) => console.error("Founder welcome email failed", err)),
   );
 

@@ -14,6 +14,8 @@ export type SetupState = {
   profileDone: boolean;
   depositsDone: boolean;
   servicesDone: boolean;
+  /** Chose Cash App, Zelle or Venmo but hasn't added a handle yet (it's optional at sign-up). */
+  needsHandle: boolean;
   /** Everything a pay link needs; only the card (trial) is left. */
   ready: boolean;
 };
@@ -26,6 +28,7 @@ export function setupState(profile: SetupProfile, activeServices: number): Setup
     profileDone,
     depositsDone,
     servicesDone,
+    needsHandle: !depositsDone && profile.deposit_method === "manual",
     ready: profileDone && depositsDone && servicesDone,
   };
 }
@@ -34,7 +37,10 @@ export function setupState(profile: SetupProfile, activeServices: number): Setup
 export function nextStepSentence(state: SetupState): string {
   const missing = [
     !state.profileDone && "add your business name",
-    !state.depositsDone && "choose how clients pay you (Cash App, Zelle, Venmo or card)",
+    !state.depositsDone &&
+      (state.needsHandle
+        ? "add the Cash App, Zelle or Venmo clients should pay"
+        : "choose how clients pay you (Cash App, Zelle, Venmo or card)"),
     !state.servicesDone && "add a service with its price and deposit",
   ].filter((step): step is string => Boolean(step));
   if (missing.length === 0)

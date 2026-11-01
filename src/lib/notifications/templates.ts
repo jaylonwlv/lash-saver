@@ -91,7 +91,8 @@ export type TemplateData = {
    * if they haven't sent a pay link. They answer the usual questions themselves and
    * don't ask for a reply (replies still reach the founder).
    */
-  founder_welcome: { appUrl: string };
+  /** needsHandle: they skipped their Cash App, Zelle or Venmo at sign-up. */
+  founder_welcome: { appUrl: string; needsHandle?: boolean };
   founder_checkin: {
     appUrl: string;
     announcement: string;
@@ -178,7 +179,13 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
     replyTo: FOUNDER_EMAIL,
     text: `Hi, I'm ${FOUNDER_NAME}, I built ${APP_NAME}. Thanks for signing up.
 
-Here's all you need to do: next time a client asks for a time in your DMs, open ${APP_NAME}, tap New appointment and send them the pay link. They agree to your policy and pay the deposit before the slot is theirs. If they don't show, you keep it.
+${
+  d.needsHandle
+    ? `First, add the Cash App, Zelle or Venmo clients should pay (1 minute): ${d.appUrl}/dashboard/payments
+
+Then `
+    : "Here's all you need to do: "
+}next time a client asks for a time in your DMs, open ${APP_NAME}, tap New appointment and send them the pay link. They agree to your policy and pay the deposit before the slot is theirs. If they don't show, you keep it.
 
 Your dashboard: ${d.appUrl}/dashboard
 See what your client sees: ${d.appUrl}/demo
