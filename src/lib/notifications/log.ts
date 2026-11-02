@@ -1,5 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { serverEnv } from "@/lib/env";
+import { unsubscribeUrls } from "@/lib/unsubscribe";
 import { notify } from "./index";
 import type { TemplateData, TemplateId } from "./templates";
 import type { Recipient } from "./types";
@@ -56,6 +58,43 @@ export async function notifyOnce<T extends TemplateId>(
   input: { to: Recipient; template: T; data: TemplateData[T] },
 ): Promise<boolean> {
   const results = await notify(input);
+  await createAdminClient()
+    .from("notification_log")
+    .insert(
+      results.map((r) => ({
+        appointment_id: null,
+        template: logKey,
+        channel: r.channel,
+        provider_message_id: r.ok ? (r.providerMessageId ?? null) : null,
+        error: r.ok ? null : r.error,
+      })),
+    );
+  return results.some((r) => r.ok);
+}
+
+/**
+ * notifyOnce for marketing email to a pro (tips, nudges to subscribe): skipped if they
+ * unsubscribed, and sent with the unsubscribe link, postal address and one-click
+ * headers. Returns false when not sent (opted out or failed).
+ */
+export async function notifyMarketingOnce<T extends TemplateId>(
+  logKey: string,
+  techId: string,
+  input: { to: Recipient; template: T; data: TemplateData[T] },
+): Promise<boolean> {
+  const { data: profile } = await createAdminClient()
+    .from("profiles")
+    .select("marketing_opt_out_at")
+    .eq("id", techId)
+    .maybeSingle();
+  if (!profile || profile.marketing_opt_out_at) return false;
+  const results = await notify({
+    ...input,
+    marketing: {
+      ...unsubscribeUrls(techId),
+      postalAddress: serverEnv().MAIL_POSTAL_ADDRESS ?? null,
+    },
+  });
   await createAdminClient()
     .from("notification_log")
     .insert(

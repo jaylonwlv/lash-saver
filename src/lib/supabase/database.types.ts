@@ -52,6 +52,8 @@ type ProfileRow = Timestamps & {
   calendar_token: string;
   /** The pro whose "Powered by Dibs" link this pro signed up from; server-set (lib/referral.ts). */
   referred_by: string | null;
+  /** Unsubscribed from tips and offers (marketing emails); server-set. */
+  marketing_opt_out_at: string | null;
 };
 
 type ServiceRow = Timestamps & {

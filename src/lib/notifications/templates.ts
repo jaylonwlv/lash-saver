@@ -237,6 +237,8 @@ export type TemplateData = {
     pageUrl: string;
   };
   catering_date_taken_owner: { hostName: string; email: string; when: string; amount: string };
+  /** The nurture drip after the first pay link (lib/drip.ts writes the copy). Marketing. */
+  nurture: { subject: string; body: string };
   catering_payment_disputed: { hostName: string; amount: string; when: string; bookingUrl: string };
   catering_dispute_closed: { hostName: string; amount: string; won: boolean; bookingUrl: string };
 };
@@ -481,6 +483,7 @@ ${d.bookingUrl}`,
     replyTo: d.ownerEmail,
     text: `Sorry! ${d.businessName}'s last opening on ${d.when} was booked while you were paying, so we refunded your ${d.amount} in full (5 to 10 business days). Pick another date: ${d.pageUrl}\n\n— sent via ${APP_NAME}`,
   }),
+  nurture: (d) => ({ subject: d.subject, text: d.body }),
   catering_payment_disputed: (d) => ({
     subject: `${d.hostName} disputed a ${d.amount} payment`,
     text: `${d.hostName} disputed their ${d.amount} payment for ${d.when} with their bank. We've sent the bank the agreement they signed. Until the bank decides, the ${d.amount} is held back from your Stripe balance; if the dispute is won, it comes back to you. ${d.bookingUrl}`,

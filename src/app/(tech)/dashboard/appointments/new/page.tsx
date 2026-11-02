@@ -64,7 +64,8 @@ export default async function NewAppointmentPage({
   const firstWithoutCard = ready && !subscribed && !paywalled;
   // null: the check failed, so say nothing about a trial either way (and still show the form).
   const offer = paywalled
-    ? await trialOffer(user!.id)
+    ? // A failed check shows plain subscription wording; Checkout still applies the trial.
+      await trialOffer(user!.id).catch(() => null)
     : firstWithoutCard
       ? await trialOffer(user!.id).catch(() => undefined)
       : null;

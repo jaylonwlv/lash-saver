@@ -181,6 +181,12 @@ export default function PrivacyPage() {
             Appointment emails are part of a booking you made, so they can&apos;t be turned off
             separately. If you don&apos;t want them, contact the pro or cancel the appointment.
           </li>
+          <li>
+            Pros get emails about their account, billing and their clients&apos; bookings, plus
+            occasional tips and reminders about getting the most from {APP_NAME} (for example after
+            sending a first pay link). Every tips email has a link to stop them, and unsubscribing
+            never affects account or booking emails.
+          </li>
         </ul>
       </Section>
 

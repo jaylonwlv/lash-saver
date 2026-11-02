@@ -16,10 +16,16 @@ import {
 import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
 import { serverEnv } from "@/lib/env";
-import { alreadyLogged, notifyForAppointment, notifyOnce } from "@/lib/notifications/log";
+import {
+  alreadyLogged,
+  notifyForAppointment,
+  notifyMarketingOnce,
+  notifyOnce,
+} from "@/lib/notifications/log";
 import { loadSavings, savingsSummary } from "@/lib/savings";
 import { nextStepSentence, setupState } from "@/lib/setup";
-import { freeUntil } from "@/lib/stripe/billing";
+import { freeUntil, trialOffer } from "@/lib/stripe/billing";
+import { DRIP_SCHEDULE, dripEmail, dueDripStep, type DripStep } from "@/lib/drip";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, formatWhen } from "@/lib/time";
 import { dueReminder, reminderLogKey } from "./reminders";
@@ -56,6 +62,10 @@ export async function GET(request: NextRequest) {
   const founderCheckins = await sendFounderCheckins(now);
   const firstLinkFollowups = await sendFirstLinkFollowups(now);
   // Never let catering stop the appointment reminders above.
+  const nurture = await sendNurtureDrip(now).catch((err: unknown) => {
+    console.error("Nurture drip failed", err);
+    return { error: 1 };
+  });
   const catering = await runCateringJobs(now).catch((err: unknown) => {
     console.error("Catering cron jobs failed", err);
     return { error: 1 };
@@ -69,7 +79,109 @@ export async function GET(request: NextRequest) {
     founderCheckins,
     firstLinkFollowups,
     catering,
+    nurture,
   });
+}
+
+/**
+ * The nurture drip (lib/drip.ts) for pros who sent a first pay link but haven't added a
+ * card: tips at days 4, 9, 16 and 24, one step per run. Marketing email, so it needs the
+ * postal address and skips anyone who unsubscribed. Stops once they have a subscription.
+ */
+async function sendNurtureDrip(now: Date): Promise<Record<string, number | string>> {
+  if (!serverEnv().MAIL_POSTAL_ADDRESS) return { skipped: "MAIL_POSTAL_ADDRESS not set" };
+  const admin = createAdminClient();
+  const since = new Date(now.getTime() - 90 * 86_400_000).toISOString();
+  const { data: techs, error } = await admin
+    .from("profiles")
+    .select("id, email, trade, business_name, cancellation_window_hours")
+    .is("subscription_id", null)
+    .is("subscription_status", null)
+    .is("marketing_opt_out_at", null)
+    .gte("created_at", since)
+    .limit(2000);
+  if (error) throw new Error(`Loading pros for the drip failed: ${error.message}`);
+
+  const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
+  let sent = 0;
+  for (const tech of techs) {
+    try {
+      const { data: first } = await admin
+        .from("appointments")
+        .select("created_at")
+        .eq("tech_id", tech.id)
+        .order("created_at")
+        .limit(1)
+        .maybeSingle();
+      if (!first) continue; // No pay link yet: the setup reminders cover them.
+
+      const keys = DRIP_SCHEDULE.map(({ step }) => `nurture_${step}:${tech.id}`);
+      const { data: logged } = await admin
+        .from("notification_log")
+        .select("template, created_at")
+        .in("template", keys)
+        .is("error", null);
+      const sentAt: Partial<Record<DripStep, Date>> = {};
+      for (const row of logged ?? []) {
+        const step = row.template.slice("nurture_".length).split(":")[0] as DripStep;
+        sentAt[step] = new Date(row.created_at);
+      }
+      const step = dueDripStep(new Date(first.created_at), now, sentAt);
+      if (!step) continue;
+
+      // Unknown trial eligibility: try again tomorrow rather than promise (or deny) a trial.
+      const offer = await trialOffer(tech.id, now).catch(() => undefined);
+      if (offer === undefined) continue;
+      const [{ data: top }, { count: depositsPaid }] = await Promise.all([
+        admin
+          .from("services")
+          .select("name, price_cents")
+          .eq("tech_id", tech.id)
+          .eq("is_active", true)
+          // Their own prices only, never the starter menu's examples.
+          .eq("is_starter", false)
+          .order("price_cents", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        admin
+          .from("deposits")
+          .select("id", { count: "exact", head: true })
+          .eq("tech_id", tech.id)
+          .in("status", ["paid", "applied", "forfeited"]),
+      ]);
+      const monthly = formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "");
+      const email = dripEmail({
+        step,
+        trade: tech.trade,
+        businessName: tech.business_name,
+        windowHours: tech.cancellation_window_hours,
+        announcement: depositAnnouncement(tech.cancellation_window_hours),
+        freeUntil: offer?.until ?? null,
+        monthly,
+        monthlyCents: SUBSCRIPTION_PRICE_CENTS,
+        topService: top
+          ? {
+              name: top.name,
+              price: formatCents(top.price_cents).replace(/\.00$/, ""),
+              priceCents: top.price_cents,
+            }
+          : null,
+        depositsPaid: depositsPaid ?? 0,
+        billingUrl: `${appUrl}/dashboard/billing`,
+        profileUrl: `${appUrl}/dashboard/profile`,
+        newAppointmentUrl: `${appUrl}/dashboard/appointments/new`,
+      });
+      const ok = await notifyMarketingOnce(`nurture_${step}:${tech.id}`, tech.id, {
+        to: { email: tech.email },
+        template: "nurture",
+        data: email,
+      });
+      if (ok) sent++;
+    } catch (err) {
+      console.error(`Nurture drip for ${tech.id} failed`, err);
+    }
+  }
+  return { sent };
 }
 
 /**
@@ -256,7 +368,7 @@ async function sendFirstLinkFollowups(now: Date): Promise<number> {
       // Unknown: try again tomorrow rather than promise (or rule out) a trial.
       const until = await freeUntil(techId).catch(() => undefined);
       if (until === undefined) continue;
-      const ok = await notifyOnce(logKey, {
+      const ok = await notifyMarketingOnce(logKey, techId, {
         to: { email: tech.email },
         template: "first_link_followup",
         data: {
@@ -414,7 +526,7 @@ async function sendFounderCheckins(now: Date): Promise<number> {
         .eq("tech_id", tech.id);
       if (countError) throw new Error(countError.message);
       if (count) continue;
-      const ok = await notifyOnce(logKey, {
+      const ok = await notifyMarketingOnce(logKey, tech.id, {
         to: { email: tech.email },
         template: "founder_checkin",
         data: {
@@ -484,7 +596,11 @@ async function sendSetupNudges(now: Date): Promise<number> {
         freeUntil: until,
         dashboardUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard`,
       };
-      const ok = await notifyOnce(logKey, { to: { email: tech.email }, template, data });
+      const ok = await notifyMarketingOnce(logKey, tech.id, {
+        to: { email: tech.email },
+        template,
+        data,
+      });
       if (ok) sent++;
     } catch (err) {
       console.error(`Setup reminder for ${tech.id} failed`, err);

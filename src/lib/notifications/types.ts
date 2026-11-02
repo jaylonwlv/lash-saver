@@ -18,6 +18,8 @@ export type RenderedMessage = {
   replyTo?: string;
   /** Email only (texts can't carry files), e.g. a calendar invite. `content` is plain text. */
   attachments?: { filename: string; content: string; contentType: string }[];
+  /** Extra email headers, e.g. List-Unsubscribe for marketing email. */
+  headers?: Record<string, string>;
 };
 
 export type SendResult =

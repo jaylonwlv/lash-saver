@@ -59,7 +59,8 @@ export default async function BillingPage() {
       ) : null}
       {!subscribed && (
         <SubscribeCard
-          trial={await trialOffer(user!.id)}
+          // A failed check shows plain subscription wording; Checkout still applies the trial.
+          trial={await trialOffer(user!.id).catch(() => null)}
           // Their first pay link needs no card; after it, this card is for the next one.
           sentFirst={
             ((

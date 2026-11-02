@@ -19,6 +19,14 @@ const serverSchema = z.object({
   EMAIL_REPLY_TO: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
 
   CRON_SECRET: z.string().min(16),
+  /**
+   * Postal address printed in marketing emails (CAN-SPAM requires one; a PO box or a
+   * registered mailbox works). The nurture drip doesn't send until it's set.
+   */
+  MAIL_POSTAL_ADDRESS: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(5).optional(),
+  ),
 
   // Meta Conversions API (optional; empty counts as unset). Needs NEXT_PUBLIC_META_PIXEL_ID too.
   META_CAPI_TOKEN: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(20).optional()),

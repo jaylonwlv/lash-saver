@@ -29,6 +29,7 @@ export class ResendEmailNotifier implements Notifier {
       subject: message.subject,
       text: message.text,
       html: message.html,
+      headers: message.headers,
       // Resend reads string content as base64.
       attachments: message.attachments?.length
         ? message.attachments.map((a) => ({
