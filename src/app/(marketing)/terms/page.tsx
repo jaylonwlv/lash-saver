@@ -7,6 +7,7 @@ import {
   PROCESSING_FEE_LABEL,
   SUBSCRIPTION_PRICE_CENTS,
   TRIAL_DAYS,
+  MIN_TRIAL_DAYS,
 } from "@/lib/config";
 import { formatCents } from "@/lib/money";
 import { LegalPage, Section } from "../legal-page";
@@ -72,8 +73,10 @@ export default function TermsPage() {
         <ul>
           <li>
             Your first pay link doesn&apos;t need a subscription. Creating more requires one:{" "}
-            {price} per month after a {TRIAL_DAYS}-day free trial. You add a card to start the trial
-            and won&apos;t be charged until it ends.
+            {price} per month after a {TRIAL_DAYS}-day free trial that counts from the day you sign
+            up. You add a card when you create your second pay link and won&apos;t be charged until
+            the trial ends; if you add it near or after the end of those {TRIAL_DAYS} days, you
+            still get {MIN_TRIAL_DAYS} free days from that moment.
           </li>
           <li>
             The subscription renews automatically every month and your card is charged each period

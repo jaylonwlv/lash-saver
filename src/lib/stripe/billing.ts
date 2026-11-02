@@ -1,17 +1,17 @@
 import "server-only";
+import { formatDate } from "@/lib/time";
 import type Stripe from "stripe";
 import {
   APP_NAME,
   DEFAULT_CURRENCY,
   SUBSCRIPTION_NAME,
   SUBSCRIPTION_PRICE_CENTS,
-  TRIAL_DAYS,
 } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
 import { notify } from "@/lib/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { canSendPayLinks, normalizeEmail } from "@/lib/subscription";
+import { canSendPayLinks, normalizeEmail, trialEndFor } from "@/lib/subscription";
 import { getStripe } from "./server";
 import { trackSubscription } from "@/lib/meta";
 
@@ -32,7 +32,7 @@ async function loadProfile(techId: string) {
   const { data, error } = await createAdminClient()
     .from("profiles")
     .select(
-      "id, email, business_name, instagram_handle, stripe_account_id, stripe_customer_id, subscription_id, subscription_status, cashapp_tag, zelle_contact, venmo_handle",
+      "id, email, business_name, instagram_handle, stripe_account_id, stripe_customer_id, subscription_id, subscription_status, cashapp_tag, zelle_contact, venmo_handle, created_at, timezone",
     )
     .eq("id", techId)
     .single();
@@ -140,14 +140,38 @@ export async function nextLinkCardLine(
   if (canSendPayLinks(status)) return null;
   const billingUrl = `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard/billing`;
   const price = formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "");
-  const eligible = await trialEligible(techId).catch(() => null);
+  const until = await freeUntil(techId).catch(() => undefined);
+  const eligible = until === undefined ? null : until !== null;
   const what =
     eligible === true
-      ? `your next pay link needs your card, which starts your ${TRIAL_DAYS}-day free trial ($0 today, cancel anytime)`
+      ? `your next pay link needs your card: $0 today, you're free until ${until}, cancel anytime`
       : eligible === false
         ? `your next pay link needs a subscription (${price}/month, cancel anytime)`
         : "your next pay link needs your card";
   return `Keep the deposits coming: ${what}: ${billingUrl}`;
+}
+
+/**
+ * "Dec 2": when this pro's free trial would end if they added their card now (30 days
+ * from sign-up, at least MIN_TRIAL_DAYS from today), or null if they can't get a trial.
+ * Throws if eligibility can't be checked; callers decide what to say then.
+ */
+export async function freeUntil(techId: string, now: Date = new Date()): Promise<string | null> {
+  return (await trialOffer(techId, now))?.until ?? null;
+}
+
+/** The trial a pro would get by adding their card now: end date ("Dec 2") and days left. */
+export async function trialOffer(
+  techId: string,
+  now: Date = new Date(),
+): Promise<{ until: string; daysLeft: number } | null> {
+  if (!(await trialEligible(techId))) return null;
+  const profile = await loadProfile(techId);
+  const end = trialEndFor(new Date(profile.created_at), now);
+  return {
+    until: formatDate(end, profile.timezone),
+    daysLeft: Math.ceil((end.getTime() - now.getTime()) / 86_400_000),
+  };
 }
 
 /** Subscriptions that still bill (or will): starting another would double-charge. */
@@ -198,7 +222,8 @@ export async function startSubscriptionCheckout(techId: string): Promise<string>
       metadata: { tech_id: techId },
       ...(withTrial
         ? {
-            trial_period_days: TRIAL_DAYS,
+            // The free month counts from sign-up (at least MIN_TRIAL_DAYS from now).
+            trial_end: Math.floor(trialEndFor(new Date(profile.created_at)).getTime() / 1000),
             trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
           }
         : {}),

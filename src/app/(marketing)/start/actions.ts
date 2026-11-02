@@ -7,14 +7,14 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { sendMagicLink } from "@/app/(auth)/login/actions";
 import { SLUG_PATTERN, slugFromName } from "@/app/(tech)/dashboard/profile/schema";
-import { SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
+import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { serverEnv } from "@/lib/env";
 import { fieldErrors, formValues, type FormState } from "@/lib/forms";
 import { trackSignUp } from "@/lib/meta";
 import { alreadyLogged, notifyOnce } from "@/lib/notifications/log";
 import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
-import { trialEligible } from "@/lib/stripe/billing";
+import { freeUntil } from "@/lib/stripe/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -155,9 +155,9 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
         appUrl,
         needsHandle: data.method !== "stripe" && !data.handles,
         signInUrl,
-        nextLink: await trialEligible(techId).then(
-          (eligible) => ({
-            trialDays: eligible ? TRIAL_DAYS : null,
+        nextLink: await freeUntil(techId).then(
+          (until) => ({
+            freeUntil: until,
             price: formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, ""),
           }),
           // Unknown: the landing page and /start already said it; don't guess here.

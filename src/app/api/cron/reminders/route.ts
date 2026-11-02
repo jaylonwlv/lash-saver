@@ -11,7 +11,6 @@ import {
   SETUP_NUDGE_NEXT_AFTER_HOURS,
   SETUP_NUDGE_STOP_AFTER_DAYS,
   SUBSCRIPTION_PRICE_CENTS,
-  TRIAL_DAYS,
   TRIAL_ENDING_NOTICE_DAYS,
 } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
@@ -20,7 +19,7 @@ import { serverEnv } from "@/lib/env";
 import { alreadyLogged, notifyForAppointment, notifyOnce } from "@/lib/notifications/log";
 import { loadSavings, savingsSummary } from "@/lib/savings";
 import { nextStepSentence, setupState } from "@/lib/setup";
-import { trialEligible } from "@/lib/stripe/billing";
+import { freeUntil } from "@/lib/stripe/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, formatWhen } from "@/lib/time";
 import { dueReminder, reminderLogKey } from "./reminders";
@@ -255,13 +254,13 @@ async function sendFirstLinkFollowups(now: Date): Promise<number> {
       // Already added a card (trial or paid, or had one before): nothing to say.
       if (tech.subscription_id || tech.subscription_status) continue;
       // Unknown: try again tomorrow rather than promise (or rule out) a trial.
-      const eligible = await trialEligible(techId).catch(() => null);
-      if (eligible === null) continue;
+      const until = await freeUntil(techId).catch(() => undefined);
+      if (until === undefined) continue;
       const ok = await notifyOnce(logKey, {
         to: { email: tech.email },
         template: "first_link_followup",
         data: {
-          trialDays: eligible ? TRIAL_DAYS : null,
+          freeUntil: until,
           price: formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, ""),
           billingUrl: `${appUrl}/dashboard/billing`,
         },
@@ -422,7 +421,7 @@ async function sendFounderCheckins(now: Date): Promise<number> {
           appUrl: publicEnv().NEXT_PUBLIC_APP_URL,
           announcement: depositAnnouncement(tech.cancellation_window_hours),
           // Only promise a trial they can get.
-          trialDays: (await trialEligible(tech.id).catch(() => false)) ? TRIAL_DAYS : null,
+          freeUntil: await freeUntil(tech.id).catch(() => null),
           price: formatCents(SUBSCRIPTION_PRICE_CENTS).replace(".00", ""),
         },
       });
@@ -478,11 +477,11 @@ async function sendSetupNudges(now: Date): Promise<number> {
         .eq("is_active", true);
       if (servicesError) throw new Error(servicesError.message);
       // Leave the trial out rather than promise one they can't get.
-      const eligible = await trialEligible(tech.id).catch(() => false);
+      const until = await freeUntil(tech.id).catch(() => null);
 
       const data = {
         nextStep: nextStepSentence(setupState(tech, count ?? 0)),
-        trialDays: eligible ? TRIAL_DAYS : null,
+        freeUntil: until,
         dashboardUrl: `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard`,
       };
       const ok = await notifyOnce(logKey, { to: { email: tech.email }, template, data });

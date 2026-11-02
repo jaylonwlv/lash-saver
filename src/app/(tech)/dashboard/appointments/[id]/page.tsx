@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BackLink } from "@/components/ui/back-link";
 import { ButtonLink } from "@/components/ui/button";
-import { SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
+import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { STATUS_LABEL, payability, payUrl } from "@/lib/appointments";
 import { formatDuration } from "@/lib/format";
 import { formatCents, processingFeeCents, techPayoutCents } from "@/lib/money";
-import { trialEligible } from "@/lib/stripe/billing";
+import { freeUntil } from "@/lib/stripe/billing";
 import { canSendPayLinks } from "@/lib/subscription";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDayTime, formatWhen } from "@/lib/time";
@@ -70,7 +70,8 @@ export default async function AppointmentPage({
   // say now, calmly, that the next one needs a card, so the trial card is no surprise.
   const nextNeedsCard = Boolean(isNew) && !canSendPayLinks(profile.subscription_status);
   // null: the check failed, so the note doesn't promise or rule out a trial.
-  const eligible = nextNeedsCard ? await trialEligible(user!.id).catch(() => null) : false;
+  const until = nextNeedsCard ? await freeUntil(user!.id).catch(() => undefined) : null;
+  const eligible = until === undefined ? null : until !== null;
   const started = new Date(a.starts_at) <= new Date();
   const deposit = deposits?.find((d) => d.status !== "pending");
   const claimed = deposits?.find((d) => d.status === "pending" && d.method === "manual");
@@ -161,7 +162,7 @@ export default async function AppointmentPage({
             {eligible !== false
               ? eligible === null
                 ? "your next pay link needs your card."
-                : `your next pay link needs your card. Adding it starts your ${TRIAL_DAYS}-day free trial: $0 today, then ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month after the trial. Cancel anytime.`
+                : `your next pay link needs your card: $0 today, you're free until ${until}, then ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month. Cancel anytime.`
               : `to send more pay links after this one, you'll subscribe for ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month. Cancel anytime.`}
           </p>
           <ButtonLink href="/dashboard/billing" variant="secondary">

@@ -13,6 +13,7 @@ import {
   REMINDER_OFFSETS_HOURS,
   SUBSCRIPTION_PRICE_CENTS,
   TRIAL_DAYS,
+  MIN_TRIAL_DAYS,
   TRIAL_ENDING_NOTICE_DAYS,
 } from "@/lib/config";
 import { formatCents, techPayoutCents } from "@/lib/money";
@@ -410,9 +411,9 @@ export default function HomePage() {
               </Faq>
               <Faq q="Do I need a card to try it?">
                 Not to sign up, and not for your first pay link. You add a card when you send your
-                second, and you won&apos;t be charged until your {TRIAL_DAYS}-day trial ends. We
-                email you {TRIAL_ENDING_NOTICE_DAYS} days before it ends, and you can cancel from
-                your phone.
+                second, and you won&apos;t be charged until {TRIAL_DAYS} days after you signed up
+                (at least {MIN_TRIAL_DAYS} days after adding the card). We email you{" "}
+                {TRIAL_ENDING_NOTICE_DAYS} days before it ends, and you can cancel from your phone.
               </Faq>
             </div>
           </div>

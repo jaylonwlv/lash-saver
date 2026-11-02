@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BackLink } from "@/components/ui/back-link";
 import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { formatCents } from "@/lib/money";
-import { trialEligible } from "@/lib/stripe/billing";
+import { trialOffer } from "@/lib/stripe/billing";
 import { canSendPayLinks } from "@/lib/subscription";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
@@ -59,7 +59,7 @@ export default async function BillingPage() {
       ) : null}
       {!subscribed && (
         <SubscribeCard
-          trialEligible={await trialEligible(user!.id)}
+          trial={await trialOffer(user!.id)}
           // Their first pay link needs no card; after it, this card is for the next one.
           sentFirst={
             ((
@@ -69,7 +69,6 @@ export default async function BillingPage() {
                 .eq("tech_id", user!.id)
             ).count ?? 0) > 0
           }
-          timezone={tz}
         />
       )}
       <p className="text-muted text-sm">

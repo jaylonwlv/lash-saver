@@ -1,13 +1,8 @@
 import Link from "next/link";
-import { REMINDER_OFFSETS_HOURS, SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
+import { REMINDER_OFFSETS_HOURS, SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { formatCents } from "@/lib/money";
-import { formatDate } from "@/lib/time";
 import { startSubscription } from "./actions";
 import { BillingButton } from "./billing-buttons";
-
-function trialEndFromNow(): Date {
-  return new Date(Date.now() + TRIAL_DAYS * 86_400_000);
-}
 
 /** "$29" rather than "$29.00" in headlines. */
 const wholeDollars = (cents: number) => formatCents(cents).replace(/\.00$/, "");
@@ -18,20 +13,18 @@ const wholeDollars = (cents: number) => formatCents(cents).replace(/\.00$/, "");
  * in their own numbers when we have them, with one big button.
  */
 export function SubscribeCard({
-  trialEligible,
+  trial,
   sentFirst = false,
-  timezone,
   topService,
 }: {
-  trialEligible: boolean;
+  /** The free trial they'd get by adding a card now (it counts from sign-up), or null. */
+  trial: { until: string; daysLeft: number } | null;
   /** They've sent their first pay link (it needs no card); this card is for the next. */
   sentFirst?: boolean;
-  timezone: string;
   /** Their priciest service, for "one no-show costs you more than a month of Dibs". */
   topService?: { name: string; priceCents: number } | null;
 }) {
   const price = wholeDollars(SUBSCRIPTION_PRICE_CENTS);
-  const firstCharge = formatDate(trialEndFromNow(), timezone);
   const reminders = [...REMINDER_OFFSETS_HOURS]
     .sort((a, b) => b - a)
     .map((h) => `${h}h`)
@@ -51,8 +44,8 @@ export function SubscribeCard({
         <p className="text-pink text-xs font-bold tracking-[0.08em] uppercase">
           {sentFirst
             ? "Your first pay link is out"
-            : trialEligible
-              ? `${TRIAL_DAYS} days free`
+            : trial
+              ? `${trial.daysLeft} free day${trial.daysLeft === 1 ? "" : "s"} left`
               : "Subscribe to send pay links"}
         </p>
         <h2 className="font-display text-[34px] leading-[1.02] font-extrabold tracking-tight">
@@ -60,8 +53,8 @@ export function SubscribeCard({
           Your next no{"\u2011"}show <span className="text-pink">pays you.</span>
         </h2>
         <p className="text-white/75">
-          {trialEligible
-            ? `Start your ${TRIAL_DAYS}-day free trial and send your ${sentFirst ? "next" : "first"} pay link in under a minute.`
+          {trial
+            ? `Add your card and send your ${sentFirst ? "next" : "first"} pay link in under a minute. You're still free until ${trial.until}.`
             : "Pick up where you left off and send your next pay link in under a minute."}
         </p>
       </div>
@@ -96,12 +89,12 @@ export function SubscribeCard({
       <div className="relative flex flex-col gap-3 [&_.text-danger]:text-white">
         <BillingButton
           action={startSubscription}
-          label={trialEligible ? "Start my free trial" : `Subscribe for ${price}/month`}
+          label={trial ? "Add my card · $0 today" : `Subscribe for ${price}/month`}
           className="min-h-14 text-lg font-bold"
         />
         <p className="text-center text-sm text-white/75">
-          {trialEligible
-            ? `$0 today · ${price}/month from ${firstCharge} · Cancel before then and pay nothing`
+          {trial
+            ? `$0 today · ${price}/month from ${trial.until} · Cancel before then and pay nothing`
             : "Cancel anytime. Existing pay links and reminders keep working either way."}
         </p>
       </div>

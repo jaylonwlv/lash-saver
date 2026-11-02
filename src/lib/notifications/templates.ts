@@ -64,9 +64,10 @@ export type TemplateData = {
   };
   /**
    * To a pro about a day after their first pay link, if they haven't added a card: the
-   * next one needs it. trialDays is null when they can't get a free trial.
+   * next one needs it. freeUntil ("Dec 2", when the free month ends) is null when they
+   * can't get a free trial.
    */
-  first_link_followup: { trialDays: number | null; price: string; billingUrl: string };
+  first_link_followup: { freeUntil: string | null; price: string; billingUrl: string };
   /** To the client: the pro didn't find their deposit. */
   manual_deposit_not_received: {
     businessName: string;
@@ -91,11 +92,11 @@ export type TemplateData = {
   };
   /**
    * To a tech who signed up but hasn't sent a pay link or added a card yet, about a
-   * day and three days after sign-up. `nextStep` names what's left; `trialDays` is null
-   * when they can't get a free trial.
+   * day and three days after sign-up. `nextStep` names what's left; `freeUntil` (when their
+   * free month ends) is null when they can't get a free trial.
    */
-  setup_nudge_first: { nextStep: string; trialDays: number | null; dashboardUrl: string };
-  setup_nudge_next_booking: { nextStep: string; trialDays: number | null; dashboardUrl: string };
+  setup_nudge_first: { nextStep: string; freeUntil: string | null; dashboardUrl: string };
+  setup_nudge_next_booking: { nextStep: string; freeUntil: string | null; dashboardUrl: string };
   /**
    * Plain notes from the founder to a new pro: right after sign-up, and a week later
    * if they haven't sent a pay link. They answer the usual questions themselves and
@@ -112,12 +113,12 @@ export type TemplateData = {
     needsHandle?: boolean;
     signInUrl?: string;
     /** What the second pay link needs, so the trial card isn't a surprise: trial days, or null (no trial: price). */
-    nextLink?: { trialDays: number | null; price: string };
+    nextLink?: { freeUntil: string | null; price: string };
   };
   founder_checkin: {
     appUrl: string;
     announcement: string;
-    trialDays: number | null;
+    freeUntil: string | null;
     price: string;
   };
   /** To the tech, a few days before the first subscription charge. */
@@ -288,11 +289,11 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   }),
   setup_nudge_first: (d) => ({
     subject: `Your first ${APP_NAME} pay link is a few taps away`,
-    text: `${d.nextStep} Paste the pay link into your DMs: your client agrees to your policy and pays the deposit before the slot is theirs. If they don't show, you keep it. ${trialLine(d.trialDays)}${d.dashboardUrl}`,
+    text: `${d.nextStep} Paste the pay link into your DMs: your client agrees to your policy and pays the deposit before the slot is theirs. If they don't show, you keep it. ${trialLine(d.freeUntil)}${d.dashboardUrl}`,
   }),
   setup_nudge_next_booking: (d) => ({
     subject: `Before your next booking, send a ${APP_NAME} pay link`,
-    text: `Next time a client asks for a time in your DMs, send a pay link instead of your Cash App. They agree to your policy, get reminders, and you keep the deposit if they don't show. ${d.nextStep} ${trialLine(d.trialDays)}This is our last setup reminder. ${d.dashboardUrl}`,
+    text: `Next time a client asks for a time in your DMs, send a pay link instead of your Cash App. They agree to your policy, get reminders, and you keep the deposit if they don't show. ${d.nextStep} ${trialLine(d.freeUntil)}This is our last setup reminder. ${d.dashboardUrl}`,
   }),
   founder_welcome: (d) => ({
     subject: `You're set up on ${APP_NAME}`,
@@ -310,7 +311,7 @@ Then `
 ${
   d.nextLink
     ? `
-Your first pay link doesn't need a card. ${d.nextLink.trialDays ? `When you send your second, you'll add one to start your ${d.nextLink.trialDays}-day free trial ($0 that day, cancel anytime).` : `To send more after that, it's ${d.nextLink.price}/month, cancel anytime.`}
+Your first pay link doesn't need a card. ${d.nextLink.freeUntil ? `When you send your second, you'll add one: $0 that day, and you're free until ${d.nextLink.freeUntil} (cancel anytime).` : `To send more after that, it's ${d.nextLink.price}/month, cancel anytime.`}
 `
     : ""
 }
@@ -332,7 +333,7 @@ Still showing example prices? Set your own in a minute: ${d.appUrl}/dashboard/se
 Worried your regulars will push back? Send them this first:
 "${d.announcement}"
 
-${d.trialDays ? `Wondering about the card? Your first pay link doesn't need one. After that, you're not charged until your ${d.trialDays}-day free trial ends, and you can cancel anytime` : `Wondering about the cost? Your first pay link is included; after that it's ${d.price}/month, and you can cancel anytime`}: ${d.appUrl}/dashboard/billing
+${d.freeUntil ? `Wondering about the card? Your first pay link doesn't need one. After that, you're not charged until ${d.freeUntil}, and you can cancel anytime` : `Wondering about the cost? Your first pay link is included; after that it's ${d.price}/month, and you can cancel anytime`}: ${d.appUrl}/dashboard/billing
 
 When a client asks for a time, tap New appointment and send the link: ${d.appUrl}/dashboard
 
@@ -352,7 +353,7 @@ ${FOUNDER_NAME}`,
   }),
   first_link_followup: (d) => ({
     subject: "Your first pay link is out. Here's what's next",
-    text: `Nice, your first ${APP_NAME} pay link is out. Your next one needs your card: ${d.trialDays ? `adding it starts your ${d.trialDays}-day free trial ($0 today, cancel anytime)` : `it's ${d.price}/month, cancel anytime`}. Add it now so your next booking is one tap: ${d.billingUrl}`,
+    text: `Nice, your first ${APP_NAME} pay link is out. Your next one needs your card: ${d.freeUntil ? `$0 today, and you're free until ${d.freeUntil} (cancel anytime)` : `it's ${d.price}/month, cancel anytime`}. Add it now so your next booking is one tap: ${d.billingUrl}`,
   }),
   manual_deposit_not_received: (d) => ({
     subject: `${d.businessName} hasn't received your deposit yet`,
@@ -503,8 +504,8 @@ export function render<T extends TemplateId>(template: T, data: TemplateData[T])
   return { ...message, text: `${message.text}\n\n— sent via ${APP_NAME}` };
 }
 
-function trialLine(trialDays: number | null): string {
-  return trialDays
-    ? `Your first pay link needs no card. Your ${trialDays}-day free trial starts when you add one for the next, and you're not charged until it ends. `
+function trialLine(freeUntil: string | null): string {
+  return freeUntil
+    ? `Your first pay link needs no card. You add one for the next, and you're not charged until ${freeUntil}. `
     : "";
 }

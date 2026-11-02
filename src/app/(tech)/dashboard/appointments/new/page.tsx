@@ -3,10 +3,10 @@ import Link from "next/link";
 import { BackLink } from "@/components/ui/back-link";
 import { ButtonLink } from "@/components/ui/button";
 import { formatDuration } from "@/lib/format";
-import { SUBSCRIPTION_PRICE_CENTS, TRIAL_DAYS } from "@/lib/config";
+import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { formatCents } from "@/lib/money";
 import { canTakeDeposits } from "@/lib/payments";
-import { trialEligible } from "@/lib/stripe/billing";
+import { trialOffer } from "@/lib/stripe/billing";
 import { canCreatePayLink, canSendPayLinks } from "@/lib/subscription";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { SubscribeCard } from "../../billing/subscribe-card";
@@ -63,11 +63,12 @@ export default async function NewAppointmentPage({
   const paywalled = ready && !canCreatePayLink(profile.subscription_status, payLinksSoFar ?? 0);
   const firstWithoutCard = ready && !subscribed && !paywalled;
   // null: the check failed, so say nothing about a trial either way (and still show the form).
-  const eligible = paywalled
-    ? await trialEligible(user!.id)
+  const offer = paywalled
+    ? await trialOffer(user!.id)
     : firstWithoutCard
-      ? await trialEligible(user!.id).catch(() => null)
-      : false;
+      ? await trialOffer(user!.id).catch(() => undefined)
+      : null;
+  const eligible = offer === undefined ? null : offer !== null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -99,7 +100,7 @@ export default async function NewAppointmentPage({
         <p className="border-line bg-surface rounded-2xl border p-4 text-sm">
           <strong>Your first pay link doesn&apos;t need a card.</strong>{" "}
           {eligible === true
-            ? `When you send your next one, you'll add a card to start your ${TRIAL_DAYS}-day free trial.`
+            ? `When you send your next one, you'll add a card: $0 then, and you're free until ${offer?.until}.`
             : eligible === false
               ? `To send more after this one, you'll subscribe for ${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/month.`
               : "When you send your next one, you'll add your card."}
@@ -116,9 +117,8 @@ export default async function NewAppointmentPage({
       )}
       {paywalled ? (
         <SubscribeCard
-          trialEligible={eligible === true}
+          trial={offer ?? null}
           sentFirst={sentBefore}
-          timezone={profile.timezone}
           // Services are ordered by price, so the last is their priciest.
           topService={
             services.at(-1)

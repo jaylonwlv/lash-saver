@@ -27,6 +27,11 @@ export const PROCESSING_FEE_LABEL = "3.5% + 30¢";
 /** Tech subscription. The first pay link needs no card; the trial starts when the tech adds one for the second. */
 export const SUBSCRIPTION_PRICE_CENTS = 2900;
 export const TRIAL_DAYS = 30;
+/**
+ * The free month counts from sign-up (the card comes with the second pay link), but
+ * nobody gets fewer than this many days after adding their card.
+ */
+export const MIN_TRIAL_DAYS = 7;
 export const SUBSCRIPTION_NAME = APP_NAME;
 /** Send the "trial ending" email this many days before the first charge. */
 export const TRIAL_ENDING_NOTICE_DAYS = 3;

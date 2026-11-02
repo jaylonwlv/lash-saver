@@ -55,4 +55,9 @@ export const bookingRequestSchema = z
   .refine((r) => r.end_time > r.start_time, {
     path: ["end_time"],
     message: "The end time must be after the start.",
+  })
+  // The typed signature must be the host's own name (the e-signature on the agreement).
+  .refine((r) => signatureMatches(r.signature, r.host_name), {
+    path: ["signature"],
+    message: "Type your full name exactly as you entered it above.",
   });
