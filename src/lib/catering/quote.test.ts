@@ -126,6 +126,20 @@ describe("calculateQuote", () => {
     assert.equal(tiny.balanceCents, 0);
   });
 
+  it("folds a balance under $1 into the deposit", () => {
+    const q = quote(
+      { pkg: { ...tacoBar, pricing_type: "flat", price_cents: 10_050, min_guests: 1 } },
+      { deposit_type: "flat", deposit_value: 10_000 },
+    );
+    assert.equal(q.depositCents, 10_050);
+    assert.equal(q.balanceCents, 0);
+    const ok = quote(
+      { pkg: { ...tacoBar, pricing_type: "flat", price_cents: 10_100, min_guests: 1 } },
+      { deposit_type: "flat", deposit_value: 10_000 },
+    );
+    assert.equal(ok.balanceCents, 100);
+  });
+
   it("charges everything up front when the event is inside the balance window", () => {
     const q = quote({ payInFull: true });
     assert.equal(q.depositCents, q.totalCents);

@@ -37,6 +37,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     { count: activeServices },
     { count: starterServices },
     { count: payLinks },
+    { count: cateringSetUp },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -59,6 +60,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     supabase
       .from("appointments")
       .select("id", { count: "exact", head: true })
+      .eq("tech_id", user!.id),
+    // Catering can be turned on by any pro, not only food trucks.
+    supabase
+      .from("catering_settings")
+      .select("tech_id", { count: "exact", head: true })
       .eq("tech_id", user!.id),
   ]);
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
@@ -187,7 +193,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         />
       )}
 
-      {profile.trade === "catering" && (
+      {(profile.trade === "catering" || (cateringSetUp ?? 0) > 0) && (
         <Link
           href="/dashboard/catering"
           className="bg-ink flex min-h-12 items-center justify-between gap-3 rounded-[22px] p-5 text-white active:opacity-90"

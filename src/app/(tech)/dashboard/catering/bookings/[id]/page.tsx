@@ -263,7 +263,7 @@ export default async function CateringBookingPage({
             <p className="text-muted text-sm">
               Everything the host paid
               {paidCents > 0 ? ` (${formatCents(paidCents)})` : ""} is refunded automatically, and
-              we email them. You keep nothing from a cancellation you make.
+              we email them. The processing fee isn&apos;t returned to you.
             </p>
             <Button type="submit" variant="secondary">
               Cancel event

@@ -167,7 +167,7 @@ export function calculateQuote(
 
   const total = subtotal + travelFee + serviceFee + tax;
   if (total <= 0) return { ok: false, error: { code: "bad_input" } };
-  const deposit = payInFull
+  const asked = payInFull
     ? total
     : Math.max(
         Math.min(total, 100),
@@ -175,6 +175,8 @@ export function calculateQuote(
           ? mulDivRound(total, rules.deposit_value, 10_000)
           : Math.min(rules.deposit_value, total),
       );
+  // A balance under $1 can't be charged on its own (Stripe's minimum): take it now.
+  const deposit = total - asked > 0 && total - asked < 100 ? total : asked;
 
   return {
     ok: true,

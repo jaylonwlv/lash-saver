@@ -220,14 +220,24 @@ export async function startDepositCheckout(req: BookingRequest, signer: Signer):
     .eq("tech_id", owner.id)
     .eq("host_email", req.host_email)
     .gte("created_at", hourAgo);
-  if ((recent ?? 0) >= 5)
+  // Per device too, so nobody can hold every date by typing different emails.
+  const { count: fromIp } = signer.ip
+    ? await admin
+        .from("catering_bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("signer_ip", signer.ip)
+        .gte("created_at", hourAgo)
+    : { count: 0 };
+  if ((recent ?? 0) >= 5 || (fromIp ?? 0) >= 10)
     throw new CateringError(
       "too_many",
       "Too many tries. Wait a bit, or message the business directly.",
     );
 
   // Their own unfinished checkout for this date shouldn't block them from trying again.
-  await releaseOwnHolds(owner.id, req.event_date, req.host_email);
+  // Same email and same device only, so nobody can cancel someone else's checkout by
+  // typing their email.
+  if (signer.ip) await releaseOwnHolds(owner.id, req.event_date, req.host_email, signer.ip);
 
   const now = new Date();
   const token = randomBytes(32).toString("base64url");
@@ -319,7 +329,7 @@ export async function startDepositCheckout(req: BookingRequest, signer: Signer):
   }
 }
 
-async function releaseOwnHolds(techId: string, date: string, email: string) {
+async function releaseOwnHolds(techId: string, date: string, email: string, ip: string) {
   const admin = createAdminClient();
   const { data: holds } = await admin
     .from("catering_bookings")
@@ -327,6 +337,7 @@ async function releaseOwnHolds(techId: string, date: string, email: string) {
     .eq("tech_id", techId)
     .eq("event_date", date)
     .eq("host_email", email)
+    .eq("signer_ip", ip)
     .eq("status", "awaiting_deposit");
   for (const h of holds ?? []) {
     await expireOpenCateringCheckouts(h.id);
@@ -668,7 +679,7 @@ export async function handleCateringCheckoutCompleted(
       : booking.balance_due_date && booking.balance_due_date <= today
         ? "balance_due"
         : "confirmed";
-  const { error: confirmError } = await admin
+  const { data: confirmedRows, error: confirmError } = await admin
     .from("catering_bookings")
     .update({
       status,
@@ -677,8 +688,15 @@ export async function handleCateringCheckoutCompleted(
       ...(status === "paid_in_full" ? { balance_paid_at: paidAt } : {}),
     })
     .eq("id", booking.id)
-    .in("status", ["awaiting_deposit", "expired"]);
+    .in("status", ["awaiting_deposit", "expired"])
+    .select("id");
   if (confirmError) throw new Error(`Confirming catering booking failed: ${confirmError.message}`);
+  if (!confirmedRows?.length) {
+    // The owner cancelled in the moment between: give the money back.
+    await refund(pi, payment.id);
+    await admin.from("catering_payments").update({ status: "refunded" }).eq("id", payment.id);
+    return;
+  }
 
   const q = readQuote(booking);
   const confirmed = { ...booking, status } as Booking;
