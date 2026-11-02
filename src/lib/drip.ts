@@ -21,6 +21,28 @@ export const DRIP_SCHEDULE: { step: DripStep; day: number }[] = [
   { step: "last", day: 24 },
 ];
 
+/**
+ * Across all marketing email to a pro (setup reminders, check-in, first-link follow-up,
+ * this drip): at most this many in any 7 days. Unsubscribes rise above one or two a
+ * week, so a blocked email waits a few days instead.
+ */
+export const MARKETING_WEEKLY_CAP = 2;
+
+/** Log keys (notification_log.template) that count as marketing email to a pro. */
+export const MARKETING_KEY_PREFIXES = [
+  "setup_nudge_first:",
+  "setup_nudge_next_booking:",
+  "founder_checkin:",
+  "first_link_followup:",
+  "nurture_",
+];
+
+/** True if another marketing email may go out now, given when the recent ones went. */
+export function underWeeklyCap(sentAt: Date[], now: Date): boolean {
+  const weekAgo = now.getTime() - 7 * 86_400_000;
+  return sentAt.filter((d) => d.getTime() > weekAgo).length < MARKETING_WEEKLY_CAP;
+}
+
 /** Never two drip emails closer than this, even if the cron missed days. */
 export const DRIP_MIN_GAP_DAYS = 3;
 /** Past this, a missed step is skipped rather than sent late. */

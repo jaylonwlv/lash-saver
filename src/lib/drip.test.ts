@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { dripEmail, dueDripStep, type DripInput } from "./drip";
+import { dripEmail, dueDripStep, underWeeklyCap, type DripInput } from "./drip";
 
 const day = 86_400_000;
 const first = new Date("2026-11-02T15:00:00Z");
@@ -45,6 +45,16 @@ const base: DripInput = {
   profileUrl: "https://getdibs.pro/dashboard/profile",
   newAppointmentUrl: "https://getdibs.pro/dashboard/appointments/new",
 };
+
+describe("underWeeklyCap", () => {
+  it("allows two marketing emails per rolling week", () => {
+    const now = at(10);
+    assert.equal(underWeeklyCap([], now), true);
+    assert.equal(underWeeklyCap([at(8)], now), true);
+    assert.equal(underWeeklyCap([at(8), at(9)], now), false);
+    assert.equal(underWeeklyCap([at(2), at(9)], now), true); // day 2 fell out of the week
+  });
+});
 
 describe("dripEmail", () => {
   it("is niche-specific and ends with the card line", () => {

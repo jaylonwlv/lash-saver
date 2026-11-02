@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { serverEnv } from "@/lib/env";
+import { MARKETING_KEY_PREFIXES, underWeeklyCap } from "@/lib/drip";
 import { unsubscribeUrls } from "@/lib/unsubscribe";
 import { notify } from "./index";
 import type { TemplateData, TemplateId } from "./templates";
@@ -88,6 +89,23 @@ export async function notifyMarketingOnce<T extends TemplateId>(
     .eq("id", techId)
     .maybeSingle();
   if (!profile || profile.marketing_opt_out_at) return false;
+  // At most MARKETING_WEEKLY_CAP marketing emails in any 7 days, across all kinds.
+  const { data: recent } = await createAdminClient()
+    .from("notification_log")
+    .select("template, created_at")
+    .like("template", `%${techId}`)
+    .is("error", null)
+    .gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString());
+  const marketing = (recent ?? []).filter((r) =>
+    MARKETING_KEY_PREFIXES.some((p) => r.template.startsWith(p)),
+  );
+  if (
+    !underWeeklyCap(
+      marketing.map((r) => new Date(r.created_at)),
+      new Date(),
+    )
+  )
+    return false;
   const results = await notify({
     ...input,
     marketing: {
