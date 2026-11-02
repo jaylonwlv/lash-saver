@@ -210,7 +210,8 @@ export default async function CateringBookingPage({
                   ? "Refunded"
                   : `You receive ${formatCents(techPayoutCents(p.amount_cents))} after the processing fee.`}
               </p>
-              {p.status === "paid" && (
+              {/* An active event is refunded by cancelling it, which also frees the date. */}
+              {p.status === "paid" && !active && (
                 <form action={refundPayment.bind(null, b.id, p.id)}>
                   <button type="submit" className="text-danger min-h-11 text-sm font-medium">
                     Refund {formatCents(p.amount_cents)} to the host

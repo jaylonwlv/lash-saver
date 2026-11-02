@@ -47,6 +47,8 @@ export const bookingRequestSchema = z
     esign: z.literal("on", "Agree to sign electronically to continue."),
     shown_total: z.coerce.number().int().min(1),
     shown_deposit: z.coerce.number().int().min(1),
+    /** The owner's date the page priced the quote on (honored until the next day ends). */
+    quote_day: z.iso.date(),
     // Honeypot: real people never fill this.
     website: z.literal("").optional(),
   })

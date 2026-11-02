@@ -140,6 +140,7 @@ export function QuoteForm({
       <input type="hidden" name="add_on_ids" value={addOnIds.join(",")} />
       <input type="hidden" name="shown_total" value={quote?.totalCents ?? 0} />
       <input type="hidden" name="shown_deposit" value={quote?.depositCents ?? 0} />
+      <input type="hidden" name="quote_day" value={today} />
       <div aria-hidden className="absolute -left-[9999px]">
         <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
       </div>

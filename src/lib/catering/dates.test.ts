@@ -7,6 +7,7 @@ import {
   daysBetween,
   formatClock,
   formatEventDate,
+  honoredQuoteDay,
   minutesBetween,
   payInFullNow,
   todayIn,
@@ -50,6 +51,13 @@ describe("catering dates", () => {
     assert.equal(payInFullNow("2027-06-14", "2027-06-06", 7), false);
     assert.equal(balanceDueDate("2027-06-14", 7), "2027-06-07");
     assert.equal(payInFullNow("2027-06-14", "2027-06-13", 0), false);
+  });
+
+  it("honors a quote priced yesterday, nothing older or newer", () => {
+    assert.equal(honoredQuoteDay("2027-06-06", "2027-06-07"), "2027-06-06");
+    assert.equal(honoredQuoteDay("2027-06-05", "2027-06-07"), "2027-06-07");
+    assert.equal(honoredQuoteDay("2027-06-08", "2027-06-07"), "2027-06-07");
+    assert.equal(honoredQuoteDay("garbage", "2027-06-07"), "2027-06-07");
   });
 
   it("formats", () => {

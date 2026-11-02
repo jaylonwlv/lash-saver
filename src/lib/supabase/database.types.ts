@@ -254,6 +254,8 @@ type CateringPaymentRow = Timestamps & {
   stripe_checkout_session_id: string | null;
   stripe_payment_intent_id: string | null;
   paid_at: string | null;
+  dispute_id: string | null;
+  dispute_status: "open" | "won" | "lost" | null;
 };
 
 /** Insert type: columns with DB defaults become optional. */

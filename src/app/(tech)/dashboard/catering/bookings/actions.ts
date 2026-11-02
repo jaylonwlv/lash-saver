@@ -111,6 +111,8 @@ export async function markCompleted(bookingId: string): Promise<void> {
 export async function refundPayment(bookingId: string, paymentId: string): Promise<void> {
   const { booking } = await ownBooking(bookingId);
   if (!z.uuid().safeParse(paymentId).success) notFound();
+  // Active events are refunded by cancelling (which frees the date), never here.
+  if ((ACTIVE_STATUSES as readonly string[]).includes(booking.status)) back(booking.id);
   const admin = createAdminClient();
   const { data: payment } = await admin
     .from("catering_payments")

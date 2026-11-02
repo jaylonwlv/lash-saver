@@ -17,6 +17,7 @@ import {
   formatClock,
   formatEventDate,
   formatShortDate,
+  honoredQuoteDay,
   minutesBetween,
   payInFullNow,
   todayIn,
@@ -116,6 +117,7 @@ export type BookingRequest = {
   /** What the page showed, in cents; refused if the server's quote differs. */
   shown_total: number;
   shown_deposit: number;
+  quote_day: string;
   /** The host's typed name (checked against host_name by the schema). */
   signature: string;
 };
@@ -194,7 +196,12 @@ export async function startDepositCheckout(req: BookingRequest, signer: Signer):
   if (req.event_date < first || req.event_date > last)
     throw new CateringError("unavailable", "That date isn't available. Pick another.");
   const eventMinutes = minutesBetween(req.start_time, req.end_time);
-  const payInFull = payInFullNow(req.event_date, today, settings.balance_due_days_before);
+  // A page opened before midnight and paid after keeps the terms it showed.
+  const payInFull = payInFullNow(
+    req.event_date,
+    honoredQuoteDay(req.quote_day, today),
+    settings.balance_due_days_before,
+  );
 
   const result = calculateQuote({
     pkg,

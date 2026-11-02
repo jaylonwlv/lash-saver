@@ -236,6 +236,8 @@ export type TemplateData = {
     pageUrl: string;
   };
   catering_date_taken_owner: { hostName: string; email: string; when: string; amount: string };
+  catering_payment_disputed: { hostName: string; amount: string; when: string; bookingUrl: string };
+  catering_dispute_closed: { hostName: string; amount: string; won: boolean; bookingUrl: string };
 };
 
 export type TemplateId = keyof TemplateData;
@@ -477,6 +479,16 @@ ${d.bookingUrl}`,
     fromName: d.businessName,
     replyTo: d.ownerEmail,
     text: `Sorry! ${d.businessName}'s last opening on ${d.when} was booked while you were paying, so we refunded your ${d.amount} in full (5 to 10 business days). Pick another date: ${d.pageUrl}\n\n— sent via ${APP_NAME}`,
+  }),
+  catering_payment_disputed: (d) => ({
+    subject: `${d.hostName} disputed a ${d.amount} payment`,
+    text: `${d.hostName} disputed their ${d.amount} payment for ${d.when} with their bank. We've sent the bank the agreement they signed. Until the bank decides, the ${d.amount} is held back from your Stripe balance; if the dispute is won, it comes back to you. ${d.bookingUrl}`,
+  }),
+  catering_dispute_closed: (d) => ({
+    subject: d.won ? `You won ${d.hostName}'s dispute` : `${d.hostName}'s dispute was lost`,
+    text: d.won
+      ? `The bank sided with you on ${d.hostName}'s ${d.amount} dispute. The money is back in your Stripe balance. ${d.bookingUrl}`
+      : `The bank sided with ${d.hostName} on the ${d.amount} dispute, so that amount went back to them. ${d.bookingUrl}`,
   }),
   catering_date_taken_owner: (d) => ({
     subject: `A payment for ${d.when} was refunded (date full)`,

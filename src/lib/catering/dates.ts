@@ -57,6 +57,14 @@ export function payInFullNow(
   return daysBetween(today, eventDate) <= balanceDueDaysBefore;
 }
 
+/**
+ * The day the host's page priced the quote, if the server should honor it: today,
+ * or yesterday for a page opened before midnight and paid after.
+ */
+export function honoredQuoteDay(quoteDay: string, today: string): string {
+  return quoteDay === addDays(today, -1) ? quoteDay : today;
+}
+
 /** When the balance is due: `balanceDueDaysBefore` days before the event. */
 export function balanceDueDate(eventDate: string, balanceDueDaysBefore: number): string {
   return addDays(eventDate, -balanceDueDaysBefore);

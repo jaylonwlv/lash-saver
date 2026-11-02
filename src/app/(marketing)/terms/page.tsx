@@ -120,9 +120,11 @@ export default function TermsPage() {
           </li>
           <li>
             Catering quote pages work the same way: the same processing fee applies to each deposit
-            and balance payment, and {APP_NAME} takes no other cut of the booking. The caterer sets
-            the prices, any service fee and any tax shown to hosts, and is responsible for them.
-            Refunds follow the cancellation terms the caterer sets and the host signs, and are made
+            and balance payment, and {APP_NAME} takes no other cut of the booking. Chargebacks on
+            catering payments are handled like deposit chargebacks (below): the caterer is
+            responsible, and we send the bank the agreement the host signed. The caterer sets the
+            prices, any service fee and any tax shown to hosts, and is responsible for them. Refunds
+            follow the cancellation terms the caterer sets and the host signs, and are made
             automatically when either side cancels (the processing fee isn&apos;t returned); the
             caterer can also refund a payment from their dashboard; payments made after a date
             filled up are refunded in full automatically.

@@ -12,6 +12,11 @@ import { notifyForAppointment } from "@/lib/notifications/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatWhen } from "@/lib/time";
 import { getStripe } from "./server";
+import {
+  findCateringPayment,
+  handleCateringDisputeClosed,
+  handleCateringDisputeCreated,
+} from "@/lib/catering/disputes";
 
 /*
  * Card disputes (chargebacks) on deposits. Deposits are destination charges, so
@@ -99,6 +104,7 @@ export async function handleDisputeCreated(dispute: Stripe.Dispute): Promise<voi
   const deposit = await findDeposit(dispute);
   const amount = formatCents(dispute.amount);
 
+  if (!deposit && (await handleCateringDisputeCreated(dispute))) return;
   if (!deposit) {
     // Not a deposit (for example a subscription payment): just tell the owner.
     await notify({
@@ -167,7 +173,8 @@ export async function handleDisputeCreated(dispute: Stripe.Dispute): Promise<voi
 
 /** The bank took the money: take the pro's share back from their Stripe account. */
 export async function handleDisputeFundsWithdrawn(dispute: Stripe.Dispute): Promise<void> {
-  if (!(await findDeposit(dispute))) return;
+  // Deposits and catering payments are both destination charges to the pro.
+  if (!(await findDeposit(dispute)) && !(await findCateringPayment(dispute))) return;
   const transfer = await transferFor(dispute);
   if (!transfer) return;
 
@@ -186,7 +193,7 @@ export async function handleDisputeFundsWithdrawn(dispute: Stripe.Dispute): Prom
 
 /** The dispute was won and the money is back with us: return the pro's share. */
 export async function handleDisputeFundsReinstated(dispute: Stripe.Dispute): Promise<void> {
-  if (!(await findDeposit(dispute))) return;
+  if (!(await findDeposit(dispute)) && !(await findCateringPayment(dispute))) return;
   const transfer = await transferFor(dispute);
   if (!transfer) return;
   const destination = idOf(transfer.destination);
@@ -208,7 +215,7 @@ export async function handleDisputeFundsReinstated(dispute: Stripe.Dispute): Pro
       currency: transfer.currency,
       destination,
       transfer_group: group,
-      description: "Deposit returned: dispute won",
+      description: "Payment returned: dispute won",
       metadata: { dispute_id: dispute.id },
     },
     { idempotencyKey: `dispute-return-${dispute.id}` },
@@ -217,7 +224,10 @@ export async function handleDisputeFundsReinstated(dispute: Stripe.Dispute): Pro
 
 export async function handleDisputeClosed(dispute: Stripe.Dispute): Promise<void> {
   const deposit = await findDeposit(dispute);
-  if (!deposit) return;
+  if (!deposit) {
+    await handleCateringDisputeClosed(dispute);
+    return;
+  }
   // "warning_closed" is an inquiry that never became a chargeback: no money moved.
   const won = dispute.status === "won" || dispute.status === "warning_closed";
 
