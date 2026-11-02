@@ -57,8 +57,8 @@ const RULES = {
   travel_fee_cents: 7500,
   service_fee_bps: 0,
   tax_bps: 775,
-  deposit_type: "percent" as const,
-  deposit_value: 3000,
+  deposit_type: "flat" as const,
+  deposit_value: 50000,
 };
 
 export default function CateringDemoPage() {

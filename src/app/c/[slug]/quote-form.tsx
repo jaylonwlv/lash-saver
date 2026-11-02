@@ -467,7 +467,7 @@ export function QuoteForm({
             : !date
               ? "Pick a date to continue"
               : quote
-                ? `Pay ${formatCents(quote.depositCents)} to hold ${formatEventDate(date).replace(/, \d{4}$/, "")}`
+                ? `Pay ${formatCents(quote.depositCents).replace(/\.00$/, "")} to hold ${formatEventDate(date).replace(/, \d{4}$/, "")}`
                 : "Check your choices"}
         </Button>
       </div>
