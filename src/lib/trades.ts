@@ -75,6 +75,19 @@ export const TRADES: Trade[] = [
     ],
   },
   {
+    id: "esthetician",
+    label: "Esthetician",
+    emoji: "🧖",
+    windowHours: 24,
+    policyText:
+      "Running more than 10 minutes late may shorten your treatment so the next client isn't kept waiting.",
+    services: [
+      s("Signature facial", 60, 95, 25),
+      s("Dermaplaning", 45, 75, 20),
+      s("Brazilian wax", 30, 55, 15),
+    ],
+  },
+  {
     id: "hair",
     label: "Hair & braids",
     emoji: "💇",
