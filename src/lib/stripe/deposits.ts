@@ -1,4 +1,7 @@
 import "server-only";
+import { inviteUrl } from "@/lib/referral";
+import { nextLinkCardLine } from "./billing";
+import { publicEnv } from "@/lib/env.public";
 import type Stripe from "stripe";
 import {
   appointmentUrl,
@@ -252,6 +255,7 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
       cancelNote: cancelNote(ctx),
       detailsUrl: payUrl(appointmentId),
       calendar: clientCalendarAttachment(ctx),
+      proInviteUrl: inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, ctx.tech.slug, "email"),
     },
   });
   await notifyForAppointment({
@@ -264,6 +268,8 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
       when,
       amount,
       appointmentUrl: appointmentUrl(appointmentId),
+      // Their first deposit just landed: the best moment to mention the card.
+      cardNote: await nextLinkCardLine(tech.id, tech.subscription_status),
     },
   });
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { manualPaymentsSchema } from "@/app/(tech)/dashboard/payments/schema";
 import { serviceSchema } from "@/app/(tech)/dashboard/services/schema";
+import { REF_PATTERN } from "@/lib/referral";
 import { TRADE_IDS } from "@/lib/trades";
 
 export const PAY_METHODS = ["cashapp", "zelle", "venmo", "stripe"] as const;
@@ -37,6 +38,11 @@ export const startSchema = z
     email: z.email("Enter a valid email address.").transform((e) => e.trim().toLowerCase()),
     // Hidden from people; bots fill it in.
     website: z.string().max(0).default(""),
+    // The pro whose "Powered by Dibs" link they came from (lib/referral.ts). Never blocks sign-up.
+    ref: z
+      .string()
+      .default("")
+      .transform((v) => (REF_PATTERN.test(v) ? v : null)),
   })
   .transform((v, ctx) => {
     let handles: z.infer<typeof manualPaymentsSchema> | null = null;

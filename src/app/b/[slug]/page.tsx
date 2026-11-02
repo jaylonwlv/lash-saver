@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { LegalLinks } from "@/components/ui/legal-links";
+import { ProInvite } from "@/components/ui/pro-invite";
+import { publicEnv } from "@/lib/env.public";
+import { inviteUrl } from "@/lib/referral";
 import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/ui/button";
 import { policySummary } from "@/lib/appointments";
@@ -78,6 +81,7 @@ export default async function MenuPage({ params }: PageProps<"/b/[slug]">) {
           {policySummary(tech.cancellation_window_hours ?? 0, tech.policy_text)}
         </p>
       </section>
+      <ProInvite compact href={inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, slug, "menu")} />
       <LegalLinks className="mt-auto pt-4" />
     </main>
   );

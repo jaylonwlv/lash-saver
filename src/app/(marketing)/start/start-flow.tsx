@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { TRIAL_DAYS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { isInAppBrowser } from "@/lib/in-app-browser";
+import { readRef, REF_KEY } from "@/lib/referral";
 import { dollarsToCents, formatCents } from "@/lib/money";
 import type { TradeId } from "@/lib/supabase/database.types";
 import { AD_TRADE_KEY } from "../remember-trade";
@@ -73,6 +74,13 @@ const serverNull = () => null;
 function draftSnapshot(): string | null {
   try {
     return localStorage.getItem(DRAFT_KEY);
+  } catch {
+    return null;
+  }
+}
+function refSnapshot(): string | null {
+  try {
+    return readRef(localStorage.getItem(REF_KEY));
   } catch {
     return null;
   }
@@ -155,6 +163,8 @@ export function StartFlow({
   const savedDraft = useSyncExternalStore(noSubscribe, draftSnapshot, serverNull);
   // A trade remembered from an ad link to the landing page (see RememberTrade).
   const adTrade = useSyncExternalStore(noSubscribe, adTradeSnapshot, serverNull);
+  // The pro whose "Powered by Dibs" link brought them here, if any (sent with sign-up).
+  const ref = useSyncExternalStore(noSubscribe, refSnapshot, serverNull);
   const [draftChecked, setDraftChecked] = useState(false);
   const [resumed, setResumed] = useState(false);
   // Where a returning visitor was put back: their first visit already counted those
@@ -511,6 +521,7 @@ export function StartFlow({
       >
         <input type="hidden" name="trade" value={trade.id} />
         <input type="hidden" name="method" value={method} />
+        {ref && <input type="hidden" name="ref" value={ref} />}
         <input type="hidden" name="service_name" value={serviceName} />
         <input type="hidden" name="service_price" value={servicePrice} />
         <input type="hidden" name="service_deposit" value={serviceDeposit} />

@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { cancelNote, loadAppointmentContext, payUrl } from "@/lib/appointments";
 import {
   depositAnnouncement,
+  FIRST_LINK_FOLLOWUP_AFTER_HOURS,
+  FIRST_LINK_FOLLOWUP_STOP_AFTER_DAYS,
   FOUNDER_CHECKIN_AFTER_DAYS,
   FOUNDER_CHECKIN_STOP_AFTER_DAYS,
   REMINDER_OFFSETS_HOURS,
@@ -50,6 +52,7 @@ export async function GET(request: NextRequest) {
   const trialNotices = await sendTrialEndingNotices(now);
   const setupNudges = await sendSetupNudges(now);
   const founderCheckins = await sendFounderCheckins(now);
+  const firstLinkFollowups = await sendFirstLinkFollowups(now);
   return NextResponse.json({
     ok: true,
     expired: expired?.length ?? 0,
@@ -57,7 +60,58 @@ export async function GET(request: NextRequest) {
     trialNotices,
     setupNudges,
     founderCheckins,
+    firstLinkFollowups,
   });
+}
+
+/**
+ * About a day after a pro's first pay link (which needs no card), if they still haven't
+ * added one: "your next pay link needs your card". Once per pro. Without it they'd hear
+ * nothing until they hit the trial card on their second link.
+ */
+async function sendFirstLinkFollowups(now: Date): Promise<number> {
+  const admin = createAdminClient();
+  const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000).toISOString();
+  const { data: links, error } = await admin
+    .from("appointments")
+    .select("tech_id")
+    .lte("created_at", hoursAgo(FIRST_LINK_FOLLOWUP_AFTER_HOURS))
+    .gt("created_at", hoursAgo(FIRST_LINK_FOLLOWUP_STOP_AFTER_DAYS * 24));
+  if (error) throw new Error(`Loading first pay links failed: ${error.message}`);
+
+  const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
+  let sent = 0;
+  for (const techId of new Set(links.map((l) => l.tech_id))) {
+    // One bad profile must not stop the rest.
+    try {
+      const logKey = `first_link_followup:${techId}`;
+      if (await alreadyLogged(logKey)) continue;
+      const { data: tech, error: techError } = await admin
+        .from("profiles")
+        .select("email, subscription_id, subscription_status")
+        .eq("id", techId)
+        .single();
+      if (techError) throw new Error(techError.message);
+      // Already added a card (trial or paid, or had one before): nothing to say.
+      if (tech.subscription_id || tech.subscription_status) continue;
+      // Unknown: try again tomorrow rather than promise (or rule out) a trial.
+      const eligible = await trialEligible(techId).catch(() => null);
+      if (eligible === null) continue;
+      const ok = await notifyOnce(logKey, {
+        to: { email: tech.email },
+        template: "first_link_followup",
+        data: {
+          trialDays: eligible ? TRIAL_DAYS : null,
+          price: formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, ""),
+          billingUrl: `${appUrl}/dashboard/billing`,
+        },
+      });
+      if (ok) sent++;
+    } catch (err) {
+      console.error(`First pay link follow-up for ${techId} failed`, err);
+    }
+  }
+  return sent;
 }
 
 async function sendReminders(now: Date) {

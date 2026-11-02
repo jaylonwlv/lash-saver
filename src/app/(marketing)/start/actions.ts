@@ -83,6 +83,27 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
   } catch (err) {
     console.error(`Instant sign-up: setting up ${created.user.id} failed`, err);
   }
+  // Which pro's "Powered by Dibs" link they came from. On its own, so it can never
+  // affect the rest of sign-up.
+  if (data.ref) {
+    try {
+      const { data: referrer } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("slug", data.ref)
+        .neq("id", created.user.id)
+        .maybeSingle();
+      if (referrer) {
+        const { error: refError } = await admin
+          .from("profiles")
+          .update({ referred_by: referrer.id })
+          .eq("id", created.user.id);
+        if (refError) console.error("Instant sign-up: saving referred_by failed", refError);
+      }
+    } catch (err) {
+      console.error("Instant sign-up: looking up the referring pro failed", err);
+    }
+  }
 
   // Sign in by verifying a one-time link token on the server: nothing is emailed.
   const { data: link, error: linkError } = await admin.auth.admin.generateLink({

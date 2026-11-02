@@ -71,6 +71,8 @@ src/
                                   (dismissible); hidden once running from the Home Screen. manifest.ts + public/icon-*.png
     (tech)/dashboard/saved-reply-card.tsx  "Add Dibs to your DMs": a ready-made Instagram saved reply (shortcut "dibs")
                                   so the booking DM itself prompts a pay link; dismissed per phone.
+    (tech)/dashboard/announcement-card.tsx  "No booking yet? Tell your regulars": the depositAnnouncement with
+                                  Share / Copy, shown until their first pay link goes out.
     (tech)/dashboard/             Tech home: "N of 4 done" progress, setup checklist (profile → deposits → services →
                                   first pay link), menu page link
     (tech)/dashboard/onboarding/  First-visit "What do you do?" picker: one tap saves profiles.trade and, for a pro
@@ -97,6 +99,7 @@ src/
                                   the phone's share sheet (Instagram, iMessage…); Copy message / Copy the link only as fallbacks
     (tech)/dashboard/clients/     Client list and [key] detail (record + appointments), built from appointments
     b/[slug]/page.tsx             Public menu page: services, how to book (DM), policy
+                                  Ends with a small "Try Dibs free" invite (components/ui/pro-invite.tsx).
     pay/[id]/calendar/route.ts    The booked appointment as an .ics (Add to my calendar on the pay page; also attached
                                   to the booking_confirmed email, so Apple Mail offers to add it). 2-hour phone alert.
     api/calendar/[token]/         A pro's private calendar feed (/api/calendar/<profiles.calendar_token>.ics) for Apple
@@ -140,6 +143,9 @@ src/
     trades.ts                     Kinds of pro and their starter menus (typical prices, policy); must match the
                                   profiles.trade check constraint
     meta.ts                       Meta Conversions API: trackSignUp, trackSubscription (StartTrial, Subscribe)
+    referral.ts                   "Powered by Dibs": inviteUrl (/?ref=<slug>, on the pay page after payment, the menu
+                                  page and the client's booking_confirmed email) and readRef. remember-trade.tsx keeps ?ref
+                                  on the phone for 7 days; /start saves the referring pro in profiles.referred_by. No rewards.
     notifications/                notify() + Notifier interface, Resend email, SMS stub, templates,
                                   log.ts (notifyForAppointment: send + write notification_log)
 supabase/migrations/              SQL migrations (timestamped, append-only)
@@ -196,7 +202,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Stripe is the source of truth. `syncSubscription` copies status, trial end, period end and cancel flag onto `profiles` from `customer.subscription.*` webhooks and the Checkout return route. Techs can't write these columns (column grants).
 - One trial per person. `trial_claims` stores card and payout-bank fingerprints, normalized email (Gmail dots and +tags removed), Instagram handle and Cash App / Zelle / Venmo handles when a trial starts. A match with another tech means no trial is offered; a reused card found after Checkout ends the trial immediately (`trial_end: "now"`).
 - New pros get a plain-text **founder welcome** from `/start` (`founder_welcome`, from "FOUNDER_NAME at APP_NAME", replies to `FOUNDER_EMAIL`, no app footer, with a one-tap sign-in link made in `after()` so leaving Instagram's browser doesn't strand them; it lasts as long as Supabase's email OTP expiry), and the cron sends one **founder check-in** 7–10 days after sign-up if they haven't sent a pay link (`founder_checkin`: answers to the usual blockers with links, and the `depositAnnouncement` for their regulars). Neither asks for a reply; replies still reach the founder. Both go through `notifyOnce` (`notifications/log.ts`), logged as `<template>:<tech id>`.
-- The daily cron also sends two setup reminders to pros with no card and no pay link yet (`setup_nudge_first` about a day after sign-up, `setup_nudge_next_booking` about three days after; `SETUP_NUDGE_*` in `config.ts`), each once (`notification_log` template `<template>:<tech id>`). They name what's left (`lib/setup.ts`) and mention the trial only if `trialEligible`. The dashboard checklist ends with step 4, "Send your first pay link" (no card needed); the trial card appears on New appointment from the second.
+- The daily cron also sends two setup reminders to pros with no card and no pay link yet (`setup_nudge_first` about a day after sign-up, `setup_nudge_next_booking` about three days after; `SETUP_NUDGE_*` in `config.ts`), each once (`notification_log` template `<template>:<tech id>`). They name what's left (`lib/setup.ts`) and mention the trial only if `trialEligible`. After the first pay link, until they add a card: one `first_link_followup` email 20 hours to 7 days later (`FIRST_LINK_FOLLOWUP_*`, logged as `first_link_followup:<tech id>`, skipped while trial eligibility can't be checked), and a card line (`nextLinkCardLine` in `billing.ts`) in the "client paid" and "client says they sent it" emails. The dashboard checklist ends with step 4, "Send your first pay link" (no card needed); the trial card appears on New appointment from the second.
 - The Stripe billing portal (`portalConfigurationId`, `PORTAL_VERSION`) asks why on cancel (reasons in the Stripe dashboard); no discount offers. Bump `PORTAL_VERSION` to push changed settings to the existing configuration.
 - The daily cron emails techs `TRIAL_ENDING_NOTICE_DAYS` before the first charge, once per subscription (`notification_log` template `trial_ending:<sub id>`). The email opens with what Dibs did for them in the trial (`lib/savings.ts`); if that lookup fails, the email still goes out.
 - Enforce the pay-link gate on the server (`createAppointment`, via `canCreatePayLink`) and in the database policy, not only in the UI.

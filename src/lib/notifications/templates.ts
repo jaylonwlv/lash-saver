@@ -22,6 +22,8 @@ export type TemplateData = {
     detailsUrl: string;
     /** The booking as an .ics file, attached so a tap adds it to their calendar. */
     calendar?: string;
+    /** "Powered by Dibs" link for clients who are pros too (lib/referral.ts). */
+    proInviteUrl?: string;
   };
   /** To the tech, when a client pays. */
   tech_deposit_paid: {
@@ -30,6 +32,8 @@ export type TemplateData = {
     when: string;
     amount: string;
     appointmentUrl: string;
+    /** First pay link sent without a card: what the next one needs (billing.nextLinkCardLine). */
+    cardNote?: string | null;
   };
   appointment_reminder: {
     businessName: string;
@@ -56,7 +60,13 @@ export type TemplateData = {
     app: string;
     when: string;
     appointmentUrl: string;
+    cardNote?: string | null;
   };
+  /**
+   * To a pro about a day after their first pay link, if they haven't added a card: the
+   * next one needs it. trialDays is null when they can't get a free trial.
+   */
+  first_link_followup: { trialDays: number | null; price: string; billingUrl: string };
   /** To the client: the pro didn't find their deposit. */
   manual_deposit_not_received: {
     businessName: string;
@@ -141,7 +151,7 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   }),
   booking_confirmed: (d) => ({
     subject: `You're booked with ${d.businessName}`,
-    text: `You're booked! ${d.serviceName} with ${d.businessName} on ${d.when}. Your ${d.amount} deposit is paid. ${d.cancelNote} Details, policy or cancel: ${d.detailsUrl}`,
+    text: `You're booked! ${d.serviceName} with ${d.businessName} on ${d.when}. Your ${d.amount} deposit is paid. ${d.cancelNote} Details, policy or cancel: ${d.detailsUrl}${d.proInviteUrl ? `\n\nAre you a pro too? Take deposits like this: ${d.proInviteUrl}` : ""}`,
     ...(d.calendar
       ? {
           attachments: [
@@ -156,7 +166,7 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   }),
   tech_deposit_paid: (d) => ({
     subject: `${d.clientName} paid their ${d.amount} deposit`,
-    text: `${d.clientName} paid their ${d.amount} deposit for ${d.serviceName} on ${d.when}. ${d.appointmentUrl}`,
+    text: `${d.clientName} paid their ${d.amount} deposit for ${d.serviceName} on ${d.when}. ${d.appointmentUrl}${d.cardNote ? `\n\n${d.cardNote}` : ""}`,
   }),
   appointment_reminder: (d) => ({
     subject: `Reminder: ${d.serviceName} on ${d.when}`,
@@ -238,7 +248,11 @@ ${FOUNDER_NAME}`,
   }),
   manual_deposit_sent: (d) => ({
     subject: `${d.clientName} says they sent their ${d.amount} deposit`,
-    text: `${d.clientName} says they sent ${d.amount} by ${d.app} for ${d.when}. Check your ${d.app}, then tap Received to confirm the booking: ${d.appointmentUrl}`,
+    text: `${d.clientName} says they sent ${d.amount} by ${d.app} for ${d.when}. Check your ${d.app}, then tap Received to confirm the booking: ${d.appointmentUrl}${d.cardNote ? `\n\n${d.cardNote}` : ""}`,
+  }),
+  first_link_followup: (d) => ({
+    subject: "Your first pay link is out. Here's what's next",
+    text: `Nice, your first ${APP_NAME} pay link is out. Your next one needs your card: ${d.trialDays ? `adding it starts your ${d.trialDays}-day free trial ($0 today, cancel anytime)` : `it's ${d.price}/month, cancel anytime`}. Add it now so your next booking is one tap: ${d.billingUrl}`,
   }),
   manual_deposit_not_received: (d) => ({
     subject: `${d.businessName} hasn't received your deposit yet`,

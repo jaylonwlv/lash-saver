@@ -48,6 +48,8 @@ type ProfileRow = Timestamps & {
   email_confirmed: boolean;
   /** Key for the private calendar feed; server-made (reset_calendar_token). */
   calendar_token: string;
+  /** The pro whose "Powered by Dibs" link this pro signed up from; server-set (lib/referral.ts). */
+  referred_by: string | null;
 };
 
 type ServiceRow = Timestamps & {

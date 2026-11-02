@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { LegalLinks } from "@/components/ui/legal-links";
+import { ProInvite } from "@/components/ui/pro-invite";
+import { publicEnv } from "@/lib/env.public";
+import { inviteUrl } from "@/lib/referral";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { z } from "zod";
@@ -182,6 +185,10 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
           )}{" "}
           for a new one.
         </Notice>
+      )}
+      {/* Only once they've paid (or say they have): never a distraction before. */}
+      {(booked || waitingOnPro) && (
+        <ProInvite href={inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, tech.slug, "paylink")} />
       )}
       <LegalLinks className="mt-auto pt-4" />
     </main>

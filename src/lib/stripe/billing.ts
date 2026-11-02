@@ -11,7 +11,7 @@ import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
 import { notify } from "@/lib/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeEmail } from "@/lib/subscription";
+import { canSendPayLinks, normalizeEmail } from "@/lib/subscription";
 import { getStripe } from "./server";
 import { trackSubscription } from "@/lib/meta";
 
@@ -126,6 +126,28 @@ export async function trialEligible(techId: string): Promise<boolean> {
     .limit(1);
   if (own?.length) return false;
   return !(await claimedByOthers(techId, await signals(profile)));
+}
+
+/**
+ * For emails to a pro whose first pay link went out without a card: what the next one
+ * needs, so the trial card is never a surprise. Null once they can send (trial or paid).
+ * If the trial check fails it says only "needs your card" rather than guess.
+ */
+export async function nextLinkCardLine(
+  techId: string,
+  status: string | null,
+): Promise<string | null> {
+  if (canSendPayLinks(status)) return null;
+  const billingUrl = `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard/billing`;
+  const price = formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "");
+  const eligible = await trialEligible(techId).catch(() => null);
+  const what =
+    eligible === true
+      ? `your next pay link needs your card, which starts your ${TRIAL_DAYS}-day free trial ($0 today, cancel anytime)`
+      : eligible === false
+        ? `your next pay link needs a subscription (${price}/month, cancel anytime)`
+        : "your next pay link needs your card";
+  return `Keep the deposits coming: ${what}: ${billingUrl}`;
 }
 
 /** Subscriptions that still bill (or will): starting another would double-charge. */

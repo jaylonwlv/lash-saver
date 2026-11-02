@@ -45,6 +45,12 @@ export default function PrivacyPage() {
             an account without revealing its number), plus a normalized copy of your email address
             and your handles.
           </li>
+          <li>
+            <strong>How you found us:</strong> if you signed up from the &ldquo;Powered by{" "}
+            {APP_NAME}&rdquo; link on another pro&apos;s pay link, menu page or confirmation email,
+            which pro&apos;s page it was. It&apos;s kept for 7 days on your phone before you sign
+            up, and is never shown to clients.
+          </li>
         </ul>
       </Section>
 

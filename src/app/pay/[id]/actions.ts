@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { nextLinkCardLine } from "@/lib/stripe/billing";
 import {
   appointmentUrl,
   cancellationTerms,
@@ -293,6 +294,7 @@ export async function clientSentDeposit(
       app: MANUAL_APP_LABEL[app.data],
       when: formatWhen(a.starts_at, tech.timezone),
       appointmentUrl: appointmentUrl(a.id),
+      cardNote: await nextLinkCardLine(tech.id, tech.subscription_status),
     },
   });
 

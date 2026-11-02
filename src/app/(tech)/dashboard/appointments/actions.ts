@@ -1,5 +1,7 @@
 "use server";
 
+import { inviteUrl } from "@/lib/referral";
+import { publicEnv } from "@/lib/env.public";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -311,6 +313,7 @@ export async function confirmManualDeposit(appointmentId: string): Promise<FormS
         cancelNote: cancelNote(ctx),
         detailsUrl: payUrl(appointmentId),
         calendar: clientCalendarAttachment(ctx),
+        proInviteUrl: inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, ctx.tech.slug, "email"),
       },
     });
   }
