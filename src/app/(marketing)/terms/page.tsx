@@ -119,6 +119,13 @@ export default function TermsPage() {
             returned to the pro, because the card network&apos;s fees aren&apos;t returned either.
           </li>
           <li>
+            Catering quote pages work the same way: the same processing fee applies to each deposit
+            and balance payment, and {APP_NAME} takes no other cut of the booking. The caterer sets
+            the prices, any service fee and any tax shown to hosts, and is responsible for them. The
+            caterer decides refunds and makes them from their dashboard; payments made after a date
+            filled up are refunded in full automatically.
+          </li>
+          <li>
             Refunds follow the policy the client agreed to: a cancellation before the refund
             deadline shown on the pay link is refunded automatically, and a pro&apos;s cancellation
             is refunded in full. Refunds usually take 5 to 10 business days to reach the client.
@@ -166,6 +173,14 @@ export default function TermsPage() {
           <li>
             If you paid by card and something went wrong with the payment itself, contact us at{" "}
             {email}.
+          </li>
+          <li>
+            <strong>Catering bookings:</strong> on a caterer&apos;s quote page, the price you see is
+            the caterer&apos;s, and paying the deposit (or the full amount) holds the date under the
+            caterer&apos;s policy. The booking is between you and the caterer. Changes,
+            cancellations and refunds are handled by the caterer; your booking page shows how to
+            reach them. If a date fills up while you&apos;re paying, your payment is refunded in
+            full automatically.
           </li>
         </ul>
       </Section>

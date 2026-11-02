@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { FormState } from "@/lib/forms";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { TRADE_IDS, tradeById } from "@/lib/trades";
+import { setUpCatering } from "@/lib/catering/starter";
 
 const tradeSchema = z.enum(TRADE_IDS);
 
@@ -67,6 +68,14 @@ export async function chooseTrade(_prev: FormState, formData: FormData): Promise
     if (error) {
       console.error("Adding starter services failed", error);
       return { message: "Saved, but we couldn't add the starter services. Add yours instead." };
+    }
+  }
+
+  if (parsed.data === "catering") {
+    try {
+      await setUpCatering(supabase, user.id);
+    } catch (err) {
+      console.error("Catering setup failed", err);
     }
   }
 

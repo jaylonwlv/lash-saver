@@ -19,6 +19,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { tradeById } from "@/lib/trades";
+import { setUpCatering } from "@/lib/catering/starter";
 import { startSchema } from "./schema";
 
 /** `existing`: that email already has an account, so we sent a sign-in code instead. */
@@ -247,6 +248,13 @@ async function setUpAccount(
   if (services.length) {
     const { error } = await admin.from("services").insert(services);
     if (error) throw new Error(`Adding services failed: ${error.message}`);
+  }
+  // Food trucks and caterers also get a catering quote page to edit. On its own, so
+  // it can never stop sign-up; they can set it up from the dashboard later.
+  if (data.trade === "catering") {
+    await setUpCatering(admin, techId).catch((err) =>
+      console.error("Instant sign-up: catering setup failed", err),
+    );
   }
 }
 

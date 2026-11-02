@@ -5,6 +5,8 @@ import { buildCalendar, type CalendarEvent } from "@/lib/calendar";
 import { APP_NAME } from "@/lib/config";
 import { formatCents } from "@/lib/money";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { bookingAdminUrl } from "@/lib/catering/server";
+import { zonedTimeToUtc } from "@/lib/time";
 
 /** How far back the feed goes; older appointments drop off the calendar. */
 const PAST_DAYS = 60;
@@ -79,6 +81,42 @@ export async function GET(
       description: details.join("\n"),
       url: appointmentUrl(a.id),
       status: waiting ? "TENTATIVE" : "CONFIRMED",
+    });
+  }
+
+  // Catering events (quote page bookings that hold the date).
+  const { data: catering } = await admin
+    .from("catering_bookings")
+    .select(
+      "id, event_date, start_time, end_time, timezone, host_name, host_phone, host_email, guest_count, event_address, event_notes, status, quote, total_cents",
+    )
+    .eq("tech_id", tech.id)
+    .gte("event_date", since.slice(0, 10))
+    .in("status", ["confirmed", "balance_due", "paid_in_full", "completed"])
+    .order("event_date")
+    .limit(1000);
+  for (const b of catering ?? []) {
+    const start = zonedTimeToUtc(b.event_date, b.start_time.slice(0, 5), b.timezone);
+    const end = zonedTimeToUtc(b.event_date, b.end_time.slice(0, 5), b.timezone);
+    if (!start || !end) continue;
+    const pkg = (b.quote as { packageName?: string } | null)?.packageName ?? "Catering";
+    events.push({
+      uid: `catering-${b.id}@dibs`,
+      start,
+      end,
+      summary: `🚚 ${b.host_name} · ${b.guest_count} guests`,
+      description: [
+        `${pkg}, ${b.guest_count} guests, total ${formatCents(b.total_cents)}`,
+        b.event_address,
+        b.host_phone,
+        b.host_email,
+        b.event_notes ? `Notes: ${b.event_notes}` : null,
+        bookingAdminUrl(b.id),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      url: bookingAdminUrl(b.id),
+      status: "CONFIRMED",
     });
   }
 

@@ -122,6 +122,19 @@ export const TRADES: Trade[] = [
       s("Event coverage (2 hrs)", 120, 500, 150),
     ],
   },
+  {
+    // Also gets a catering quote page with starter packages (lib/catering/starter.ts).
+    id: "catering",
+    label: "Food truck / caterer",
+    emoji: "🚚",
+    windowHours: 720,
+    policyText: "Your deposit holds your date and goes toward your event total.",
+    services: [
+      s("Private event (2 hrs)", 120, 1500, 450),
+      s("Truck rental (3 hrs)", 180, 2000, 600),
+      s("Corporate lunch", 90, 1200, 360),
+    ],
+  },
 ];
 
 export const OTHER_TRADE: Pick<Trade, "id" | "label" | "emoji"> = {

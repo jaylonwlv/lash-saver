@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run lint && npm run typecheck && npm run format:check",
-    "db:types": "npx supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > src/lib/supabase/database.types.ts"
+    "db:types": "npx supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > src/lib/supabase/database.types.ts",
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@stripe/stripe-js": "^9.17.0",
@@ -35,6 +36,7 @@
     "prettier": "^3.9.8",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "engines": {

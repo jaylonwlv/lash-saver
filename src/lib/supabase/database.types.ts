@@ -18,6 +18,7 @@ export type TradeId =
   | "fitness"
   | "detailing"
   | "photography"
+  | "catering"
   | "other";
 
 type ProfileRow = Timestamps & {
@@ -121,6 +122,127 @@ type TrialClaimRow = {
   created_at: string;
 };
 
+export type CateringPricingType = "per_person" | "flat";
+
+type CateringSettingsRow = Timestamps & {
+  tech_id: string;
+  cuisine: string | null;
+  city: string | null;
+  description: string | null;
+  policy_text: string | null;
+  is_published: boolean;
+  daily_capacity: number;
+  min_notice_days: number;
+  max_advance_days: number;
+  minimum_spend_cents: number | null;
+  extra_hour_price_cents: number | null;
+  max_extra_hours: number;
+  travel_fee_cents: number;
+  service_fee_bps: number;
+  tax_bps: number;
+  deposit_type: "percent" | "flat";
+  deposit_value: number;
+  balance_due_days_before: number;
+};
+
+type CateringPackageRow = Timestamps & {
+  id: string;
+  tech_id: string;
+  name: string;
+  description: string | null;
+  items_text: string | null;
+  pricing_type: CateringPricingType;
+  price_cents: number;
+  min_guests: number;
+  max_guests: number | null;
+  included_minutes: number;
+  sort_order: number;
+  is_active: boolean;
+};
+
+type CateringAddOnRow = Timestamps & {
+  id: string;
+  tech_id: string;
+  name: string;
+  description: string | null;
+  pricing_type: CateringPricingType;
+  price_cents: number;
+  sort_order: number;
+  is_active: boolean;
+};
+
+type CateringBlockedDateRow = {
+  tech_id: string;
+  date: string;
+  reason: string | null;
+  created_at: string;
+};
+
+export type CateringBookingStatus =
+  | "requested"
+  | "awaiting_deposit"
+  | "confirmed"
+  | "balance_due"
+  | "paid_in_full"
+  | "completed"
+  | "cancelled"
+  | "declined"
+  | "expired";
+
+export type CateringEventType = "wedding" | "corporate" | "birthday" | "graduation" | "other";
+
+type CateringBookingRow = Timestamps & {
+  id: string;
+  tech_id: string;
+  public_token: string;
+  status: CateringBookingStatus;
+  event_date: string;
+  start_time: string;
+  end_time: string;
+  timezone: string;
+  guest_count: number;
+  package_id: string | null;
+  add_on_ids: string[];
+  extra_hours: number;
+  event_type: CateringEventType;
+  event_address: string;
+  event_notes: string | null;
+  host_name: string;
+  host_email: string;
+  host_phone: string | null;
+  quote: Json;
+  subtotal_cents: number;
+  travel_fee_cents: number;
+  service_fee_cents: number;
+  tax_cents: number;
+  total_cents: number;
+  deposit_cents: number;
+  balance_cents: number;
+  balance_due_date: string | null;
+  policy_text_snapshot: string | null;
+  terms_accepted_at: string | null;
+  hold_expires_at: string | null;
+  deposit_paid_at: string | null;
+  balance_paid_at: string | null;
+  owner_approved_at: string | null;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  owner_notes: string | null;
+};
+
+type CateringPaymentRow = Timestamps & {
+  id: string;
+  booking_id: string;
+  tech_id: string;
+  kind: "deposit" | "balance";
+  amount_cents: number;
+  platform_fee_cents: number;
+  status: "pending" | "paid" | "failed" | "refunded";
+  stripe_checkout_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  paid_at: string | null;
+};
+
 /** Insert type: columns with DB defaults become optional. */
 type Insertable<Row, Required extends keyof Row> = Pick<Row, Required> &
   Partial<Omit<Row, Required>>;
@@ -167,6 +289,61 @@ export type Database = {
         Update: Partial<NotificationLogRow>;
         Relationships: [];
       };
+      catering_settings: {
+        Row: CateringSettingsRow;
+        Insert: Insertable<CateringSettingsRow, "tech_id">;
+        Update: Partial<CateringSettingsRow>;
+        Relationships: [];
+      };
+      catering_packages: {
+        Row: CateringPackageRow;
+        Insert: Insertable<CateringPackageRow, "tech_id" | "name" | "pricing_type" | "price_cents">;
+        Update: Partial<CateringPackageRow>;
+        Relationships: [];
+      };
+      catering_addons: {
+        Row: CateringAddOnRow;
+        Insert: Insertable<CateringAddOnRow, "tech_id" | "name" | "pricing_type" | "price_cents">;
+        Update: Partial<CateringAddOnRow>;
+        Relationships: [];
+      };
+      catering_blocked_dates: {
+        Row: CateringBlockedDateRow;
+        Insert: Insertable<CateringBlockedDateRow, "tech_id" | "date">;
+        Update: Partial<CateringBlockedDateRow>;
+        Relationships: [];
+      };
+      catering_bookings: {
+        Row: CateringBookingRow;
+        Insert: Insertable<
+          CateringBookingRow,
+          | "tech_id"
+          | "public_token"
+          | "status"
+          | "event_date"
+          | "start_time"
+          | "end_time"
+          | "timezone"
+          | "guest_count"
+          | "event_type"
+          | "event_address"
+          | "host_name"
+          | "host_email"
+          | "quote"
+          | "subtotal_cents"
+          | "total_cents"
+          | "deposit_cents"
+          | "balance_cents"
+        >;
+        Update: Partial<CateringBookingRow>;
+        Relationships: [];
+      };
+      catering_payments: {
+        Row: CateringPaymentRow;
+        Insert: Insertable<CateringPaymentRow, "booking_id" | "tech_id" | "kind" | "amount_cents">;
+        Update: Partial<CateringPaymentRow>;
+        Relationships: [];
+      };
     };
     Views: {
       public_profiles: {
@@ -185,6 +362,11 @@ export type Database = {
     };
     Functions: {
       reset_calendar_token: { Args: Record<string, never>; Returns: string };
+      hold_catering_date: { Args: { p_booking: Json }; Returns: string | null };
+      catering_held_count: {
+        Args: { p_tech: string; p_date: string; p_exclude?: string };
+        Returns: number;
+      };
     };
     Enums: {
       appointment_status:

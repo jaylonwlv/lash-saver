@@ -24,6 +24,9 @@ import { trialEligible } from "@/lib/stripe/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, formatWhen } from "@/lib/time";
 import { dueReminder, reminderLogKey } from "./reminders";
+import { cateringJobs } from "./catering-due";
+import { addDays, formatEventDate, todayIn } from "@/lib/catering/dates";
+import { bookingAdminUrl, bookingStatusUrl, bookingWhen, readQuote } from "@/lib/catering/server";
 
 /**
  * Run by Vercel Cron (see vercel.json). Vercel sends
@@ -53,6 +56,11 @@ export async function GET(request: NextRequest) {
   const setupNudges = await sendSetupNudges(now);
   const founderCheckins = await sendFounderCheckins(now);
   const firstLinkFollowups = await sendFirstLinkFollowups(now);
+  // Never let catering stop the appointment reminders above.
+  const catering = await runCateringJobs(now).catch((err: unknown) => {
+    console.error("Catering cron jobs failed", err);
+    return { error: 1 };
+  });
   return NextResponse.json({
     ok: true,
     expired: expired?.length ?? 0,
@@ -61,7 +69,149 @@ export async function GET(request: NextRequest) {
     setupNudges,
     founderCheckins,
     firstLinkFollowups,
+    catering,
   });
+}
+
+/**
+ * Catering: expire unpaid holds, move bookings to balance_due, balance reminders
+ * (7 and 2 days before it's due), an overdue notice to the owner, the owner's
+ * day-before summary, and completing past events. Each message is sent once
+ * (notification_log key "<template>:<booking id>").
+ */
+async function runCateringJobs(now: Date): Promise<Record<string, number>> {
+  const admin = createAdminClient();
+  const counts: Record<string, number> = { expired: 0, sent: 0, completed: 0 };
+
+  const { data: lapsed, error: expireError } = await admin
+    .from("catering_bookings")
+    .update({ status: "expired" })
+    .in("status", ["awaiting_deposit", "requested"])
+    .lt("hold_expires_at", now.toISOString())
+    .select("id");
+  if (expireError) throw new Error(`Expiring catering holds failed: ${expireError.message}`);
+  counts.expired = lapsed?.length ?? 0;
+
+  // Everything that holds a date within reach of a reminder (balance due up to 90
+  // days before the event, reminded 7 days before that), plus past ones to complete.
+  const horizon = addDays(now.toISOString().slice(0, 10), 100);
+  const { data: bookings, error } = await admin
+    .from("catering_bookings")
+    .select("*")
+    .in("status", ["confirmed", "balance_due", "paid_in_full"])
+    .lte("event_date", horizon)
+    .limit(5000);
+  if (error) throw new Error(`Loading catering bookings failed: ${error.message}`);
+
+  const owners = new Map<string, { business_name: string | null; email: string } | null>();
+  const ownerOf = async (id: string) => {
+    if (!owners.has(id)) {
+      const { data } = await admin
+        .from("profiles")
+        .select("business_name, email")
+        .eq("id", id)
+        .maybeSingle();
+      owners.set(id, data);
+    }
+    return owners.get(id) ?? null;
+  };
+
+  for (const b of bookings) {
+    try {
+      const today = todayIn(b.timezone, now);
+      const jobs = cateringJobs(
+        {
+          ...b,
+          deposit_paid_date: b.deposit_paid_at
+            ? todayIn(b.timezone, new Date(b.deposit_paid_at))
+            : null,
+        },
+        today,
+      );
+      if (jobs.length === 0) continue;
+      const owner = await ownerOf(b.tech_id);
+      if (!owner) continue;
+      const business = owner.business_name ?? "Your caterer";
+      const when = bookingWhen(b);
+      const balance = formatCents(b.balance_cents);
+      const dueDate = b.balance_due_date ? formatEventDate(b.balance_due_date) : "";
+      const send = async <T extends Parameters<typeof notifyOnce>[1]>(key: string, input: T) => {
+        const logKey = `${key}:${b.id}`;
+        if (await alreadyLogged(logKey)) return;
+        if (await notifyOnce(logKey, input)) counts.sent++;
+      };
+
+      for (const job of jobs) {
+        switch (job) {
+          case "mark_completed":
+            await admin
+              .from("catering_bookings")
+              .update({ status: "completed" })
+              .eq("id", b.id)
+              .eq("status", b.status);
+            counts.completed++;
+            break;
+          case "mark_balance_due":
+            await admin
+              .from("catering_bookings")
+              .update({ status: "balance_due" })
+              .eq("id", b.id)
+              .eq("status", "confirmed");
+            break;
+          case "balance_reminder_7d":
+          case "balance_reminder_2d":
+            await send(`catering_${job}`, {
+              to: { name: b.host_name, email: b.host_email },
+              template: "catering_balance_reminder",
+              data: {
+                businessName: business,
+                ownerEmail: owner.email,
+                when,
+                balance,
+                dueDate,
+                payUrl: bookingStatusUrl(b.public_token),
+              },
+            });
+            break;
+          case "balance_overdue":
+            await send("catering_balance_overdue", {
+              to: { email: owner.email },
+              template: "catering_balance_overdue",
+              data: {
+                hostName: b.host_name,
+                when,
+                balance,
+                dueDate,
+                bookingUrl: bookingAdminUrl(b.id),
+              },
+            });
+            break;
+          case "day_before": {
+            const q = readQuote(b);
+            await send("catering_day_before", {
+              to: { email: owner.email },
+              template: "catering_day_before",
+              data: {
+                when,
+                hostName: b.host_name,
+                hostPhone: b.host_phone,
+                address: b.event_address,
+                guests: b.guest_count,
+                packageName: q?.packageName ?? "Catering",
+                addOns: q?.addOnNames.length ? q.addOnNames.join(", ") : null,
+                notes: b.event_notes,
+                bookingUrl: bookingAdminUrl(b.id),
+              },
+            });
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`Catering jobs for ${b.id} failed`, err);
+    }
+  }
+  return counts;
 }
 
 /**

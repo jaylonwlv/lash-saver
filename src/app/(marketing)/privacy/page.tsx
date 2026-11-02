@@ -74,6 +74,13 @@ export default function PrivacyPage() {
             App, Zelle or Venmo, we record which app you said you used, not your account on that
             app.
           </li>
+          <li>
+            <strong>Catering events:</strong> if you book a caterer through their {APP_NAME} quote
+            page, we collect your name, email, phone number (optional), the event date, time,
+            address, guest count, menu choices and notes you enter, the policy you agreed to, and
+            the payments you make. The caterer sees all of it; we use it only to run your booking,
+            send your confirmation and balance reminders, and keep records.
+          </li>
         </ul>
       </Section>
 

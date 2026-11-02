@@ -138,6 +138,86 @@ export type TemplateData = {
   };
   /** To the owner of Dibs, for any dispute on the platform account. */
   dispute_alert: { summary: string; amount: string; dueBy: string; disputeUrl: string };
+  // Catering (lib/catering). Messages to hosts come from the business by name, and
+  // replies go to the owner.
+  catering_booked_host: {
+    businessName: string;
+    ownerEmail: string;
+    when: string;
+    guests: number;
+    packageName: string;
+    total: string;
+    paid: string;
+    /** "$1,008 due June 7", or null when paid in full. */
+    balanceLine: string | null;
+    statusUrl: string;
+    calendar?: string;
+  };
+  catering_booked_owner: {
+    hostName: string;
+    when: string;
+    guests: number;
+    packageName: string;
+    total: string;
+    paid: string;
+    bookingUrl: string;
+    cardNote?: string | null;
+  };
+  catering_balance_reminder: {
+    businessName: string;
+    ownerEmail: string;
+    when: string;
+    balance: string;
+    dueDate: string;
+    payUrl: string;
+  };
+  catering_balance_overdue: {
+    hostName: string;
+    when: string;
+    balance: string;
+    dueDate: string;
+    bookingUrl: string;
+  };
+  catering_balance_paid_host: {
+    businessName: string;
+    ownerEmail: string;
+    when: string;
+    amount: string;
+    statusUrl: string;
+  };
+  catering_balance_paid_owner: {
+    hostName: string;
+    when: string;
+    amount: string;
+    bookingUrl: string;
+  };
+  catering_day_before: {
+    when: string;
+    hostName: string;
+    hostPhone: string | null;
+    address: string;
+    guests: number;
+    packageName: string;
+    addOns: string | null;
+    notes: string | null;
+    bookingUrl: string;
+  };
+  catering_cancelled_host: {
+    businessName: string;
+    ownerEmail: string;
+    when: string;
+    reason: string | null;
+    paid: string | null;
+  };
+  /** The date filled while they were paying: their payment is refunded. */
+  catering_date_taken: {
+    businessName: string;
+    ownerEmail: string;
+    when: string;
+    amount: string;
+    pageUrl: string;
+  };
+  catering_date_taken_owner: { hostName: string; email: string; when: string; amount: string };
 };
 
 export type TemplateId = keyof TemplateData;
@@ -287,6 +367,71 @@ ${FOUNDER_NAME}`,
     text: d.fromProvider
       ? `${d.businessName} cancelled your appointment and will send your ${d.amount} deposit back the same way you paid it.`
       : `${d.businessName} refunded your ${d.amount} deposit. It can take 5 to 10 business days to show up.`,
+  }),
+  catering_booked_host: (d) => ({
+    subject: `You're booked with ${d.businessName} for ${d.when}`,
+    fromName: d.businessName,
+    replyTo: d.ownerEmail,
+    text: `Your date is held! ${d.businessName} is booked for ${d.when}: ${d.packageName}, ${d.guests} guests. Total ${d.total}, ${d.paid} paid.${d.balanceLine ? ` Balance: ${d.balanceLine}.` : " You're paid in full."} Details and receipt: ${d.statusUrl}\n\nQuestions? Just reply to this email.\n\n— sent via ${APP_NAME}`,
+    ...(d.calendar
+      ? {
+          attachments: [
+            {
+              filename: "event.ics",
+              content: d.calendar,
+              contentType: "text/calendar; charset=utf-8; method=PUBLISH",
+            },
+          ],
+        }
+      : {}),
+  }),
+  catering_booked_owner: (d) => ({
+    subject: `Booked: ${d.when}, ${d.guests} guests`,
+    text: `New catering booking: ${d.hostName}, ${d.when}, ${d.guests} guests, ${d.packageName}. Total ${d.total}, ${d.paid} paid. ${d.bookingUrl}${d.cardNote ? `\n\n${d.cardNote}` : ""}`,
+  }),
+  catering_balance_reminder: (d) => ({
+    subject: `Your balance for ${d.when} is due ${d.dueDate}`,
+    fromName: d.businessName,
+    replyTo: d.ownerEmail,
+    text: `Reminder from ${d.businessName}: the ${d.balance} balance for your event on ${d.when} is due ${d.dueDate}. Pay it here: ${d.payUrl}\n\n— sent via ${APP_NAME}`,
+  }),
+  catering_balance_overdue: (d) => ({
+    subject: `${d.hostName}'s balance is overdue`,
+    text: `${d.hostName} hasn't paid the ${d.balance} balance for ${d.when} (due ${d.dueDate}). We've reminded them twice. Reach out, or open the booking: ${d.bookingUrl}`,
+  }),
+  catering_balance_paid_host: (d) => ({
+    subject: `Receipt: ${d.amount} paid to ${d.businessName}`,
+    fromName: d.businessName,
+    replyTo: d.ownerEmail,
+    text: `Thanks! Your ${d.amount} balance is paid, so your event on ${d.when} is paid in full. Receipt and details: ${d.statusUrl}\n\n— sent via ${APP_NAME}`,
+  }),
+  catering_balance_paid_owner: (d) => ({
+    subject: `${d.hostName} paid in full`,
+    text: `${d.hostName} paid their ${d.amount} balance for ${d.when}. The event is paid in full. ${d.bookingUrl}`,
+  }),
+  catering_day_before: (d) => ({
+    subject: `Tomorrow: ${d.when}, ${d.guests} guests`,
+    text: `Tomorrow: ${d.when}
+${d.packageName}, ${d.guests} guests${d.addOns ? `\nAdd-ons: ${d.addOns}` : ""}
+Where: ${d.address}
+Host: ${d.hostName}${d.hostPhone ? `, ${d.hostPhone}` : ""}${d.notes ? `\nNotes: ${d.notes}` : ""}
+${d.bookingUrl}`,
+  }),
+  catering_cancelled_host: (d) => ({
+    subject: `${d.businessName} cancelled your event on ${d.when}`,
+    fromName: d.businessName,
+    replyTo: d.ownerEmail,
+    text: `${d.businessName} cancelled your event on ${d.when}.${d.reason ? ` Their note: "${d.reason}"` : ""}${d.paid ? ` Any refund of the ${d.paid} you paid comes from ${d.businessName}; reply to this email to reach them.` : ""}\n\n— sent via ${APP_NAME}`,
+  }),
+  catering_date_taken: (d) => ({
+    subject: `${d.when} just filled up: your ${d.amount} is refunded`,
+    fromName: d.businessName,
+    replyTo: d.ownerEmail,
+    text: `Sorry! ${d.businessName}'s last opening on ${d.when} was booked while you were paying, so we refunded your ${d.amount} in full (5 to 10 business days). Pick another date: ${d.pageUrl}\n\n— sent via ${APP_NAME}`,
+  }),
+  catering_date_taken_owner: (d) => ({
+    subject: `A payment for ${d.when} was refunded (date full)`,
+    text: `${d.hostName} (${d.email}) paid ${d.amount} for ${d.when} after the date filled up, so it was refunded automatically. You may want to reach out with another date.`,
   }),
 };
 

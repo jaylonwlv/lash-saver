@@ -19,6 +19,11 @@ import {
 } from "@/lib/stripe/disputes";
 import { getStripe } from "@/lib/stripe/server";
 import { trackSubscription } from "@/lib/meta";
+import {
+  handleCateringChargeRefunded,
+  handleCateringCheckoutCompleted,
+  handleCateringCheckoutExpired,
+} from "@/lib/catering/server";
 
 /**
  * Platform webhook. This is the source of truth for deposit status:
@@ -44,6 +49,8 @@ export async function POST(request: NextRequest) {
     case "checkout.session.completed":
       if (event.data.object.mode === "subscription") {
         await completeSubscriptionCheckout(event.data.object.id);
+      } else if (event.data.object.metadata?.kind === "catering") {
+        await handleCateringCheckoutCompleted(event.data.object);
       } else {
         await handleCheckoutCompleted(event.data.object);
       }
@@ -61,11 +68,19 @@ export async function POST(request: NextRequest) {
       break;
     }
     case "checkout.session.expired":
-      await handleCheckoutExpired(event.data.object);
+      if (event.data.object.metadata?.kind === "catering") {
+        await handleCateringCheckoutExpired(event.data.object);
+      } else {
+        await handleCheckoutExpired(event.data.object);
+      }
       break;
-    case "charge.refunded":
+    case "charge.refunded": {
       await handleChargeRefunded(event.data.object);
+      const pi = event.data.object.payment_intent;
+      const piId = typeof pi === "string" ? pi : pi?.id;
+      if (piId && event.data.object.refunded) await handleCateringChargeRefunded(piId);
       break;
+    }
     case "charge.dispute.created":
       await handleDisputeCreated(event.data.object);
       break;

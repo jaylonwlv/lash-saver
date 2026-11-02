@@ -44,6 +44,9 @@ src/
                                   config.ts; keep claims true to the product.
     (marketing)/demo/             Demo pay link anyone can try (no sign-up): reuses the pay page's forms
                                   with local actions, so nothing is charged or saved. Card or manual toggle.
+    (marketing)/catering/         Food truck / caterer landing page for ads (the one marketing page that names a trade, on
+                                  purpose) and demo/ (a sample quote page; nothing is booked). Start free →
+                                  /start?trade=catering.
     (marketing)/terms/, privacy/  Terms of Service and Privacy Policy (legal-page.tsx layout). Keep them true to
                                   the product: update them, and LEGAL_UPDATED in config.ts, when data, fees,
                                   providers or billing change. No ad trackers on pay links or menu pages
@@ -98,6 +101,11 @@ src/
                                   The detail page sends the pay link with a ready-made DM (share-pay-link.tsx): Share opens
                                   the phone's share sheet (Instagram, iMessage…); Copy message / Copy the link only as fallbacks
     (tech)/dashboard/clients/     Client list and [key] detail (record + appointments), built from appointments
+    (tech)/dashboard/catering/    Dibs Catering, for food trucks / caterers (trade "catering"; anyone can turn it on):
+                                  overview (publish, link, this month's bookings and money, coming up), packages/ and
+                                  addons/ (per person or flat), settings/ (pricing rules, deposit, balance due, policy,
+                                  availability), dates/ (blocked dates), bookings/ (list, [id] detail: notes, resend,
+                                  mark done, cancel, refund a payment). Publishing needs a name + slug, a package and Stripe.
     b/[slug]/page.tsx             Public menu page: services, how to book (DM), policy
                                   Ends with a small "Try Dibs free" invite (components/ui/pro-invite.tsx).
     pay/[id]/calendar/route.ts    The booked appointment as an .ics (Add to my calendar on the pay page; also attached
@@ -106,6 +114,12 @@ src/
                                   Calendar (webcal://) or Google Calendar: confirmed, waiting and past 60 days. The card is at
                                   the bottom of Appointments; Reset link calls reset_calendar_token() (techs can't set it)
     pay/[id]/                     Public pay page: details, policy + agree checkbox → Stripe Checkout
+    c/[slug]/                     Catering quote page (the main catering product): calendar with booked/blocked dates
+                                  crossed out, times, guests, package, add-ons, event details, live quote, policy →
+                                  requestBooking recalculates, holds the date and opens Stripe Checkout. The owner
+                                  previews it unpublished. No ad trackers (client-facing).
+    e/[token]/                    The host's booking page (unguessable token): status, breakdown, pay the balance,
+                                  finish an unpaid hold, contact, .ics (calendar/). Refreshes itself while a payment confirms.
     api/stripe/connect/webhook/   Connect events (account.updated)
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
     api/cron/reminders/           Vercel Cron: expire unpaid pay links, send reminders (reminders.ts: due rule)
@@ -143,6 +157,12 @@ src/
     trades.ts                     Kinds of pro and their starter menus (typical prices, policy); must match the
                                   profiles.trade check constraint
     meta.ts                       Meta Conversions API: trackSignUp, trackSubscription (StartTrial, Subscribe)
+    catering/                     quote.ts (the pure quote: per person/flat, add-ons, extra hours, minimum spend,
+                                  travel, service fee, tax on subtotal + service fee, deposit; integer cents, half-up
+                                  rounding; tested), dates.ts (owner's wall-clock dates, availability; tested),
+                                  bookings.ts (states, labels), setup.ts (publishProblems), starter.ts (setUpCatering:
+                                  default settings + example packages), server.ts (startDepositCheckout, balance and
+                                  resume checkouts, webhook handlers, emails, .ics)
     referral.ts                   "Powered by Dibs": inviteUrl (/?ref=<slug>, on the pay page after payment, the menu
                                   page and the client's booking_confirmed email) and readRef. remember-trade.tsx keeps ?ref
                                   on the phone for 7 days; /start saves the referring pro in profiles.referred_by. No rewards.
@@ -162,7 +182,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Changes to data go through **Server Actions** (forms) or **route handlers** (webhooks, cron, external callers). Validate every input with zod on the server.
 - Any module that uses secrets starts with `import "server-only"`.
 - Read env only through `serverEnv()` / `publicEnv()`. Add every new key to the schema **and** to `.env.example`.
-- Keep changes small and focused. Before committing, run `npm run check` and `npm run build`.
+- Keep changes small and focused. Before committing, run `npm run check`, `npm test` and `npm run build`.
 
 **Forms**
 
@@ -196,6 +216,16 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - **Webhooks are the source of truth** for payment state. Never mark a deposit paid because of a redirect or a client-side callback. Webhook handlers must be idempotent.
 - Check each webhook's signature against the matching secret (platform or Connect).
 - **Chargebacks** (`charge.dispute.*`, `lib/stripe/disputes.ts`): the platform is liable, so on `funds_withdrawn` Dibs reverses the pro's transfer (up to what's left of it) and on `funds_reinstated` sends it back. `created` auto-submits the agreed policy as evidence and emails the pro and `OWNER_ALERT_EMAIL`; `closed` records `deposits.dispute_status` and tells the pro. Each step is idempotent across retries (reversal metadata, transfer_group, conditional updates). Stripe's dispute fee stays with the platform.
+
+**Catering** (`20261013000000_catering.sql`, `lib/catering/`)
+
+- The owner is a normal pro (`profiles`), trade `catering`; the end customer is the _host_ (no account, like a client). Tables: `catering_settings` (one per owner; percentages in basis points), `catering_packages`, `catering_addons`, `catering_blocked_dates`, `catering_bookings` (quote snapshot, amounts, `public_token`), `catering_payments` (deposit / balance). Owners write settings, packages, add-ons and blocked dates as themselves; bookings and payments are server-written, and owners may update only status, notes and cancel fields (column grants).
+- A date is held by `hold_catering_date()` (security definer, service role only): an advisory lock on (owner, date), blocked-date and capacity check (`catering_held_count`), then the insert. Held = `confirmed`/`balance_due`/`paid_in_full`, or `awaiting_deposit`/`requested` until `hold_expires_at` (the Checkout lifetime). A payment that lands after the date filled is refunded with the fee returned and both sides are emailed.
+- The server recalculates the quote at checkout and refuses if it differs from what the page showed (`shown_total`/`shown_deposit`). Inside the balance window the whole total is charged up front.
+- Payments are destination charges with the normal processing fee (no other commission), webhook-confirmed (`metadata.kind = "catering"` routes them). Express owners can't refund destination charges themselves, so refunds are a button on the booking (`refundPayment`, fee kept like a pro cancellation). Owner cancellation doesn't refund automatically.
+- Gate: an owner's first paid catering booking is free; after that the page needs a live subscription (`canCreatePayLink`), else it shows "not taking online bookings" and the dashboard says so.
+- Daily cron (`runCateringJobs`, rules in `cron/reminders/catering-due.ts`, tested): expire holds, `confirmed` → `balance_due`, balance reminders 7 and 2 days before due, overdue notice to the owner, day-before summary, past events → `completed`. Each message once via `notifyOnce` (`<template>:<booking id>`). Emails to hosts come from the business name and reply to the owner.
+- Not built yet: request mode (approve first), the weekly schedule page (`/t/[slug]`), the onboarding wizard, transfer reversal on catering chargebacks (they only alert `OWNER_ALERT_EMAIL`), per-IP rate limits.
 
 **Subscriptions**
 
@@ -236,6 +266,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 ```bash
 npm run dev          # local dev at http://localhost:3000
 npm run check        # lint + typecheck + prettier check
+npm test             # unit tests (node:test via tsx, src/**/*.test.ts)
 npm run build        # production build
 npm run format       # prettier --write
 npm run db:types     # regenerate Supabase types (needs SUPABASE_PROJECT_ID + `npx supabase login`)

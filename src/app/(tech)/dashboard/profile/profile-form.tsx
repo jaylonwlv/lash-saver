@@ -36,6 +36,8 @@ const WINDOW_OPTIONS = [
   [48, "48 hours"],
   [72, "72 hours"],
   [168, "1 week"],
+  [336, "2 weeks"],
+  [720, "30 days"],
 ] as const;
 
 export function ProfileForm({

@@ -37,7 +37,7 @@ export const profileSchema = z.object({
   timezone: z
     .string()
     .refine((tz) => Intl.supportedValuesOf("timeZone").includes(tz), "Pick a time zone."),
-  cancellation_window_hours: z.coerce.number().int().min(0).max(336),
+  cancellation_window_hours: z.coerce.number().int().min(0).max(720),
   policy_text: optionalText(1000),
   trade: z.preprocess((v) => (v === "" || v == null ? null : v), z.enum(TRADE_IDS).nullable()),
 });

@@ -187,6 +187,23 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         />
       )}
 
+      {profile.trade === "catering" && (
+        <Link
+          href="/dashboard/catering"
+          className="bg-ink flex min-h-12 items-center justify-between gap-3 rounded-[22px] p-5 text-white active:opacity-90"
+        >
+          <span className="flex flex-col gap-1">
+            <span className="font-display text-pink text-lg font-bold">🚚 Catering quote page</span>
+            <span className="text-sm text-white/80">
+              Hosts get your price for their date and guest count, then pay a deposit.
+            </span>
+          </span>
+          <span aria-hidden className="text-pink text-xl">
+            →
+          </span>
+        </Link>
+      )}
+
       {allDone && menuUrl ? (
         <>
           <Link
