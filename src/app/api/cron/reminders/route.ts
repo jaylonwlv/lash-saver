@@ -72,16 +72,26 @@ export async function GET(request: NextRequest) {
 async function sendFirstLinkFollowups(now: Date): Promise<number> {
   const admin = createAdminClient();
   const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000).toISOString();
-  const { data: links, error } = await admin
-    .from("appointments")
-    .select("tech_id")
-    .lte("created_at", hoursAgo(FIRST_LINK_FOLLOWUP_AFTER_HOURS))
-    .gt("created_at", hoursAgo(FIRST_LINK_FOLLOWUP_STOP_AFTER_DAYS * 24));
-  if (error) throw new Error(`Loading first pay links failed: ${error.message}`);
+  // Paged: Supabase returns at most 1000 rows per request, and every pro's pay links
+  // from the past week land here, not only first ones.
+  const techIds = new Set<string>();
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data: links, error } = await admin
+      .from("appointments")
+      .select("tech_id")
+      .lte("created_at", hoursAgo(FIRST_LINK_FOLLOWUP_AFTER_HOURS))
+      .gt("created_at", hoursAgo(FIRST_LINK_FOLLOWUP_STOP_AFTER_DAYS * 24))
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(`Loading first pay links failed: ${error.message}`);
+    for (const l of links) techIds.add(l.tech_id);
+    if (links.length < PAGE) break;
+  }
 
   const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
   let sent = 0;
-  for (const techId of new Set(links.map((l) => l.tech_id))) {
+  for (const techId of techIds) {
     // One bad profile must not stop the rest.
     try {
       const logKey = `first_link_followup:${techId}`;
