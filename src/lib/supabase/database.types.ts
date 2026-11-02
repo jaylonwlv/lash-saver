@@ -143,6 +143,9 @@ type CateringSettingsRow = Timestamps & {
   deposit_type: "percent" | "flat";
   deposit_value: number;
   balance_due_days_before: number;
+  contract_terms: string | null;
+  host_can_cancel: boolean;
+  full_refund_days: number;
 };
 
 type CateringPackageRow = Timestamps & {
@@ -228,6 +231,16 @@ type CateringBookingRow = Timestamps & {
   cancelled_at: string | null;
   cancel_reason: string | null;
   owner_notes: string | null;
+  /** The agreement exactly as the host signed it (lib/catering/agreement.ts). */
+  contract_text: string | null;
+  signature_name: string | null;
+  signed_at: string | null;
+  signer_ip: string | null;
+  signer_user_agent: string | null;
+  /** Refund terms when they booked (lib/catering/refunds.ts). */
+  host_can_cancel: boolean;
+  full_refund_days: number | null;
+  cancelled_by: "owner" | "host" | null;
 };
 
 type CateringPaymentRow = Timestamps & {

@@ -148,8 +148,14 @@ export default function CateringLandingPage() {
               their booking, where they can pay the balance and add the event to their calendar.
             </Faq>
             <Faq q="How do cancellations work?">
-              Your policy, your call. Hosts agree to it before paying. You can cancel an event from
-              your dashboard and refund the host with one tap if you owe them money.
+              You set the rules: whether hosts can cancel online, and how many days before the event
+              they get a full refund (after that, you keep the deposit). Refunds happen
+              automatically. If you cancel, the host gets everything back.
+            </Faq>
+            <Faq q="Do hosts sign a contract?">
+              Yes. Before paying, hosts e-sign an agreement with their event, price, payment
+              schedule, refund rules, your policy and any terms you add. You both get a copy, and it
+              stays on the booking.
             </Faq>
             <Faq q="Can two people book the same date?">
               No. A date is held while a host pays, and closes once they do. If you take more than

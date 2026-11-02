@@ -100,6 +100,8 @@ export default function CateringDemoPage() {
           unavailable={unavailable}
           balanceDueDaysBefore={7}
           policyText="Your deposit holds your date and goes toward your event total. Final guest count is due 7 days before the event."
+          contractTerms="Host provides a level spot within 50 feet of the event, with room for the truck to park."
+          refundTerms={{ host_can_cancel: true, full_refund_days: 30 }}
           canBook={false}
           notice="This is a sample. On your page, the host pays here and the date is theirs."
         />

@@ -8,7 +8,7 @@ import {
   bookingCalendar,
   bookingStatusUrl,
   bookingWhen,
-  expireOpenCateringCheckouts,
+  ownerCancelRefund,
   readQuote,
 } from "@/lib/catering/server";
 import { formatEventDate } from "@/lib/catering/dates";
@@ -56,15 +56,18 @@ export async function saveNotes(bookingId: string, formData: FormData): Promise<
   back(booking.id, "saved");
 }
 
+/** Cancels the event and refunds everything the host paid, automatically. */
 export async function cancelBooking(bookingId: string, formData: FormData): Promise<void> {
   const { supabase, booking, user } = await ownBooking(bookingId);
   if (!(ACTIVE_STATUSES as readonly string[]).includes(booking.status)) back(booking.id);
   const reason = optionalText(500).safeParse(String(formData.get("reason") ?? ""));
-  await expireOpenCateringCheckouts(booking.id);
+  // Refund first: if Stripe fails, the booking stays active and the owner can retry.
+  const refundedCents = await ownerCancelRefund(booking.id);
   const { error } = await supabase
     .from("catering_bookings")
     .update({
       status: "cancelled",
+      cancelled_by: "owner",
       cancelled_at: new Date().toISOString(),
       cancel_reason: reason.success ? reason.data : null,
       hold_expires_at: null,
@@ -78,12 +81,6 @@ export async function cancelBooking(bookingId: string, formData: FormData): Prom
       .select("business_name, email")
       .eq("id", user.id)
       .single();
-    const { data: paid } = await createAdminClient()
-      .from("catering_payments")
-      .select("amount_cents")
-      .eq("booking_id", booking.id)
-      .eq("status", "paid");
-    const paidCents = (paid ?? []).reduce((s, p) => s + p.amount_cents, 0);
     await notify({
       to: { name: booking.host_name, email: booking.host_email },
       template: "catering_cancelled_host",
@@ -92,7 +89,7 @@ export async function cancelBooking(bookingId: string, formData: FormData): Prom
         ownerEmail: owner?.email ?? "",
         when: bookingWhen(booking),
         reason: reason.success ? reason.data : null,
-        paid: paidCents > 0 ? formatCents(paidCents) : null,
+        refunded: refundedCents > 0 ? formatCents(refundedCents) : null,
       },
     });
   }

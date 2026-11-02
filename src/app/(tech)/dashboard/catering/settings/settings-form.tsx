@@ -11,6 +11,9 @@ export type SettingsValues = Record<
   | "city"
   | "description"
   | "policy_text"
+  | "contract_terms"
+  | "host_can_cancel"
+  | "full_refund_days"
   | "minimum_spend"
   | "extra_hour_price"
   | "max_extra_hours"
@@ -180,7 +183,52 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
           label="Your policy"
           defaultValue={v.policy_text}
           error={e.policy_text}
-          hint="Hosts agree to this before paying: what the deposit covers, cancellations, final headcount."
+          hint="A short summary hosts see before paying: what the deposit covers, final headcount."
+        />
+      </div>
+
+      <div className={section}>
+        <h2 className="font-semibold">Cancellations and refunds</h2>
+        <Select
+          id="host_can_cancel"
+          label="Hosts can cancel online"
+          defaultValue={v.host_can_cancel}
+          error={e.host_can_cancel}
+          hint="Refunds happen automatically, by these rules. If you cancel, the host gets everything back."
+        >
+          <option value="yes">Yes, from their booking page</option>
+          <option value="no">No, they contact me</option>
+        </Select>
+        <Select
+          id="full_refund_days"
+          label="Full refund if they cancel at least"
+          defaultValue={v.full_refund_days}
+          error={e.full_refund_days}
+          hint="After that, you keep the deposit and any balance they paid is refunded."
+        >
+          {[0, 7, 14, 21, 30, 45, 60, 90].map((d) => (
+            <option key={d} value={d}>
+              {d === 0 ? "Any time before the event" : `${d} days before the event`}
+            </option>
+          ))}
+        </Select>
+      </div>
+
+      <div className={section}>
+        <h2 className="font-semibold">Contract</h2>
+        <p className="text-muted text-sm">
+          Hosts e-sign an agreement with their event, price, payment schedule, refund rules and your
+          policy. Add anything else you need them to agree to.
+        </p>
+        <Textarea
+          id="contract_terms"
+          label="Additional contract terms (optional)"
+          defaultValue={v.contract_terms}
+          error={e.contract_terms}
+          className="min-h-48"
+          placeholder={
+            "e.g. Host provides a level spot within 50 feet of power.\nWeather: we serve rain or shine under cover."
+          }
         />
       </div>
 

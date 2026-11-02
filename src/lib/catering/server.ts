@@ -21,7 +21,9 @@ import {
   payInFullNow,
   todayIn,
 } from "./dates";
+import { buildAgreement, signatureBlock } from "./agreement";
 import { holdStillOpen } from "./bookings";
+import { hostCancelPlan, ownerCancelPlan, type PaidPayment, type RefundPlan } from "./refunds";
 import { calculateQuote, quoteErrorMessage, type Quote } from "./quote";
 
 /*
@@ -114,7 +116,11 @@ export type BookingRequest = {
   /** What the page showed, in cents; refused if the server's quote differs. */
   shown_total: number;
   shown_deposit: number;
+  /** The host's typed name (checked against host_name by the schema). */
+  signature: string;
 };
+
+export type Signer = { ip: string | null; userAgent: string | null };
 
 async function loadOwnerBySlug(slug: string) {
   const admin = createAdminClient();
@@ -148,7 +154,7 @@ export async function cateringOpenForBookings(owner: Owner): Promise<boolean> {
 }
 
 /** Validates the request, recalculates the price, holds the date and opens Checkout. */
-export async function startDepositCheckout(req: BookingRequest): Promise<string> {
+export async function startDepositCheckout(req: BookingRequest, signer: Signer): Promise<string> {
   const loaded = await loadOwnerBySlug(req.slug);
   if (!loaded || !loaded.settings.is_published)
     throw new CateringError("not_taking", "This page isn't taking bookings right now.");
@@ -262,6 +268,35 @@ export async function startDepositCheckout(req: BookingRequest): Promise<string>
         : balanceDueDate(req.event_date, settings.balance_due_days_before),
       policy_text_snapshot: settings.policy_text,
       terms_accepted_at: now.toISOString(),
+      contract_text: buildAgreement({
+        businessName: owner.business_name ?? "The caterer",
+        hostName: req.host_name,
+        hostEmail: req.host_email,
+        eventDate: req.event_date,
+        startTime: req.start_time,
+        endTime: req.end_time,
+        eventAddress: req.event_address,
+        guestCount: req.guest_count,
+        lines: q.lines,
+        totalCents: q.totalCents,
+        depositCents: q.depositCents,
+        balanceCents: q.balanceCents,
+        balanceDueDate: payInFull
+          ? null
+          : balanceDueDate(req.event_date, settings.balance_due_days_before),
+        refund: {
+          host_can_cancel: settings.host_can_cancel,
+          full_refund_days: settings.full_refund_days,
+        },
+        policyText: settings.policy_text,
+        contractTerms: settings.contract_terms,
+      }),
+      signature_name: req.signature,
+      signed_at: now.toISOString(),
+      signer_ip: signer.ip,
+      signer_user_agent: signer.userAgent,
+      host_can_cancel: settings.host_can_cancel,
+      full_refund_days: settings.full_refund_days,
       hold_expires_at: new Date(now.getTime() + CHECKOUT_SESSION_MINUTES * 60_000).toISOString(),
     },
   });
@@ -664,6 +699,7 @@ export async function handleCateringCheckoutCompleted(
           : null,
       statusUrl: bookingStatusUrl(booking.public_token),
       calendar: bookingCalendar(confirmed, business),
+      agreement: signedAgreement(booking),
     },
   });
   await notify({
@@ -677,6 +713,7 @@ export async function handleCateringCheckoutCompleted(
       total: formatCents(booking.total_cents),
       paid: formatCents(payment.amount_cents),
       bookingUrl: bookingAdminUrl(booking.id),
+      agreement: signedAgreement(booking),
       // After the first (free) booking, the page needs a live subscription to take more.
       cardNote: canSendPayLinks(owner.subscription_status)
         ? null
@@ -705,4 +742,121 @@ export async function handleCateringChargeRefunded(paymentIntentId: string): Pro
     .update({ status: "refunded" })
     .eq("stripe_payment_intent_id", paymentIntentId)
     .neq("status", "refunded");
+}
+
+/** The agreement as signed, with the signature block, or undefined for older bookings. */
+export function signedAgreement(
+  b: Pick<Booking, "contract_text" | "signature_name" | "signed_at" | "signer_ip">,
+): string | undefined {
+  if (!b.contract_text || !b.signature_name || !b.signed_at) return undefined;
+  return `${b.contract_text}\n\n${signatureBlock({ signatureName: b.signature_name, signedAt: b.signed_at, ip: b.signer_ip })}`;
+}
+
+async function paidPayments(bookingId: string): Promise<(PaidPayment & { pi: string | null })[]> {
+  const { data } = await createAdminClient()
+    .from("catering_payments")
+    .select("id, kind, amount_cents, stripe_payment_intent_id")
+    .eq("booking_id", bookingId)
+    .eq("status", "paid");
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    kind: p.kind,
+    amount_cents: p.amount_cents,
+    pi: p.stripe_payment_intent_id,
+  }));
+}
+
+/**
+ * Refunds whole payments. A cancellation by the host or owner keeps the processing
+ * fee, like Dibs deposits (Stripe keeps its fee too). Each is marked as it goes, so
+ * a retry after a failure skips the ones already refunded.
+ */
+async function refundPayments(payments: (PaidPayment & { pi: string | null })[]): Promise<void> {
+  const admin = createAdminClient();
+  for (const p of payments) {
+    if (!p.pi) throw new Error(`Catering payment ${p.id} has no payment intent`);
+    await getStripe().refunds.create(
+      { payment_intent: p.pi, reverse_transfer: true, refund_application_fee: false },
+      { idempotencyKey: `catering-cancel-refund-${p.id}` },
+    );
+    const { error } = await admin
+      .from("catering_payments")
+      .update({ status: "refunded" })
+      .eq("id", p.id)
+      .eq("status", "paid");
+    if (error) throw new Error(`Recording refund failed: ${error.message}`);
+  }
+}
+
+/** The owner cancels: refund everything the host paid, then cancel. Returns the cents refunded. */
+export async function ownerCancelRefund(bookingId: string): Promise<number> {
+  await expireOpenCateringCheckouts(bookingId);
+  const payments = await paidPayments(bookingId);
+  const plan = ownerCancelPlan(payments);
+  await refundPayments(payments.filter((p) => plan.refund.some((r) => r.id === p.id)));
+  return plan.refundCents;
+}
+
+/** What a host would get back if they cancelled now, or null if they can't cancel online. */
+export async function hostCancelQuote(booking: Booking): Promise<RefundPlan | null> {
+  if (!(["confirmed", "balance_due", "paid_in_full"] as string[]).includes(booking.status))
+    return null;
+  return hostCancelPlan(booking, await paidPayments(booking.id), todayIn(booking.timezone));
+}
+
+/**
+ * The host cancels from their booking page. The server decides the refund now and
+ * refuses if the page showed a different amount.
+ */
+export async function hostCancelBooking(token: string, shownRefundCents: number): Promise<void> {
+  const loaded = await loadByToken(token);
+  if (!loaded) throw new CateringError("expired", "We couldn't find this booking.");
+  const { booking, owner } = loaded;
+  const payments = await paidPayments(booking.id);
+  const plan = (["confirmed", "balance_due", "paid_in_full"] as string[]).includes(booking.status)
+    ? hostCancelPlan(booking, payments, todayIn(booking.timezone))
+    : null;
+  if (!plan)
+    throw new CateringError(
+      "invalid",
+      "This event can't be cancelled online. Contact the caterer.",
+    );
+  if (plan.refundCents !== shownRefundCents)
+    throw new CateringError(
+      "price_changed",
+      "The refund for cancelling has changed. Check the new amount and try again.",
+    );
+
+  await expireOpenCateringCheckouts(booking.id);
+  await refundPayments(payments.filter((p) => plan.refund.some((r) => r.id === p.id)));
+  const admin = createAdminClient();
+  const { data: cancelled, error } = await admin
+    .from("catering_bookings")
+    .update({ status: "cancelled", cancelled_by: "host", cancelled_at: new Date().toISOString() })
+    .eq("id", booking.id)
+    .in("status", ["confirmed", "balance_due", "paid_in_full"])
+    .select("id");
+  if (error) throw new Error(`Cancelling catering booking failed: ${error.message}`);
+  if (!cancelled?.length) return;
+
+  const business = owner.business_name ?? "your caterer";
+  const when = bookingWhen(booking);
+  const refund = plan.refundCents > 0 ? formatCents(plan.refundCents) : null;
+  const kept = plan.keptCents > 0 ? formatCents(plan.keptCents) : null;
+  await notify({
+    to: { name: booking.host_name, email: booking.host_email },
+    template: "catering_host_cancelled_host",
+    data: { businessName: business, ownerEmail: owner.email, when, refund, kept },
+  });
+  await notify({
+    to: { email: owner.email },
+    template: "catering_host_cancelled_owner",
+    data: {
+      hostName: booking.host_name,
+      when,
+      refund,
+      kept,
+      bookingUrl: bookingAdminUrl(booking.id),
+    },
+  });
 }

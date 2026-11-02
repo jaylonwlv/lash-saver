@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { signatureMatches } from "@/lib/catering/agreement";
 import { optionalText } from "@/lib/forms";
 
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Pick a time.");
@@ -42,7 +43,8 @@ export const bookingRequestSchema = z
       .max(30)
       .refine((v) => v === "" || /^[+\d][\d\s().-]{6,}$/.test(v), "Enter a valid phone number.")
       .transform((v) => (v === "" ? null : v)),
-    terms: z.literal("on", "Agree to the policy to continue."),
+    signature: z.string().trim().max(100),
+    esign: z.literal("on", "Agree to sign electronically to continue."),
     shown_total: z.coerce.number().int().min(1),
     shown_deposit: z.coerce.number().int().min(1),
     // Honeypot: real people never fill this.

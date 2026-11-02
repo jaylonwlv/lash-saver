@@ -121,8 +121,10 @@ export default function TermsPage() {
           <li>
             Catering quote pages work the same way: the same processing fee applies to each deposit
             and balance payment, and {APP_NAME} takes no other cut of the booking. The caterer sets
-            the prices, any service fee and any tax shown to hosts, and is responsible for them. The
-            caterer decides refunds and makes them from their dashboard; payments made after a date
+            the prices, any service fee and any tax shown to hosts, and is responsible for them.
+            Refunds follow the cancellation terms the caterer sets and the host signs, and are made
+            automatically when either side cancels (the processing fee isn&apos;t returned); the
+            caterer can also refund a payment from their dashboard; payments made after a date
             filled up are refunded in full automatically.
           </li>
           <li>
@@ -177,10 +179,12 @@ export default function TermsPage() {
           <li>
             <strong>Catering bookings:</strong> on a caterer&apos;s quote page, the price you see is
             the caterer&apos;s, and paying the deposit (or the full amount) holds the date under the
-            caterer&apos;s policy. The booking is between you and the caterer. Changes,
-            cancellations and refunds are handled by the caterer; your booking page shows how to
-            reach them. If a date fills up while you&apos;re paying, your payment is refunded in
-            full automatically.
+            caterer&apos;s agreement, which you sign electronically by typing your name. The booking
+            is between you and the caterer. Cancellations are refunded automatically by the terms in
+            that agreement: if the caterer cancels, everything you paid is refunded; if the caterer
+            allows it, you can cancel from your booking page, which shows your refund before you
+            confirm. For changes, contact the caterer. If a date fills up while you&apos;re paying,
+            your payment is refunded in full automatically.
           </li>
         </ul>
       </Section>

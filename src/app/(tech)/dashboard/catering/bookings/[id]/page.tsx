@@ -45,6 +45,9 @@ export default async function CateringBookingPage({
     .in("status", ["paid", "refunded"])
     .order("created_at");
   const q = readQuote(b);
+  const paidCents = (payments ?? [])
+    .filter((p) => p.status === "paid")
+    .reduce((sum, p) => sum + p.amount_cents, 0);
   const held = (HELD_STATUSES as readonly string[]).includes(b.status);
   const active = (ACTIVE_STATUSES as readonly string[]).includes(b.status);
   const row = "flex justify-between gap-3";
@@ -56,6 +59,12 @@ export default async function CateringBookingPage({
         <p className="text-muted text-sm font-medium">{bookingStatusLabel(b.status)}</p>
         <h1 className="font-display text-2xl font-bold">{b.host_name}</h1>
         <p className="text-muted">{bookingWhen(b)}</p>
+        {b.status === "cancelled" && b.cancelled_by && (
+          <p className="text-muted text-sm">
+            Cancelled by {b.cancelled_by === "host" ? "the host" : "you"}
+            {b.cancel_reason ? `: "${b.cancel_reason}"` : ""}
+          </p>
+        )}
       </div>
 
       {flags.saved === "1" && <p className="bg-brand-soft rounded-2xl p-4 text-sm">Notes saved.</p>}
@@ -144,6 +153,40 @@ export default async function CateringBookingPage({
         )}
       </section>
 
+      <section className="border-line bg-surface flex flex-col gap-2 rounded-2xl border p-4 text-sm">
+        <h2 className="font-semibold">Agreement</h2>
+        {b.signature_name && b.signed_at ? (
+          <p className="text-muted">
+            Signed by <span className="text-foreground font-serif italic">{b.signature_name}</span>{" "}
+            on{" "}
+            {new Date(b.signed_at).toLocaleString("en-US", {
+              timeZone: b.timezone,
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
+          </p>
+        ) : (
+          <p className="text-muted">Agreed to your policy (booked before e-signing).</p>
+        )}
+        <p className="text-muted">
+          {!b.host_can_cancel
+            ? "The host can't cancel online; they contact you."
+            : b.full_refund_days
+              ? `The host can cancel online: full refund at least ${b.full_refund_days} days before; after that you keep the deposit.`
+              : "The host can cancel online for a full refund until the event."}
+        </p>
+        {b.contract_text && (
+          <a
+            href={`/e/${b.public_token}/agreement`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-brand font-medium"
+          >
+            View the signed agreement →
+          </a>
+        )}
+      </section>
+
       {(payments ?? []).length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="font-semibold">Payments</h2>
@@ -218,8 +261,9 @@ export default async function CateringBookingPage({
               placeholder="e.g. Our truck is in the shop. So sorry!"
             />
             <p className="text-muted text-sm">
-              We email the host. Cancelling doesn&apos;t refund them: use the refund buttons above
-              if you owe them money.
+              Everything the host paid
+              {paidCents > 0 ? ` (${formatCents(paidCents)})` : ""} is refunded automatically, and
+              we email them. You keep nothing from a cancellation you make.
             </p>
             <Button type="submit" variant="secondary">
               Cancel event

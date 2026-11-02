@@ -152,6 +152,8 @@ export type TemplateData = {
     balanceLine: string | null;
     statusUrl: string;
     calendar?: string;
+    /** The signed agreement, attached as a text file. */
+    agreement?: string;
   };
   catering_booked_owner: {
     hostName: string;
@@ -162,6 +164,7 @@ export type TemplateData = {
     paid: string;
     bookingUrl: string;
     cardNote?: string | null;
+    agreement?: string;
   };
   catering_balance_reminder: {
     businessName: string;
@@ -207,7 +210,22 @@ export type TemplateData = {
     ownerEmail: string;
     when: string;
     reason: string | null;
-    paid: string | null;
+    /** What was refunded automatically, if anything. */
+    refunded: string | null;
+  };
+  catering_host_cancelled_host: {
+    businessName: string;
+    ownerEmail: string;
+    when: string;
+    refund: string | null;
+    kept: string | null;
+  };
+  catering_host_cancelled_owner: {
+    hostName: string;
+    when: string;
+    refund: string | null;
+    kept: string | null;
+    bookingUrl: string;
   };
   /** The date filled while they were paying: their payment is refunded. */
   catering_date_taken: {
@@ -373,21 +391,42 @@ ${FOUNDER_NAME}`,
     fromName: d.businessName,
     replyTo: d.ownerEmail,
     text: `Your date is held! ${d.businessName} is booked for ${d.when}: ${d.packageName}, ${d.guests} guests. Total ${d.total}, ${d.paid} paid.${d.balanceLine ? ` Balance: ${d.balanceLine}.` : " You're paid in full."} Details and receipt: ${d.statusUrl}\n\nQuestions? Just reply to this email.\n\n— sent via ${APP_NAME}`,
-    ...(d.calendar
-      ? {
-          attachments: [
+    attachments: [
+      ...(d.calendar
+        ? [
             {
               filename: "event.ics",
               content: d.calendar,
               contentType: "text/calendar; charset=utf-8; method=PUBLISH",
             },
-          ],
-        }
-      : {}),
+          ]
+        : []),
+      ...(d.agreement
+        ? [
+            {
+              filename: "agreement.txt",
+              content: d.agreement,
+              contentType: "text/plain; charset=utf-8",
+            },
+          ]
+        : []),
+    ],
   }),
   catering_booked_owner: (d) => ({
     subject: `Booked: ${d.when}, ${d.guests} guests`,
     text: `New catering booking: ${d.hostName}, ${d.when}, ${d.guests} guests, ${d.packageName}. Total ${d.total}, ${d.paid} paid. ${d.bookingUrl}${d.cardNote ? `\n\n${d.cardNote}` : ""}`,
+
+    ...(d.agreement
+      ? {
+          attachments: [
+            {
+              filename: "agreement.txt",
+              content: d.agreement,
+              contentType: "text/plain; charset=utf-8",
+            },
+          ],
+        }
+      : {}),
   }),
   catering_balance_reminder: (d) => ({
     subject: `Your balance for ${d.when} is due ${d.dueDate}`,
@@ -421,7 +460,17 @@ ${d.bookingUrl}`,
     subject: `${d.businessName} cancelled your event on ${d.when}`,
     fromName: d.businessName,
     replyTo: d.ownerEmail,
-    text: `${d.businessName} cancelled your event on ${d.when}.${d.reason ? ` Their note: "${d.reason}"` : ""}${d.paid ? ` Any refund of the ${d.paid} you paid comes from ${d.businessName}; reply to this email to reach them.` : ""}\n\n— sent via ${APP_NAME}`,
+    text: `${d.businessName} cancelled your event on ${d.when}.${d.reason ? ` Their note: "${d.reason}"` : ""}${d.refunded ? ` We've refunded the ${d.refunded} you paid in full; it can take 5 to 10 business days to show up.` : ""} Questions? Just reply to this email.\n\n— sent via ${APP_NAME}`,
+  }),
+  catering_host_cancelled_host: (d) => ({
+    subject: `Your event on ${d.when} is cancelled`,
+    fromName: d.businessName,
+    replyTo: d.ownerEmail,
+    text: `You cancelled your event with ${d.businessName} on ${d.when}.${d.refund ? ` We've refunded ${d.refund}; it can take 5 to 10 business days to show up.` : ""}${d.kept ? ` The ${d.kept} deposit is kept, as your agreement says.` : ""}\n\n— sent via ${APP_NAME}`,
+  }),
+  catering_host_cancelled_owner: (d) => ({
+    subject: `${d.hostName} cancelled ${d.when}`,
+    text: `${d.hostName} cancelled their event on ${d.when}. ${d.refund ? `${d.refund} was refunded automatically.` : "Nothing was refunded."}${d.kept ? ` You keep the ${d.kept} deposit.` : ""} The date is open again on your page. ${d.bookingUrl}`,
   }),
   catering_date_taken: (d) => ({
     subject: `${d.when} just filled up: your ${d.amount} is refunded`,

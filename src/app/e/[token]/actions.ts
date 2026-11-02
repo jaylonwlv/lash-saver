@@ -2,7 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { CateringError, resumeDepositCheckout, startBalanceCheckout } from "@/lib/catering/server";
+import {
+  CateringError,
+  hostCancelBooking,
+  resumeDepositCheckout,
+  startBalanceCheckout,
+} from "@/lib/catering/server";
+import { revalidatePath } from "next/cache";
 import type { FormState } from "@/lib/forms";
 
 const tokenSchema = z.string().regex(/^[A-Za-z0-9_-]{32,64}$/);
@@ -26,4 +32,18 @@ export async function payBalance(token: string): Promise<FormState> {
 
 export async function finishDeposit(token: string): Promise<FormState> {
   return go(token, resumeDepositCheckout);
+}
+
+/** The host cancels; the refund was shown on the page and is re-checked on the server. */
+export async function cancelEvent(token: string, shownRefundCents: number): Promise<FormState> {
+  if (!tokenSchema.safeParse(token).success) return { message: "We couldn't find this booking." };
+  try {
+    await hostCancelBooking(token, shownRefundCents);
+  } catch (err) {
+    if (err instanceof CateringError) return { message: err.message };
+    console.error("Catering host cancel failed", err);
+    return { message: "We couldn't cancel right now. Try again in a minute." };
+  }
+  revalidatePath(`/e/${token}`);
+  redirect(`/e/${token}?cancelled=1`);
 }

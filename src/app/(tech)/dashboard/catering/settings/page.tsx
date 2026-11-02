@@ -30,6 +30,9 @@ export default async function CateringSettingsPage() {
           city: s.city ?? "",
           description: s.description ?? "",
           policy_text: s.policy_text ?? "",
+          contract_terms: s.contract_terms ?? "",
+          host_can_cancel: s.host_can_cancel ? "yes" : "no",
+          full_refund_days: String(s.full_refund_days),
           minimum_spend:
             s.minimum_spend_cents === null ? "" : centsToDollarsInput(s.minimum_spend_cents),
           extra_hour_price:

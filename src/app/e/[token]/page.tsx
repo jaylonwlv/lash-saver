@@ -3,19 +3,21 @@ import { notFound } from "next/navigation";
 import { LegalLinks } from "@/components/ui/legal-links";
 import { bookingStatusLabel, eventTypeLabel, holdStillOpen } from "@/lib/catering/bookings";
 import { formatEventDate } from "@/lib/catering/dates";
-import { bookingWhen, quotePageUrl, readQuote } from "@/lib/catering/server";
+import { refundTermsText } from "@/lib/catering/agreement";
+import { bookingWhen, hostCancelQuote, quotePageUrl, readQuote } from "@/lib/catering/server";
 import { formatCents } from "@/lib/money";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { finishDeposit, payBalance } from "./actions";
+import { cancelEvent, finishDeposit, payBalance } from "./actions";
 import { AutoRefresh } from "./auto-refresh";
 import { PayButton } from "./pay-button";
+import { CancelEvent } from "./cancel-event";
 
 export const metadata: Metadata = { title: "Your event", robots: { index: false, follow: false } };
 
 /** The host's booking page. The unguessable token in the URL is what grants access. */
 export default async function BookingStatusPage({ params, searchParams }: PageProps<"/e/[token]">) {
   const { token } = await params;
-  const { paid } = await searchParams;
+  const { paid, cancelled } = await searchParams;
   if (!/^[A-Za-z0-9_-]{32,64}$/.test(token)) notFound();
   const admin = createAdminClient();
   const { data: b } = await admin
@@ -38,6 +40,9 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
 
   const business = owner?.business_name ?? "Your caterer";
   const q = readQuote(b);
+  const refundedCents = (payments ?? [])
+    .filter((p) => p.status === "refunded")
+    .reduce((sum, p) => sum + p.amount_cents, 0);
   const paidCents = (payments ?? [])
     .filter((p) => p.status === "paid")
     .reduce((s, p) => s + p.amount_cents, 0);
@@ -48,6 +53,7 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
     b.balance_cents > 0 &&
     !b.balance_paid_at;
   const justPaid = paid === "1";
+  const cancelPlan = await hostCancelQuote(b);
 
   const title = held
     ? b.status === "paid_in_full"
@@ -96,10 +102,18 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
           to check the date.
         </p>
       )}
+      {cancelled === "1" && (
+        <p className="bg-brand/10 rounded-2xl p-4 text-sm">
+          Your event is cancelled. We emailed you the details.
+        </p>
+      )}
       {b.status === "cancelled" && (
         <p className="text-sm">
-          {b.cancel_reason ? `Note from ${business}: "${b.cancel_reason}". ` : ""}Any refund comes
-          from {business}.
+          {b.cancelled_by === "host" ? "You cancelled this event. " : ""}
+          {b.cancel_reason ? `Note from ${business}: "${b.cancel_reason}". ` : ""}
+          {refundedCents > 0
+            ? `${formatCents(refundedCents)} was refunded to your card (5 to 10 business days).`
+            : "Nothing was refunded."}
         </p>
       )}
 
@@ -163,12 +177,34 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
         </a>
       )}
 
-      {b.policy_text_snapshot && (
-        <section className="flex flex-col gap-1 text-sm">
-          <h2 className="font-semibold">Policy you agreed to</h2>
-          <p className="text-muted whitespace-pre-line">{b.policy_text_snapshot}</p>
-        </section>
-      )}
+      <section className="flex flex-col gap-2 text-sm">
+        <h2 className="font-semibold">Your agreement</h2>
+        <p className="text-muted">
+          {refundTermsText(
+            { host_can_cancel: b.host_can_cancel, full_refund_days: b.full_refund_days },
+            business,
+          )}
+        </p>
+        {b.contract_text ? (
+          <a href={`/e/${token}/agreement`} className="text-brand font-medium">
+            View your signed agreement →
+          </a>
+        ) : (
+          b.policy_text_snapshot && (
+            <p className="text-muted whitespace-pre-line">{b.policy_text_snapshot}</p>
+          )
+        )}
+        {cancelPlan && (
+          <CancelEvent
+            action={cancelEvent.bind(null, token, cancelPlan.refundCents)}
+            summary={
+              cancelPlan.keptCents === 0
+                ? `You'll get ${formatCents(cancelPlan.refundCents)} back, everything you paid. The date opens up for others.`
+                : `${business} keeps the ${formatCents(cancelPlan.keptCents)} deposit, as your agreement says.${cancelPlan.refundCents > 0 ? ` You'll get ${formatCents(cancelPlan.refundCents)} back.` : ""}`
+            }
+          />
+        )}
+      </section>
 
       <section className="flex flex-col gap-1 text-sm">
         <h2 className="font-semibold">Contact {business}</h2>
@@ -187,7 +223,7 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
             @{owner.instagram_handle} on Instagram
           </a>
         )}
-        <p className="text-muted">To change or cancel your event, contact {business} directly.</p>
+        <p className="text-muted">To change your event, contact {business} directly.</p>
       </section>
       <LegalLinks />
     </main>

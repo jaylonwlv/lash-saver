@@ -22,6 +22,7 @@ import {
 } from "@/lib/catering/quote";
 import type { FormState } from "@/lib/forms";
 import { formatCents } from "@/lib/money";
+import { buildAgreement, refundTermsText, type RefundTerms } from "@/lib/catering/agreement";
 import { requestBooking } from "./actions";
 import { DateCalendar } from "./date-calendar";
 
@@ -56,6 +57,8 @@ export function QuoteForm({
   unavailable,
   balanceDueDaysBefore,
   policyText,
+  contractTerms,
+  refundTerms,
   canBook,
   notice,
 }: {
@@ -70,6 +73,8 @@ export function QuoteForm({
   unavailable: string[];
   balanceDueDaysBefore: number;
   policyText: string | null;
+  contractTerms: string | null;
+  refundTerms: RefundTerms;
   canBook: boolean;
   /** Why booking is off (preview, not taking bookings), shown at the button. */
   notice: string | null;
@@ -80,6 +85,9 @@ export function QuoteForm({
   const unavailableSet = useMemo(() => new Set(unavailable), [unavailable]);
 
   const [date, setDate] = useState(v.event_date ?? "");
+  const [hostName, setHostName] = useState(v.host_name ?? "");
+  const [hostEmail, setHostEmail] = useState(v.host_email ?? "");
+  const [address, setAddress] = useState(v.event_address ?? "");
   const [guests, setGuests] = useState(
     Number(v.guest_count) || Math.max(packages[0]?.min_guests ?? 1, 50),
   );
@@ -308,6 +316,7 @@ export function QuoteForm({
           id="event_address"
           label="Event address"
           defaultValue={v.event_address}
+          onChange={(ev) => setAddress(ev.target.value)}
           error={e.event_address}
           autoComplete="street-address"
           required
@@ -323,6 +332,7 @@ export function QuoteForm({
           id="host_name"
           label="Your name"
           defaultValue={v.host_name}
+          onChange={(ev) => setHostName(ev.target.value)}
           error={e.host_name}
           autoComplete="name"
           required
@@ -332,6 +342,7 @@ export function QuoteForm({
           type="email"
           label="Email"
           defaultValue={v.host_email}
+          onChange={(ev) => setHostEmail(ev.target.value)}
           error={e.host_email}
           autoComplete="email"
           hint="Your confirmation and receipt go here."
@@ -391,25 +402,60 @@ export function QuoteForm({
         )}
       </section>
 
-      {policyText && (
-        <section className="flex flex-col gap-2">
-          <h2 className="font-bold">{businessName}&apos;s policy</h2>
-          <p className="text-muted text-sm whitespace-pre-line">{policyText}</p>
-        </section>
-      )}
-      <label className="flex items-start gap-3 text-sm">
-        <input
-          type="checkbox"
-          name="terms"
-          className="accent-brand mt-0.5 size-5 shrink-0"
-          defaultChecked={v.terms === "on"}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-bold">Sign your agreement</h2>
+        <p className="text-muted text-sm">{refundTermsText(refundTerms, businessName)}</p>
+        <details className="border-line bg-surface rounded-2xl border p-4">
+          <summary className="text-brand min-h-11 cursor-pointer text-sm leading-[2.75rem] font-medium">
+            Read the full agreement
+          </summary>
+          <pre className="text-muted mt-2 max-h-96 overflow-y-auto font-sans text-sm whitespace-pre-wrap">
+            {quote && date
+              ? buildAgreement({
+                  businessName,
+                  hostName: hostName.trim() || "[your name]",
+                  hostEmail: hostEmail.trim() || "[your email]",
+                  eventDate: date,
+                  startTime: start,
+                  endTime: end,
+                  eventAddress: address.trim() || "[event address]",
+                  guestCount: guests,
+                  lines: quote.lines,
+                  totalCents: quote.totalCents,
+                  depositCents: quote.depositCents,
+                  balanceCents: quote.balanceCents,
+                  balanceDueDate: dueDate,
+                  refund: refundTerms,
+                  policyText,
+                  contractTerms,
+                })
+              : "Pick a date and package to see your agreement."}
+          </pre>
+        </details>
+        <Input
+          id="signature"
+          label="Type your full name to sign"
+          defaultValue={v.signature}
+          error={e.signature}
+          autoComplete="off"
+          className="font-serif text-lg italic"
+          hint={hostName.trim() ? `Type it as "${hostName.trim()}".` : "Same as your name above."}
           required
         />
-        <span>
-          I agree to {businessName}&apos;s policy{policyText ? " above" : ""}.
-          {e.terms && <span className="text-danger block">{e.terms}</span>}
-        </span>
-      </label>
+        <label className="flex items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            name="esign"
+            className="accent-brand mt-0.5 size-5 shrink-0"
+            defaultChecked={v.esign === "on"}
+            required
+          />
+          <span>
+            I agree to {businessName}&apos;s agreement and to sign it electronically.
+            {e.esign && <span className="text-danger block">{e.esign}</span>}
+          </span>
+        </label>
+      </section>
 
       <div className="bg-background/95 sticky bottom-0 -mx-5 flex flex-col gap-2 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
         {state.message && <p className="text-danger text-sm">{state.message}</p>}

@@ -154,6 +154,11 @@ export default async function CateringQuotePage({ params }: Params) {
           unavailable={unavailable}
           balanceDueDaysBefore={settings.balance_due_days_before}
           policyText={settings.policy_text}
+          contractTerms={settings.contract_terms}
+          refundTerms={{
+            host_can_cancel: settings.host_can_cancel,
+            full_refund_days: settings.full_refund_days,
+          }}
           canBook={!preview && open}
           notice={notice}
         />
