@@ -41,14 +41,21 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     cache: "no-store",
   });
   const text = await res.text();
-  const json: unknown = text ? JSON.parse(text) : {};
+  let json: unknown = {};
+  try {
+    json = text ? JSON.parse(text) : {};
+  } catch {
+    json = {};
+  }
   if (!res.ok) {
     const error =
-      json && typeof json === "object" && "error" in json
+      json && typeof json === "object" && "error" in json && typeof json.error === "object"
         ? (json.error as { code?: string; message?: string })
         : {};
+    // Keep Vercel's own words (they say why: billing, permissions, terms…), not just the status.
+    const detail = error.message ?? (text.slice(0, 300) || "no details");
     throw new RegistrarError(
-      error.message ?? `Vercel ${method} ${path} failed (${res.status})`,
+      `Vercel ${method} ${path} failed (${res.status}${error.code ? ` ${error.code}` : ""}): ${detail}`,
       res.status,
       error.code,
     );

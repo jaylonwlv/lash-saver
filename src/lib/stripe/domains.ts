@@ -255,7 +255,7 @@ async function registerDomain(row: DomainRow): Promise<void> {
   try {
     orderId = await buyDomain(row.domain, row.purchase_cents, registrant);
   } catch (err) {
-    const reason = err instanceof RegistrarError ? (err.code ?? err.message) : String(err);
+    const reason = err instanceof RegistrarError ? err.message : String(err);
     return failRegistration(row, `buy failed: ${reason}`);
   }
   const { data: saved } = await createAdminClient()
