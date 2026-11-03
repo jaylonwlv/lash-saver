@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { APP_NAME } from "@/lib/config";
+import { markTourSeen } from "./tour-actions";
 
 /*
  * First-run tour: how Dibs works in five short cards, then what's left before the
- * first booking, with a button straight to the next step. Shown once per phone to
- * pros who haven't sent a pay link yet; "Take the tour" (?tour=1) brings it back.
+ * first booking, with a button straight to the next step. Shown once per account
+ * (profiles.tour_seen_at, plus the browser for an instant hide) to pros who
+ * haven't sent a pay link yet; "Take the tour" brings it back.
  */
 
 const DONE_KEY = "dibs:tour-done-v1";
@@ -48,7 +50,7 @@ export function Tour({
 }: {
   steps: TourStep[];
   example: TourExample;
-  /** A pro who hasn't sent a pay link yet. */
+  /** A pro who hasn't sent a pay link yet and hasn't closed the tour on any device. */
   eligible: boolean;
   /** Opened from "Take the tour". */
   force: boolean;
@@ -80,8 +82,9 @@ export function Tour({
     try {
       localStorage.setItem(DONE_KEY, "1");
     } catch {
-      // Storage blocked (private mode): it just shows again next time.
+      // Storage blocked (private mode): the account flag below still covers it.
     }
+    void markTourSeen();
     dialog.current?.close();
     setClosed(true);
     setLaunched(false);

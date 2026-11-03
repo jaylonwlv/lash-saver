@@ -54,6 +54,8 @@ type ProfileRow = Timestamps & {
   referred_by: string | null;
   /** Unsubscribed from tips and offers (marketing emails); server-set. */
   marketing_opt_out_at: string | null;
+  /** Closed the dashboard's first-run tour; set by the pro (dashboard/tour-actions.ts). */
+  tour_seen_at: string | null;
 };
 
 type ServiceRow = Timestamps & {

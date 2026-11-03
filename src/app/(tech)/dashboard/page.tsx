@@ -56,7 +56,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     supabase
       .from("profiles")
       .select(
-        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade, email, email_confirmed, cancellation_window_hours",
+        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade, email, email_confirmed, cancellation_window_hours, tour_seen_at",
       )
       .eq("id", user!.id)
       .single(),
@@ -201,7 +201,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       <Tour
         steps={tourSteps}
         // After the "What do you do?" picker, never on top of it.
-        eligible={!firstLinkSent && profile.trade !== null}
+        eligible={!firstLinkSent && profile.trade !== null && !profile.tour_seen_at}
         force={tour === "1"}
         example={
           topService && topService.price_cents > topService.deposit_cents
