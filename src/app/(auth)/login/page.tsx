@@ -5,6 +5,7 @@ import { MetaPixel } from "@/components/meta-pixel";
 import { APP_NAME, TRIAL_DAYS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { LoginForm } from "./login-form";
+import { OAuthButtons } from "./oauth-buttons";
 
 export const metadata: Metadata = { title: "Sign in" };
 export const viewport: Viewport = { themeColor: "#0d0b0c" };
@@ -29,6 +30,10 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             That sign-in link didn&apos;t work or has expired. Send yourself a new code below.
           </p>
         )}
+        <OAuthButtons
+          providers={publicEnv().NEXT_PUBLIC_AUTH_PROVIDERS}
+          next={typeof next === "string" ? next : undefined}
+        />
         <LoginForm next={typeof next === "string" ? next : undefined} />
         <p className="text-muted text-sm">
           New to {APP_NAME}?{" "}

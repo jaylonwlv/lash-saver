@@ -14,6 +14,20 @@ const publicSchema = z.object({
     (v) => (v === "" ? undefined : v),
     z.string().optional(),
   ),
+  /**
+   * One-tap sign-in providers shown on /login, comma-separated ("google,apple"). Each
+   * must be enabled in Supabase (Authentication → Providers) first. Unset hides them.
+   */
+  NEXT_PUBLIC_AUTH_PROVIDERS: z.preprocess(
+    (v) =>
+      typeof v === "string" && v.trim()
+        ? v
+            .split(",")
+            .map((p) => p.trim().toLowerCase())
+            .filter(Boolean)
+        : [],
+    z.array(z.enum(["google", "apple"])),
+  ),
   /** Meta Pixel for ad measurement. Optional: empty or unset turns it off. */
   NEXT_PUBLIC_META_PIXEL_ID: z.preprocess(
     (v) => (v === "" ? undefined : v),
@@ -31,6 +45,7 @@ let cached: PublicEnv | undefined;
 export function publicEnv(): PublicEnv {
   if (cached) return cached;
   const raw: Record<keyof PublicEnv, string | undefined> = {
+    NEXT_PUBLIC_AUTH_PROVIDERS: process.env.NEXT_PUBLIC_AUTH_PROVIDERS,
     NEXT_PUBLIC_META_PIXEL_ID: process.env.NEXT_PUBLIC_META_PIXEL_ID,
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,

@@ -63,15 +63,20 @@ src/
                                   it: no inbox trip before the first pay link or trial. While false, the dashboard
                                   shows "Booking alerts go to … · Wrong? Fix it" (dashboard/confirm-email/).
                                   /login?start=1 redirects here.
-    (auth)/login/                 Email sign-in: 6-digit code (any browser) or link (page, form, actions). The code
+    (auth)/login/                 "Continue with Apple / Google" (oauth-buttons.tsx; only in a real browser, only the providers
+                                  in NEXT_PUBLIC_AUTH_PROVIDERS, each enabled in Supabase first; lands on auth/callback's
+                                  PKCE path), then email sign-in: 6-digit code (any browser) or link (page, form, actions). The code
                                   screen survives a reload for an hour (localStorage) and shows an "Open Gmail /
                                   Mail / Outlook" button picked from the email domain and phone (inbox.ts)
     auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
     (tech)/install-banner.tsx     Pros sign up inside Instagram's browser, whose sign-in doesn't carry over: once they've made
-                                  a pay link (not before, so they reach value first), banner says open in Safari / Chrome
-                                  (Android intent link), then "Add to Home Screen"
-                                  (dismissible); hidden once running from the Home Screen. manifest.ts + public/icon-*.png
+                                  a pay link (not before, so they reach value first), banner offers "Open in Safari / Chrome"
+                                  already signed in (open-in-browser.tsx: createHandoffLink mints a one-time link at the tap,
+                                  opened via x-safari-https / an Android intent, with copy-and-paste if Instagram blocks it;
+                                  it lands on auth/handoff, which signs in without marking the email confirmed), then
+                                  "Add to Home Screen" (dismissible); hidden once running from the Home Screen.
+                                  manifest.ts + public/icon-*.png
     (tech)/dashboard/saved-reply-card.tsx  "Add Dibs to your DMs": a ready-made Instagram saved reply (shortcut "dibs")
                                   so the booking DM itself prompts a pay link; dismissed per phone.
     (tech)/dashboard/announcement-card.tsx  "No booking yet? Tell your regulars": the depositAnnouncement with

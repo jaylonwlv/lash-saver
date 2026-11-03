@@ -7,12 +7,14 @@ import { APP_NAME } from "@/lib/config";
 import { isInAppBrowser } from "@/lib/in-app-browser";
 import stepAddToHomeScreen from "./images/home-screen-step-2.jpg";
 import stepAdd from "./images/home-screen-step-3.jpg";
+import { OpenInBrowser } from "./open-in-browser";
 
 /*
  * Pros sign up from Instagram ads, inside Instagram's in-app browser. Its
  * sign-in doesn't carry over to Safari or Chrome, and they can't get back to it
  * once they leave, so they'd have to sign in again every time. This banner moves
- * them to their real browser, then suggests adding Dibs to the Home Screen,
+ * them to their real browser already signed in (a one-time handoff link, see
+ * open-in-browser.tsx), then suggests adding Dibs to the Home Screen,
  * where it stays signed in. It disappears once Dibs runs from the Home Screen.
  */
 
@@ -108,24 +110,16 @@ export function InstallBanner({
           You&apos;re in Instagram&apos;s browser, which won&apos;t keep you signed in once you
           leave.
         </p>
-        {where === "instagram-ios" ? (
-          <p className="text-white/80">
-            Tap <strong className="text-white">•••</strong> at the top, then{" "}
-            <strong className="text-white">Open in external browser</strong>. Sign in once in
-            Safari, then add {APP_NAME} to your Home Screen. Everything you set up here is saved.
+        <p className="text-white/80">
+          Open {APP_NAME} in {where === "instagram-ios" ? "Safari" : "Chrome"}: you&apos;ll already
+          be signed in, and everything you set up here is saved.
+        </p>
+        <OpenInBrowser ios={where === "instagram-ios"} />
+        {where === "instagram-ios" && (
+          <p className="text-xs text-white/60">
+            Or tap <strong className="text-white/80">•••</strong> at the top, then{" "}
+            <strong className="text-white/80">Open in external browser</strong>.
           </p>
-        ) : (
-          <>
-            <p className="text-white/80">
-              Open {APP_NAME} in Chrome and sign in once. Everything you set up here is saved.
-            </p>
-            <a
-              href={`intent://${window.location.host}/dashboard#Intent;scheme=https;package=com.android.chrome;end`}
-              className="bg-pink text-ink mt-1 inline-flex min-h-12 items-center justify-center rounded-xl px-4 font-semibold"
-            >
-              Open in Chrome
-            </a>
-          </>
         )}
       </section>
     );

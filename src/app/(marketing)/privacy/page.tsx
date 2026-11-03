@@ -141,6 +141,12 @@ export default function PrivacyPage() {
             described above).
           </li>
           <li>
+            <strong>Apple and Google sign-in:</strong> if a pro chooses &ldquo;Continue with
+            Apple&rdquo; or &ldquo;Continue with Google&rdquo;, that company confirms who they are
+            and shares their name and email address with us (with Apple, possibly a private relay
+            address that forwards to them). We use it only to sign them in. Clients never sign in.
+          </li>
+          <li>
             <strong>When required:</strong> to comply with the law or a valid legal request, or to
             protect the rights and safety of our users, the public or {APP_NAME}.
           </li>
