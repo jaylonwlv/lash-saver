@@ -1,5 +1,5 @@
 -- "Your own website": a pro's page (and later their pay links) on their own domain,
--- e.g. studionova.com. $99/year, or $10/month plus a $15 setup fee (src/lib/domains.ts).
+-- e.g. studionova.com. $99/year, or $15/month plus a $25 setup fee (src/lib/domains.ts).
 -- Dibs buys the domain through Vercel's registrar with the pro as the registrant, only
 -- after Stripe confirms the payment. One per pro. Server-written; pros read their own row.
 
