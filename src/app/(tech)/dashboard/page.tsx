@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
 import { APP_NAME, depositAnnouncement, SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
@@ -22,10 +21,23 @@ import { AnnouncementCard } from "./announcement-card";
 import { SavedReplyCard } from "./saved-reply-card";
 import { startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
+import {
+  Badge,
+  Hero,
+  NeedsYou,
+  NewAppointmentCard,
+  NextUp,
+  ProgressRing,
+  Results,
+  Stat,
+  StatRow,
+  Step,
+  type StepStatus,
+  Tile,
+} from "./home";
+import { loadPulse } from "./pulse";
 
 export const metadata: Metadata = { title: "Dashboard" };
-
-type StepStatus = "done" | "todo" | "waiting";
 
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const { stripe: stripeParam } = await searchParams;
@@ -120,59 +132,96 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       : null;
   // Everything done and no example prices left: the checklist shrinks to one line.
   const setupComplete = allDone && firstLinkSent && !starterServices;
+  // A failed snapshot only hides its cards; the rest of the dashboard still loads.
+  const pulse = firstLinkSent
+    ? await loadPulse(supabase, user!.id, profile.timezone).catch((err) => {
+        console.error("Loading dashboard snapshot failed", err);
+        return null;
+      })
+    : null;
+  const today = new Intl.DateTimeFormat("en-US", {
+    timeZone: profile.timezone,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
+  const statuses: StepStatus[] = [
+    profileDone ? "done" : "todo",
+    stripeStatus,
+    servicesDone ? "done" : "todo",
+    firstLinkSent ? "done" : "todo",
+  ];
+  // The step to do next gets a pink ring.
+  const current = statuses.findIndex((s) => s !== "done");
+  const newHint = nextNeedsCard
+    ? eligible === true
+      ? `Your next pay link needs your card: $0 today, free until ${until}.`
+      : eligible === false
+        ? `Your next pay link needs a subscription (${monthly}, cancel anytime).`
+        : "Your next pay link needs your card."
+    : "Make the pay link. The deposit locks in their spot.";
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Continues the pink header into one band on phones. */}
-      <section className="bg-pink text-ink -mx-5 -mt-6 flex flex-col items-start gap-3 rounded-b-[28px] px-5 pt-2 pb-6 sm:mx-0 sm:mt-0 sm:rounded-[28px] sm:pt-6">
-        <h1
-          className={`${(profile.business_name?.length ?? 0) > 22 ? "text-[26px]" : "text-[32px]"} leading-[1.05] font-extrabold break-words`}
-        >
-          Hey{profile.business_name ? `, ${profile.business_name}` : ""}
-          {/* No break before the wave, so it never sits alone on a line. */}
-          {"\u00a0👋"}
-        </h1>
-        {trialDaysLeft !== null && (
-          <Link
-            href="/dashboard/billing"
-            className="bg-ink text-pink inline-flex min-h-11 items-center rounded-full px-4 text-sm font-bold"
-          >
-            {profile.cancel_at_period_end
-              ? `Trial ends ${formatDate(profile.trial_ends_at!, profile.timezone)} · cancelled`
-              : trialDaysLeft === 0
-                ? "Free trial · ends today"
-                : `Free trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left`}
-          </Link>
+    <div className="flex flex-col gap-4">
+      <Hero
+        today={today}
+        greeting={`Hey${profile.business_name ? `, ${profile.business_name}` : ""}`}
+        badge={
+          trialDaysLeft !== null ? (
+            <Badge href="/dashboard/billing">
+              {profile.cancel_at_period_end
+                ? `Trial ends ${formatDate(profile.trial_ends_at!, profile.timezone)} · cancelled`
+                : trialDaysLeft === 0
+                  ? "Free trial · ends today"
+                  : `Free trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left`}
+            </Badge>
+          ) : null
+        }
+      >
+        {pulse ? (
+          <StatRow>
+            <Stat
+              href="/dashboard/appointments"
+              value={pulse.needsYou}
+              label={pulse.needsYou === 1 ? "thing needs you" : "things need you"}
+              hot={pulse.needsYou > 0}
+            />
+            <Stat href="/dashboard/appointments" value={pulse.upcoming} label="booked & paid" />
+            <Stat
+              href="/dashboard/appointments"
+              value={pulse.waiting}
+              label="waiting on a deposit"
+            />
+          </StatRow>
+        ) : (
+          !firstLinkSent && (
+            <div className="flex items-center gap-4 rounded-[22px] bg-white/55 p-3.5">
+              <ProgressRing done={stepsDone} total={4} />
+              <p className="font-display text-lg leading-tight font-extrabold">
+                {stepsDone === 3
+                  ? "One step to your first pay link"
+                  : `${4 - stepsDone} steps to your first pay link`}
+                <span className="text-ink/70 block text-sm font-semibold">
+                  No card needed for it.
+                </span>
+              </p>
+            </div>
+          )
         )}
-      </section>
+      </Hero>
+
       {/* Instant sign-ups: where alerts go, so a typo is caught here, not in their inbox. */}
       {!profile.email_confirmed && <AlertsEmail email={profile.email} />}
       <InstallBanner placement="page" payLinkSent={firstLinkSent} />
-      {!firstLinkSent && <SetupProgress done={stepsDone} />}
 
       {profile.subscription_status === "past_due" && (
         <Link
           href="/dashboard/billing"
-          className="border-danger text-danger bg-surface rounded-2xl border p-4 text-sm"
+          className="press border-danger text-danger bg-surface rounded-[22px] border-2 p-4 text-sm font-semibold"
         >
           Your {APP_NAME} payment didn&apos;t go through. Tap to update your card and keep sending
           pay links.
         </Link>
-      )}
-      {savings && (
-        <section className="bg-ink flex flex-col gap-2 rounded-[22px] p-5 text-white">
-          <p className="text-pink text-xs font-bold tracking-[0.08em] uppercase">Your results</p>
-          <h2 className="font-display text-pink text-[32px] leading-[1.05] font-extrabold tracking-tight">
-            {savings.headline}
-          </h2>
-          {savings.lines.length > 0 && (
-            <ul className="flex flex-col gap-1 text-sm text-white/80">
-              {savings.lines.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          )}
-        </section>
       )}
 
       {stripeParam === "error" && (
@@ -194,10 +243,17 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         />
       )}
 
+      {allDone && menuUrl && <NewAppointmentCard hint={newHint} i={0} />}
+      {pulse && pulse.tasks.length > 0 && (
+        <NeedsYou tasks={pulse.tasks} more={pulse.moreTasks} i={1} />
+      )}
+      {pulse?.next && <NextUp {...pulse.next} i={2} />}
+      {savings && <Results headline={savings.headline} lines={savings.lines} i={3} />}
+
       {(profile.trade === "catering" || (cateringSetUp ?? 0) > 0) && (
         <Link
           href="/dashboard/catering"
-          className="bg-ink flex min-h-12 items-center justify-between gap-3 rounded-[22px] p-5 text-white active:opacity-90"
+          className="rise press bg-ink flex min-h-12 items-center justify-between gap-3 rounded-[28px] p-5 text-white"
         >
           <span className="flex flex-col gap-1">
             <span className="font-display text-pink text-lg font-bold">🚚 Catering quote page</span>
@@ -213,44 +269,44 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
       {allDone && menuUrl ? (
         <>
-          <Link
-            href="/dashboard/appointments/new"
-            className="bg-ink flex min-h-24 items-center justify-between gap-4 rounded-[22px] p-5 text-white active:opacity-90"
-          >
-            <span className="flex flex-col gap-1">
-              <span className="font-display text-[22px] leading-tight font-extrabold tracking-tight">
-                New appointment
-              </span>
-              <span className="text-sm text-white/70">
-                {nextNeedsCard
-                  ? eligible === true
-                    ? `Your next pay link needs your card: $0 today, free until ${until}.`
-                    : eligible === false
-                      ? `Your next pay link needs a subscription (${monthly}, cancel anytime).`
-                      : "Your next pay link needs your card."
-                  : "Agreed on a time in your DMs? Make the pay link. The deposit locks in their spot."}
-              </span>
-            </span>
-            <span
-              aria-hidden
-              className="bg-pink text-ink flex size-13 shrink-0 items-center justify-center rounded-full text-3xl leading-none font-extrabold"
-            >
-              +
-            </span>
-          </Link>
           {!firstLinkSent && (
             <AnnouncementCard message={depositAnnouncement(profile.cancellation_window_hours)} />
           )}
           <div className="grid grid-cols-2 gap-3">
-            <Tile href="/dashboard/appointments" emoji="📅" label="Appointments" />
-            <Tile href="/dashboard/clients" emoji="👥" label="Your clients" />
+            <Tile
+              href="/dashboard/appointments"
+              emoji="📅"
+              label="Appointments"
+              note={pulse ? `${pulse.upcoming} coming up` : undefined}
+              i={4}
+            />
+            <Tile
+              href="/dashboard/clients"
+              emoji="👥"
+              label="Your clients"
+              note="History & flags"
+              i={5}
+            />
           </div>
           <SavedReplyCard />
-          <section className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]">
-            <h2 className="font-display text-xl font-extrabold tracking-tight">Your menu page</h2>
+          <section className="card flex flex-col gap-3 p-5">
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden
+                className="bg-brand-soft flex size-11 shrink-0 items-center justify-center rounded-[14px] text-xl"
+              >
+                🔗
+              </span>
+              <div className="flex flex-col">
+                <h2 className="font-display text-xl leading-tight font-extrabold tracking-tight">
+                  Your menu page
+                </h2>
+                <p className="text-muted text-sm">For your Instagram bio</p>
+              </div>
+            </div>
             <p className="text-muted text-sm">
-              Your services, prices and policy on one page, for your Instagram bio. People see what
-              you offer, then message you to book.
+              Your services, prices and policy on one page. People see what you offer, then message
+              you to book.
             </p>
             <CopyLink
               url={menuUrl}
@@ -267,22 +323,22 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             <Link
               href={menuUrl}
               target="_blank"
-              className="text-brand inline-flex min-h-12 items-center justify-center text-sm font-medium underline"
+              className="text-brand inline-flex min-h-12 items-center justify-center text-sm font-semibold underline"
             >
               See what people see
             </Link>
           </section>
         </>
       ) : (
-        <p className="text-muted">Finish these steps to start taking deposits.</p>
+        <p className="text-muted px-1 text-sm">Finish these steps to start taking deposits.</p>
       )}
 
       {setupComplete ? (
-        <section className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]">
-          <p className="flex items-center gap-3 font-bold">
+        <section className="card flex flex-col gap-3 p-5">
+          <p className="flex items-center gap-3 font-extrabold">
             <span
               aria-hidden
-              className="bg-pink text-ink flex size-7 items-center justify-center rounded-full text-sm"
+              className="bg-pink text-ink flex size-8 items-center justify-center rounded-[10px] text-sm"
             >
               ✓
             </span>
@@ -298,7 +354,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               <Link
                 key={chip.href}
                 href={chip.href}
-                className="border-ink active:bg-background inline-flex min-h-11 items-center justify-center rounded-full border-2 px-4 text-sm font-semibold"
+                className="press bg-background active:bg-brand-soft inline-flex min-h-11 items-center justify-center rounded-2xl px-4 text-sm font-bold"
               >
                 {chip.label}
               </Link>
@@ -310,12 +366,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           <Step
             number={1}
             title="Set up your profile"
-            status={profileDone ? "done" : "todo"}
-            description={
-              profileDone
-                ? `Your menu page is at /b/${profile.slug}.`
-                : "Your business name, menu page link and cancellation policy."
-            }
+            status={statuses[0]}
+            current={current === 0}
+            description="Your business name, menu page link and cancellation policy."
+            edit={{ href: "/dashboard/profile", label: `Menu page at /b/${profile.slug}` }}
+            i={6}
           >
             <ButtonLink href="/dashboard/profile" variant={profileDone ? "secondary" : "primary"}>
               {profileDone ? "Edit profile" : "Set up profile"}
@@ -326,23 +381,23 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             number={2}
             title="Set up deposits"
             status={stripeStatus}
+            current={current === 1}
             description={
-              stripeStatus === "done"
-                ? manual
-                  ? `Clients pay you with ${handles.map((h) => h.label).join(", ")}. You confirm each deposit.`
-                  : "Clients pay by card or Apple Pay, and deposits go to your bank automatically."
-                : stripeStatus === "waiting"
-                  ? "Stripe is checking your details. This usually takes a few minutes; if Stripe needs anything else, tap below."
-                  : setup.needsHandle
-                    ? "Add your Cash App, Zelle or Venmo so clients know where to send the deposit (1 minute). Or take cards with Stripe."
-                    : "Choose how clients pay you. Keep your Cash App, Zelle or Venmo (2 minutes), or take cards automatically with Stripe."
+              stripeStatus === "waiting"
+                ? "Stripe is checking your details. This usually takes a few minutes; if Stripe needs anything else, tap below."
+                : setup.needsHandle
+                  ? "Add your Cash App, Zelle or Venmo so clients know where to send the deposit (1 minute). Or take cards with Stripe."
+                  : "Choose how clients pay you. Keep your Cash App, Zelle or Venmo (2 minutes), or take cards automatically with Stripe."
             }
+            edit={{
+              href: "/dashboard/payments",
+              label: manual
+                ? `Clients pay with ${handles.map((h) => h.label).join(", ")}`
+                : "Clients pay by card, deposits go to your bank",
+            }}
+            i={7}
           >
-            {stripeStatus === "done" ? (
-              <ButtonLink href="/dashboard/payments" variant="secondary">
-                Deposit settings
-              </ButtonLink>
-            ) : stripeStatus === "waiting" ? (
+            {stripeStatus === "done" ? null : stripeStatus === "waiting" ? (
               <StripeButton action={startStripeOnboarding} label="Check Stripe details" />
             ) : (
               <>
@@ -356,15 +411,19 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
           <Step
             number={3}
-            title="Add your services"
-            status={servicesDone ? "done" : "todo"}
+            title={starterServices ? "Set your prices" : "Add your services"}
+            status={servicesDone && !starterServices ? "done" : servicesDone ? "todo" : statuses[2]}
+            current={current === 2 || (current === -1 && !!starterServices)}
             description={
               starterServices
                 ? `${starterServices} still ${starterServices === 1 ? "has an example price" : "have example prices"}. Edit them to match what you charge.`
-                : servicesDone
-                  ? `${activeServices} service${activeServices === 1 ? "" : "s"} on your menu page.`
-                  : "What you offer, how long it takes, the price and the deposit."
+                : "What you offer, how long it takes, the price and the deposit."
             }
+            edit={{
+              href: "/dashboard/services",
+              label: `${activeServices} service${activeServices === 1 ? "" : "s"} on your menu page`,
+            }}
+            i={8}
           >
             <ButtonLink
               href={servicesDone ? "/dashboard/services" : "/dashboard/services/new"}
@@ -373,7 +432,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               {starterServices
                 ? "Set your prices"
                 : servicesDone
-                  ? "Manage services"
+                  ? `${activeServices} service${activeServices === 1 ? "" : "s"} · manage`
                   : "Add a service"}
             </ButtonLink>
           </Step>
@@ -381,16 +440,16 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           <Step
             number={4}
             title="Send your first pay link"
-            status={firstLinkSent ? "done" : "todo"}
+            status={statuses[3]}
+            current={current === 3}
             description={
-              firstLinkSent
-                ? "You're taking deposits. Make a pay link whenever you book a client."
-                : !allDone
-                  ? "Unlocks after the steps above. No card needed for your first one."
-                  : subscribed
-                    ? "Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
-                    : "No card needed for your first one. Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
+              !allDone
+                ? "Unlocks after the steps above. No card needed for your first one."
+                : subscribed
+                  ? "Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
+                  : "No card needed for your first one. Next time a client picks a time in your DMs, tap New appointment and paste them the pay link."
             }
+            i={9}
           >
             {allDone && !firstLinkSent && (
               <ButtonLink href="/dashboard/appointments/new">New appointment</ButtonLink>
@@ -403,7 +462,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       )}
 
       {profileDone && !allDone && menuUrl && (
-        <p className="text-muted text-sm">
+        <p className="text-muted px-1 text-sm">
           Your menu page goes live at{" "}
           <Link href={menuUrl} className="text-brand underline">
             /b/{profile.slug}
@@ -417,90 +476,5 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </p>
       )}
     </div>
-  );
-}
-
-/**
- * "3 of 4 done": progress already made pulls people through the rest (the
- * endowed progress effect), and instant sign-up finishes the first three.
- */
-function SetupProgress({ done }: { done: number }) {
-  return (
-    <section className="bg-ink flex flex-col gap-3 rounded-[22px] p-5 text-white">
-      <p className="font-display text-xl font-extrabold tracking-tight">
-        {done} of 4 done
-        {done === 3 ? <span className="text-pink"> · one step to your first pay link</span> : null}
-      </p>
-      <div className="flex gap-1.5" aria-hidden>
-        {[0, 1, 2, 3].map((i) => (
-          <span
-            key={i}
-            className={`h-2 flex-1 rounded-full ${i < done ? "bg-pink" : "bg-white/20"}`}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/** A square shortcut on the dashboard. Labels shrink on the narrowest phones so they fit. */
-function Tile({ href, emoji, label }: { href: string; emoji: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="border-ink bg-surface active:bg-background flex min-h-24 flex-col justify-between gap-3 rounded-[18px] border-2 p-4"
-    >
-      <span aria-hidden className="text-2xl leading-none">
-        {emoji}
-      </span>
-      <span className="text-base font-bold max-[359px]:text-sm">{label}</span>
-    </Link>
-  );
-}
-
-const statusLabel: Record<StepStatus, string> = {
-  done: "Done",
-  todo: "To do",
-  waiting: "In review",
-};
-
-function Step({
-  number,
-  title,
-  status,
-  description,
-  children,
-}: {
-  number: number;
-  title: string;
-  status: StepStatus;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <li className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span
-            aria-hidden
-            className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-              status === "done" ? "bg-pink text-ink" : "bg-background text-foreground"
-            }`}
-          >
-            {status === "done" ? "✓" : number}
-          </span>
-          <h2 className="font-display text-lg font-bold tracking-tight">{title}</h2>
-        </div>
-        <span
-          className={`shrink-0 text-xs font-medium ${
-            status === "done" ? "text-foreground" : "text-muted"
-          }`}
-        >
-          {statusLabel[status]}
-        </span>
-      </div>
-      <p className="text-muted text-sm">{description}</p>
-      {children}
-    </li>
   );
 }

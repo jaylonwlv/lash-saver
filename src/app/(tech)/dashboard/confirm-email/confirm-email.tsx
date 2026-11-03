@@ -37,10 +37,7 @@ export function AlertsEmail({ email }: { email: string }) {
     );
   }
   return (
-    <form
-      action={action}
-      className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]"
-    >
+    <form action={action} className="card flex flex-col gap-3 p-5">
       <Input
         id="email"
         type="email"

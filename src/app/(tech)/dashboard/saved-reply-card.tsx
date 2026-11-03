@@ -33,7 +33,7 @@ export function SavedReplyCard() {
   if (doneBefore || done) return null;
 
   return (
-    <section className="border-ink bg-surface flex flex-col gap-4 rounded-[22px] border-2 p-5">
+    <section className="card flex flex-col gap-4 p-5">
       <div className="flex flex-col gap-1">
         <p className="text-brand text-xs font-semibold tracking-wide uppercase">1-minute setup</p>
         <h2 className="font-display text-xl font-extrabold tracking-tight">

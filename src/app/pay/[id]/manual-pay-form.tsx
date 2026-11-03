@@ -4,9 +4,17 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { FormState } from "@/lib/forms";
 import { ContactFields, type ContactAsk } from "./contact-fields";
+import { AgreeBox } from "./ui";
 import type { ManualApp } from "@/lib/supabase/database.types";
 
 export type PayOption = { app: ManualApp; label: string; handle: string; url: string | null };
+
+/** A color per app so the options are easy to tell apart (initials, not logos). */
+const APP_TILE: Record<ManualApp, string> = {
+  cashapp: "bg-cashapp text-white",
+  zelle: "bg-zelle text-white",
+  venmo: "bg-venmo text-white",
+};
 
 /** Client pays with the pro's own Cash App / Zelle / Venmo, then tells us they sent it. */
 export function ManualPayForm({
@@ -38,43 +46,40 @@ export function ManualPayForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       {askContact && <ContactFields ask={askContact} state={state} />}
-      <label className="flex min-h-12 cursor-pointer items-start gap-3">
-        <input
-          type="checkbox"
-          name="agree"
-          defaultChecked={state.values?.agree === "on"}
-          className="accent-brand mt-0.5 size-6 shrink-0"
-          aria-invalid={state.errors?.agree ? true : undefined}
-        />
-        <span>I&apos;ve read and agree to the deposit policy above.</span>
-      </label>
+      <AgreeBox defaultChecked={state.values?.agree === "on"} invalid={!!state.errors?.agree} />
       {state.errors?.agree && <p className="text-danger -mt-2 text-sm">{state.errors.agree}</p>}
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 font-semibold">
+        <legend className="font-display mb-3 text-lg font-extrabold tracking-tight">
           Send {amount} with {many ? "one of these" : options[0].label}
         </legend>
         {options.map((o, i) => (
           <div
             key={o.app}
-            className="border-line bg-surface flex flex-col gap-3 rounded-2xl border p-4"
+            className="has-[:checked]:border-brand bg-surface border-line flex flex-col gap-3 rounded-[22px] border-2 p-4"
           >
-            <label className="flex items-center gap-3">
+            <label className="flex cursor-pointer items-center gap-3">
               {many && (
                 <input
                   type="radio"
                   name="app"
                   value={o.app}
                   defaultChecked={i === 0}
-                  className="accent-brand size-5"
+                  className="accent-brand size-5 shrink-0"
                 />
               )}
               {!many && <input type="hidden" name="app" value={o.app} />}
-              <span className="flex flex-col">
-                <span className="text-muted text-xs font-medium tracking-wide uppercase">
+              <span
+                aria-hidden
+                className={`font-display flex size-11 shrink-0 items-center justify-center rounded-[14px] text-lg font-extrabold ${APP_TILE[o.app]}`}
+              >
+                {o.label.charAt(0)}
+              </span>
+              <span className="flex min-w-0 flex-col">
+                <span className="text-muted text-xs font-bold tracking-[0.1em] uppercase">
                   {o.label}
                 </span>
-                <span className="font-medium break-all select-all">{o.handle}</span>
+                <span className="font-bold break-all select-all">{o.handle}</span>
                 <span className="text-muted text-sm">Send exactly {amount}</span>
               </span>
             </label>
@@ -82,17 +87,17 @@ export function ManualPayForm({
               <Button
                 type="button"
                 variant="secondary"
-                className="flex-1 sm:flex-none"
+                className="min-h-11 flex-1 sm:flex-none"
                 onClick={() => copy(o.handle)}
               >
-                {copied === o.handle ? "Copied!" : "Copy"}
+                {copied === o.handle ? "Copied ✓" : "Copy"}
               </Button>
               {o.url && (
                 <a
                   href={o.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="border-line bg-surface inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border px-3 font-semibold whitespace-nowrap sm:flex-none sm:px-5"
+                  className="press border-line bg-surface inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl border px-3 font-bold whitespace-nowrap sm:flex-none sm:px-5"
                 >
                   Open {o.label}
                 </a>
@@ -104,7 +109,7 @@ export function ManualPayForm({
       </fieldset>
 
       {state.message && <p className="text-danger text-sm">{state.message}</p>}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="min-h-14 text-lg">
         {pending ? "Letting them know…" : "I've sent my deposit"}
       </Button>
       <p className="text-muted text-center text-xs">

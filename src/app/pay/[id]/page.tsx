@@ -4,7 +4,6 @@ import { ProInvite } from "@/components/ui/pro-invite";
 import { publicEnv } from "@/lib/env.public";
 import { inviteUrl } from "@/lib/referral";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
 import { z } from "zod";
 import {
   cancellationTerms,
@@ -22,6 +21,7 @@ import { CancelForm } from "./cancel-form";
 import type { ContactAsk } from "./contact-fields";
 import { ManualPayForm } from "./manual-pay-form";
 import { PayForm } from "./pay-form";
+import { Notice, PayHeader, PayTitle, PolicyCard, Ticket } from "./ui";
 
 export const metadata: Metadata = {
   title: "Pay your deposit",
@@ -70,148 +70,145 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
     `message ${business}`
   );
 
+  const title = booked
+    ? "You're booked"
+    : a.status === "pending_deposit"
+      ? waitingOnPro
+        ? "Thanks! Almost there"
+        : "Secure your spot"
+      : a.status === "no_show"
+        ? "Missed appointment"
+        : a.status === "expired"
+          ? "This link has expired"
+          : "Appointment cancelled";
+  const stamp = booked
+    ? ({ label: "Booked", tone: "success" } as const)
+    : waitingOnPro
+      ? ({ label: "Checking", tone: "brand" } as const)
+      : a.status === "pending_deposit"
+        ? undefined
+        : ({ label: "Closed", tone: "muted" } as const);
+
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
-      <div className="flex flex-col gap-1">
-        <p className="text-brand text-sm font-semibold">{business}</p>
-        <h1 className="text-2xl font-bold">
-          {booked
-            ? "You're booked"
-            : a.status === "pending_deposit"
-              ? `Hi ${a.client_name.split(" ")[0]}, ${waitingOnPro ? "thanks!" : "secure your spot"}`
-              : a.status === "no_show"
-                ? "Missed appointment"
-                : a.status === "expired"
-                  ? "This link has expired"
-                  : "Appointment cancelled"}
-        </h1>
-      </div>
+    <div className="flex flex-1 flex-col">
+      <PayHeader business={business} />
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-5 pt-7 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        <PayTitle
+          eyebrow={
+            a.status === "pending_deposit" ? `Hi ${a.client_name.split(" ")[0]},` : undefined
+          }
+          title={title}
+        />
 
-      <dl className="border-line bg-surface flex flex-col gap-4 rounded-2xl border p-5">
-        <Row label="Appointment">{serviceName}</Row>
-        <Row label="When">{when}</Row>
-        <Row label="Deposit">
-          {formatCents(deposit)}
-          {rest > 0 && (
-            <span className="text-muted"> · {formatCents(rest)} due at your appointment</span>
-          )}
-        </Row>
-      </dl>
+        <Ticket
+          service={serviceName}
+          when={when}
+          deposit={formatCents(deposit)}
+          rest={rest > 0 ? formatCents(rest) : null}
+          stamp={stamp}
+        />
 
-      {booked ? (
-        <>
-          <Notice tone="success">
-            Your {formatCents(deposit)} deposit is paid. We emailed your confirmation. See you then!
+        {booked ? (
+          <>
+            <Notice tone="success">
+              Your {formatCents(deposit)} deposit is paid. We emailed your confirmation. See you
+              then!
+            </Notice>
+            {upcoming && <AddToCalendar href={`/pay/${a.id}/calendar`} />}
+            {upcoming && (
+              <section className="flex flex-col gap-3 pt-2">
+                <h2 className="font-display text-lg font-extrabold tracking-tight">
+                  Can&apos;t make it?
+                </h2>
+                <p className="text-muted text-sm">
+                  To reschedule, {messageTech}.{" "}
+                  {terms.refundable
+                    ? `If you need to cancel, do it by ${formatWhen(terms.refundDeadline, tech.timezone)} to get your ${formatCents(deposit)} deposit back.`
+                    : `It's less than ${terms.windowHours} hours before your appointment, so if you cancel now your ${formatCents(deposit)} deposit is kept, per the policy.`}
+                </p>
+                <CancelForm
+                  action={cancelByClient.bind(null, a.id)}
+                  expectRefund={terms.refundable}
+                  confirmText={
+                    terms.refundable
+                      ? `Cancel your appointment? Your ${formatCents(deposit)} deposit will be refunded.`
+                      : `Cancel your appointment? Your ${formatCents(deposit)} deposit will NOT be refunded.`
+                  }
+                />
+              </section>
+            )}
+          </>
+        ) : a.status === "cancelled_by_client" ? (
+          <Notice>
+            You cancelled this appointment.{" "}
+            {settled?.status === "refund_due" ||
+            (settled?.status === "refunded" && settled.method === "manual")
+              ? `${business} will send your ${formatCents(settled.amount_cents)} deposit back the same way you paid it.`
+              : settled?.status === "refunded"
+                ? `Your ${formatCents(settled.amount_cents)} deposit is being refunded; it can take 5 to 10 business days.`
+                : `Your ${formatCents(settled?.amount_cents ?? deposit)} deposit was kept, per the policy.`}
           </Notice>
-          {upcoming && <AddToCalendar href={`/pay/${a.id}/calendar`} />}
-          {upcoming && (
-            <section className="flex flex-col gap-3">
-              <h2 className="font-semibold">Can&apos;t make it?</h2>
-              <p className="text-muted text-sm">
-                To reschedule, {messageTech}.{" "}
-                {terms.refundable
-                  ? `If you need to cancel, do it by ${formatWhen(terms.refundDeadline, tech.timezone)} to get your ${formatCents(deposit)} deposit back.`
-                  : `It's less than ${terms.windowHours} hours before your appointment, so if you cancel now your ${formatCents(deposit)} deposit is kept, per the policy.`}
-              </p>
-              <CancelForm
-                action={cancelByClient.bind(null, a.id)}
-                expectRefund={terms.refundable}
-                confirmText={
-                  terms.refundable
-                    ? `Cancel your appointment? Your ${formatCents(deposit)} deposit will be refunded.`
-                    : `Cancel your appointment? Your ${formatCents(deposit)} deposit will NOT be refunded.`
-                }
+        ) : waitingOnPro ? (
+          <Notice tone="success">
+            {business} will check for your {formatCents(deposit)} deposit and confirm your spot.
+            You&apos;ll get an email when you&apos;re booked.
+          </Notice>
+        ) : paid && a.status === "pending_deposit" ? (
+          <Notice tone="success">
+            Payment received. Your booking is being confirmed, and you&apos;ll get an email shortly.
+          </Notice>
+        ) : state === "ok" ? (
+          <>
+            <PolicyCard
+              refundBy={
+                terms.windowHours > 0 && terms.refundable
+                  ? formatWhen(terms.refundDeadline, tech.timezone)
+                  : null
+              }
+              policy={policy}
+            />
+            {manual ? (
+              <ManualPayForm
+                action={clientSentDeposit.bind(null, a.id)}
+                amount={formatCents(deposit)}
+                askContact={askContact}
+                options={manualHandles(tech).map((h) => ({
+                  ...h,
+                  label: MANUAL_APP_LABEL[h.app],
+                  url: paymentAppUrl(h, deposit, note),
+                }))}
               />
-            </section>
-          )}
-        </>
-      ) : a.status === "cancelled_by_client" ? (
-        <Notice>
-          You cancelled this appointment.{" "}
-          {settled?.status === "refund_due" ||
-          (settled?.status === "refunded" && settled.method === "manual")
-            ? `${business} will send your ${formatCents(settled.amount_cents)} deposit back the same way you paid it.`
-            : settled?.status === "refunded"
-              ? `Your ${formatCents(settled.amount_cents)} deposit is being refunded; it can take 5 to 10 business days.`
-              : `Your ${formatCents(settled?.amount_cents ?? deposit)} deposit was kept, per the policy.`}
-        </Notice>
-      ) : waitingOnPro ? (
-        <Notice tone="success">
-          Thanks! {business} will check for your {formatCents(deposit)} deposit and confirm your
-          spot. You&apos;ll get an email when you&apos;re booked.
-        </Notice>
-      ) : paid && a.status === "pending_deposit" ? (
-        <Notice tone="success">
-          Payment received. Your booking is being confirmed, and you&apos;ll get an email shortly.
-        </Notice>
-      ) : state === "ok" ? (
-        <>
-          <section className="flex flex-col gap-2">
-            <h2 className="font-semibold">Deposit policy</h2>
-            <p className="text-muted text-sm whitespace-pre-line">{policy}</p>
-          </section>
-          {manual ? (
-            <ManualPayForm
-              action={clientSentDeposit.bind(null, a.id)}
-              amount={formatCents(deposit)}
-              askContact={askContact}
-              options={manualHandles(tech).map((h) => ({
-                ...h,
-                label: MANUAL_APP_LABEL[h.app],
-                url: paymentAppUrl(h, deposit, note),
-              }))}
-            />
-          ) : (
-            <PayForm
-              action={payDeposit.bind(null, a.id)}
-              amount={formatCents(deposit)}
-              askContact={askContact}
-            />
-          )}
-        </>
-      ) : a.status === "cancelled_by_tech" ? (
-        <Notice>This appointment was cancelled.</Notice>
-      ) : a.status === "no_show" ? (
-        <Notice>This appointment is closed.</Notice>
-      ) : (
-        <Notice>
-          This pay link has expired.{" "}
-          {dm ? (
-            <a href={dm} className="text-brand underline">
-              Message {business}
-            </a>
-          ) : (
-            `Message ${business}`
-          )}{" "}
-          for a new one.
-        </Notice>
-      )}
-      {/* Only once they've paid (or say they have): never a distraction before. */}
-      {(booked || waitingOnPro) && (
-        <ProInvite href={inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, tech.slug, "paylink")} />
-      )}
-      <LegalLinks className="mt-auto pt-4" />
-    </main>
-  );
-}
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-muted text-xs font-medium tracking-wide uppercase">{label}</dt>
-      <dd className="font-medium">{children}</dd>
+            ) : (
+              <PayForm
+                action={payDeposit.bind(null, a.id)}
+                amount={formatCents(deposit)}
+                askContact={askContact}
+              />
+            )}
+          </>
+        ) : a.status === "cancelled_by_tech" ? (
+          <Notice>This appointment was cancelled.</Notice>
+        ) : a.status === "no_show" ? (
+          <Notice>This appointment is closed.</Notice>
+        ) : (
+          <Notice>
+            This pay link has expired.{" "}
+            {dm ? (
+              <a href={dm} className="text-brand underline">
+                Message {business}
+              </a>
+            ) : (
+              `Message ${business}`
+            )}{" "}
+            for a new one.
+          </Notice>
+        )}
+        {/* Only once they've paid (or say they have): never a distraction before. */}
+        {(booked || waitingOnPro) && (
+          <ProInvite href={inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, tech.slug, "paylink")} />
+        )}
+        <LegalLinks className="mt-auto pt-4" />
+      </main>
     </div>
-  );
-}
-
-function Notice({ tone, children }: { tone?: "success"; children: ReactNode }) {
-  return (
-    <p
-      className={`rounded-2xl border p-5 ${
-        tone === "success" ? "border-success text-success bg-surface" : "border-line bg-surface"
-      }`}
-    >
-      {children}
-    </p>
   );
 }

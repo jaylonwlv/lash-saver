@@ -80,10 +80,66 @@
   /* Primary buttons: the brand color unless an area sets --action (the pro's app: hot pink, black text). */
   --color-action: var(--action, var(--brand));
   --color-action-foreground: var(--action-foreground, var(--brand-foreground));
+  /* Payment apps on the pay page, so clients can tell the options apart at a glance. */
+  --color-cashapp: #00c244;
+  --color-zelle: #6d1ed4;
+  --color-venmo: #008cff;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Motion: cards rise in on load (staggered with --i) and tappable things give a
+ * small squeeze. Both switch off for people who ask for reduced motion.
+ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+.rise {
+  animation: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.pop {
+  animation: pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.press {
+  transition: transform 0.15s ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .pop {
+    animation: none;
+  }
+  .press:active {
+    transform: none;
+  }
+}
+
+/* A raised card: hairline ring plus a soft shadow, warm-tinted to match the cream background. */
+.card {
+  background: var(--surface);
+  border-radius: 24px;
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 8px 24px -12px rgb(120 40 70 / 0.18);
 }

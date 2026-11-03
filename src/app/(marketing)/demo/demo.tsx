@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { CancelForm } from "@/app/pay/[id]/cancel-form";
 import { ManualPayForm, type PayOption } from "@/app/pay/[id]/manual-pay-form";
 import { PayForm } from "@/app/pay/[id]/pay-form";
+import { Notice, PayHeader, PayTitle, PolicyCard, Ticket } from "@/app/pay/[id]/ui";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LegalLinks } from "@/components/ui/legal-links";
 import { APP_NAME, TRIAL_DAYS } from "@/lib/config";
@@ -65,11 +66,11 @@ export function DemoPayPage({ policy }: { policy: string }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="bg-ink px-5 py-4 text-white">
+      <div className="bg-pink text-ink px-5 py-4">
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
           <p className="text-sm">
-            <strong className="text-pink">Demo:</strong> this is the page your client opens from
-            your DM. Try it. Nothing is charged.
+            <strong>Demo:</strong> this is the page your client opens from your DM. Try it. Nothing
+            is charged.
           </p>
           <div className="flex flex-col gap-2">
             <span className="text-xs font-semibold tracking-wide uppercase opacity-90">
@@ -91,7 +92,7 @@ export function DemoPayPage({ policy }: { policy: string }) {
                     setStage("pay");
                   }}
                   className={`min-h-12 rounded-xl px-3 text-sm font-semibold ${
-                    method === value ? "bg-pink text-ink" : "border border-white/30 bg-transparent"
+                    method === value ? "bg-ink text-pink" : "border-ink/30 border-2 bg-transparent"
                   }`}
                 >
                   {label}
@@ -102,36 +103,40 @@ export function DemoPayPage({ policy }: { policy: string }) {
         </div>
       </div>
 
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
-        <div className="flex flex-col gap-1">
-          <p className="text-brand text-sm font-semibold">{BUSINESS}</p>
-          <h1 className="text-2xl font-bold">
-            {stage === "booked"
+      <PayHeader business={BUSINESS} />
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-5 pt-7 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        <PayTitle
+          eyebrow={stage === "pay" || stage === "sent" ? `Hi ${CLIENT},` : undefined}
+          title={
+            stage === "booked"
               ? "You're booked"
               : stage === "cancelled"
                 ? "Appointment cancelled"
-                : `Hi ${CLIENT}, ${stage === "sent" ? "thanks!" : "secure your spot"}`}
-          </h1>
-        </div>
+                : stage === "sent"
+                  ? "Thanks! Almost there"
+                  : "Secure your spot"
+          }
+        />
 
-        <dl className="border-line bg-surface flex flex-col gap-4 rounded-2xl border p-5">
-          <Row label="Appointment">{SERVICE}</Row>
-          <Row label="When">{WHEN}</Row>
-          <Row label="Deposit">
-            {amount}
-            <span className="text-muted">
-              {" "}
-              · {formatCents(PRICE - DEPOSIT)} due at your appointment
-            </span>
-          </Row>
-        </dl>
+        <Ticket
+          service={SERVICE}
+          when={WHEN}
+          deposit={amount}
+          rest={formatCents(PRICE - DEPOSIT)}
+          stamp={
+            stage === "booked"
+              ? { label: "Booked", tone: "success" }
+              : stage === "sent"
+                ? { label: "Checking", tone: "brand" }
+                : stage === "cancelled"
+                  ? { label: "Closed", tone: "muted" }
+                  : undefined
+          }
+        />
 
         {stage === "pay" && (
           <>
-            <section className="flex flex-col gap-2">
-              <h2 className="font-semibold">Deposit policy</h2>
-              <p className="text-muted text-sm whitespace-pre-line">{policy}</p>
-            </section>
+            <PolicyCard refundBy={REFUND_BY} policy={policy} />
             {method === "card" ? (
               <PayForm key="card" action={pay} amount={amount} />
             ) : (
@@ -164,7 +169,9 @@ export function DemoPayPage({ policy }: { policy: string }) {
               Your {amount} deposit is paid. We emailed your confirmation. See you then!
             </Notice>
             <section className="flex flex-col gap-3">
-              <h2 className="font-semibold">Can&apos;t make it?</h2>
+              <h2 className="font-display text-lg font-extrabold tracking-tight">
+                Can&apos;t make it?
+              </h2>
               <p className="text-muted text-sm">
                 To reschedule, message {BUSINESS}. If you need to cancel, do it by {REFUND_BY} to
                 get your {amount} deposit back.
@@ -231,27 +238,6 @@ export function DemoPayPage({ policy }: { policy: string }) {
         <LegalLinks className="mt-auto pt-2" />
       </main>
     </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-muted text-xs font-medium tracking-wide uppercase">{label}</dt>
-      <dd className="font-medium">{children}</dd>
-    </div>
-  );
-}
-
-function Notice({ tone, children }: { tone?: "success"; children: ReactNode }) {
-  return (
-    <p
-      className={`rounded-2xl border p-5 ${
-        tone === "success" ? "border-success text-success bg-surface" : "border-line bg-surface"
-      }`}
-    >
-      {children}
-    </p>
   );
 }
 

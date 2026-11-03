@@ -33,8 +33,8 @@ export default async function TechLayout({ children }: LayoutProps<"/">) {
           <span className="text-white">.</span>
         </Link>
       </header>
-      {/* Bottom padding clears the fixed tab bar. Page titles use the display face. */}
-      <main className="[&_h1]:font-display mx-auto w-full max-w-2xl flex-1 px-5 pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] [&_h1]:tracking-tight">
+      {/* Bottom padding clears the fixed tab bar and its raised New button. Page titles use the display face. */}
+      <main className="[&_h1]:font-display mx-auto w-full max-w-2xl flex-1 px-5 pt-6 pb-[calc(7rem+env(safe-area-inset-bottom))] [&_h1]:tracking-tight">
         <InstallBanner placement="layout" payLinkSent={(payLinks ?? 0) > 0} />
         {children}
       </main>

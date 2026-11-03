@@ -34,7 +34,7 @@ export function AnnouncementCard({ message }: { message: string }) {
   }
 
   return (
-    <section className="bg-surface flex flex-col gap-3 rounded-[22px] p-5 shadow-[0_1px_0_var(--line)]">
+    <section className="card flex flex-col gap-3 p-5">
       <div className="flex flex-col gap-1">
         <h2 className="font-display text-xl font-extrabold tracking-tight">
           No booking yet? Tell your regulars 👋
