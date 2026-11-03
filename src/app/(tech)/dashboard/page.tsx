@@ -36,11 +36,12 @@ import {
   Tile,
 } from "./home";
 import { loadPulse } from "./pulse";
+import { Tour, type TourStep } from "./tour";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
-  const { stripe: stripeParam } = await searchParams;
+  const { stripe: stripeParam, tour } = await searchParams;
   const user = await getUser();
   const supabase = await createClient();
 
@@ -161,8 +162,33 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         : "Your next pay link needs your card."
     : "Make the pay link. The deposit locks in their spot.";
 
+  // The tour's last card: what's left before the first booking, each a tap away.
+  const tourSteps: TourStep[] = [
+    {
+      title: "Check your profile & policy",
+      detail: "Business name, menu page link, cancellation window",
+      href: "/dashboard/profile",
+      done: profileDone,
+    },
+    {
+      title: "Choose how clients pay",
+      detail: "Your Cash App, Zelle or Venmo, or cards",
+      href: "/dashboard/payments",
+      done: stripeStatus === "done",
+    },
+    {
+      title: starterServices ? "Set your prices" : "Add your services",
+      detail: starterServices
+        ? "Swap the example prices for what you charge"
+        : "What you offer, the price and the deposit",
+      href: "/dashboard/services",
+      done: servicesDone && !starterServices,
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-4">
+      <Tour steps={tourSteps} eligible={!firstLinkSent} force={tour === "1"} />
       <Hero
         today={today}
         greeting={`Hey${profile.business_name ? `, ${profile.business_name}` : ""}`}
@@ -180,12 +206,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       >
         {pulse ? (
           <StatRow>
-            <Stat
-              href="/dashboard/appointments"
-              value={pulse.needsYou}
-              label={pulse.needsYou === 1 ? "thing needs you" : "things need you"}
-              hot={pulse.needsYou > 0}
-            />
             <Stat href="/dashboard/appointments" value={pulse.upcoming} label="booked & paid" />
             <Stat
               href="/dashboard/appointments"
@@ -475,6 +495,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               : "deposits are set up and you add a service."}
         </p>
       )}
+      <Link
+        href="/dashboard?tour=1"
+        className="text-muted mx-auto inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold"
+      >
+        <span aria-hidden>✨</span> Take the 30-second tour
+      </Link>
     </div>
   );
 }

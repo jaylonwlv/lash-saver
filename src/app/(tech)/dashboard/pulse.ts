@@ -13,7 +13,6 @@ import type { Task } from "./home";
 export type Pulse = {
   tasks: Task[];
   moreTasks: number;
-  needsYou: number;
   upcoming: number;
   waiting: number;
   next: {
@@ -92,7 +91,6 @@ export async function loadPulse(
   return {
     tasks: tasks.slice(0, SHOWN_TASKS),
     moreTasks: Math.max(0, tasks.length - SHOWN_TASKS),
-    needsYou: tasks.length,
     upcoming: upcoming.length,
     waiting: waiting.length,
     next: n
