@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { publicEnv } from "@/lib/env.public";
+import { registrarConfigured } from "@/lib/vercel/registrar";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 import { ProfileForm } from "./profile-form";
@@ -56,6 +57,11 @@ export default async function ProfilePage() {
         <ButtonLink href="/dashboard/gallery" variant="secondary">
           Your work photos
         </ButtonLink>
+        {registrarConfigured() && (
+          <ButtonLink href="/dashboard/domain" variant="secondary">
+            Your own website
+          </ButtonLink>
+        )}
         <ButtonLink href="/dashboard/payments" variant="secondary">
           Deposits
         </ButtonLink>

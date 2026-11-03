@@ -18,6 +18,7 @@ import {
   handleDisputeFundsWithdrawn,
 } from "@/lib/stripe/disputes";
 import { getStripe } from "@/lib/stripe/server";
+import { handleDomainCheckoutCompleted, syncDomainSubscription } from "@/lib/stripe/domains";
 import { trackSubscription } from "@/lib/meta";
 import {
   handleCateringChargeRefunded,
@@ -47,7 +48,10 @@ export async function POST(request: NextRequest) {
 
   switch (event.type) {
     case "checkout.session.completed":
-      if (event.data.object.mode === "subscription") {
+      // The website add-on first: it's a subscription too, but never the Dibs one.
+      if (event.data.object.metadata?.kind === "domain") {
+        await handleDomainCheckoutCompleted(event.data.object);
+      } else if (event.data.object.mode === "subscription") {
         await completeSubscriptionCheckout(event.data.object.id);
       } else if (event.data.object.metadata?.kind === "catering") {
         await handleCateringCheckoutCompleted(event.data.object);
@@ -59,6 +63,10 @@ export async function POST(request: NextRequest) {
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
       const sub = event.data.object;
+      if (sub.metadata?.kind === "domain") {
+        await syncDomainSubscription(sub);
+        break;
+      }
       const previous = await syncSubscription(sub);
       if (sub.status === "past_due" && previous !== "past_due") await notifyPaymentFailed(sub);
       // First paid period after the trial: the conversion ads should optimize for.
@@ -68,6 +76,8 @@ export async function POST(request: NextRequest) {
       break;
     }
     case "checkout.session.expired":
+      // An abandoned website checkout stays "pending" until they try again.
+      if (event.data.object.metadata?.kind === "domain") break;
       if (event.data.object.metadata?.kind === "catering") {
         await handleCateringCheckoutExpired(event.data.object);
       } else {

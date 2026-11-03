@@ -15,12 +15,15 @@ export function BioCard({
   savedServices,
   photos,
   inBio,
+  domainOffer,
 }: {
   menuUrl: string;
   starterServices: number;
   savedServices: number;
   photos: number;
   inBio: boolean;
+  /** "studionova.com" to offer the website add-on, or null (has one, or it's off). */
+  domainOffer?: string | null;
 }) {
   const address = menuUrl.replace(/^https?:\/\//, "");
   const pricesFirst = starterServices > 0 && savedServices === 0;
@@ -124,6 +127,20 @@ export function BioCard({
         </>
       )}
 
+      {domainOffer && (
+        <Link
+          href="/dashboard/domain"
+          className="press bg-ink flex min-h-12 items-center justify-between gap-3 rounded-2xl px-4 py-3 text-white"
+        >
+          <span className="flex flex-col">
+            <span className="text-pink font-bold">Want {domainOffer}?</span>
+            <span className="text-sm text-white/75">Your own website address, from $99/year</span>
+          </span>
+          <span aria-hidden className="text-pink text-xl">
+            →
+          </span>
+        </Link>
+      )}
       <Link
         href="/dashboard/gallery"
         className="press bg-brand-soft/60 flex min-h-12 items-center justify-between gap-3 rounded-2xl px-4 py-3"

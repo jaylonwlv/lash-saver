@@ -91,6 +91,8 @@ src/
                                   opened from Instagram ([slug]/instagram-visit.tsx beacon → api/page-visit sets
                                   profiles.instagram_visit_at once, 20261025000000; nothing about the visitor is
                                   stored). The cron sends one bio_nudge (marketing) ~2 days after sign-up if not.
+    (tech)/dashboard/domain/      "Your own website": search .com/.pro, pick yearly ($99) or monthly ($10 + $15 setup),
+                                  owner details (the registrant), terms, Stripe Checkout; then status, transfer code.
     (tech)/dashboard/services/confirm/  "Confirm your prices": every example (starter) price on one screen, untick to hide.
     (tech)/dashboard/announcement-card.tsx  "No booking yet? Tell your regulars": the depositAnnouncement with
                                   Share / Copy, shown until their first pay link goes out.
@@ -291,6 +293,12 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - **Chargebacks** (`lib/catering/disputes.ts`, `20261015000000`): `lib/stripe/disputes.ts` falls back to catering payments. `created` records `catering_payments.dispute_status`, submits the signed agreement (signature, time, IP) as evidence and emails the owner and `OWNER_ALERT_EMAIL`; `funds_withdrawn`/`funds_reinstated` reverse and return the owner's transfer exactly like deposits; `closed` records the outcome and tells the owner.
 - Abuse limits: 5 holds per host email and 10 per device (signer IP) per hour; a host's earlier unpaid hold for the same date is released only from the same device.
 - Not built yet: request mode (approve first), the weekly schedule page (`/t/[slug]`), the onboarding wizard.
+
+**Your own website** (`20261026000000_custom_domains.sql`, `lib/domains.ts`, `lib/stripe/domains.ts`, `lib/vercel/registrar.ts`, `lib/custom-host.ts`)
+
+- An add-on with its own Stripe subscription (`metadata.kind = "domain"`): never mixed with the Dibs one (`syncSubscription` skips it; `startSubscriptionCheckout` ignores it when refusing a second plan). Only for pros `trialing`/`active`. Off unless `VERCEL_API_TOKEN` and `VERCEL_PROJECT_ID` are set.
+- The domain is bought through Vercel's registrar only after the webhook confirms payment, at the quoted price (`expectedPrice`), with the pro as registrant and auto-renew off; registrant details are deleted once registered. Only .com/.pro costing at most `MAX_DOMAIN_COST_CENTS` a year (first year and renewal), so the first charge always covers it. Registration failure, or a paid stale checkout, refunds in full and cancels.
+- `proxy.ts`: a live domain (public_custom_domains view, cached 5 min) serves the pro's page at `/`, pay links as-is, and redirects everything else to the app. The daily cron finishes slow registrations and renews 30 days before expiry while the add-on is paid; cancelling detaches the domain at period end (the registration stays theirs).
 
 **Subscriptions**
 

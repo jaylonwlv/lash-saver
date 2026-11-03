@@ -11,6 +11,8 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
 import { manualHandles } from "@/lib/payments";
 import { setupState } from "@/lib/setup";
+import { domainLabel } from "@/lib/domains";
+import { registrarConfigured } from "@/lib/vercel/registrar";
 import { canSendPayLinks } from "@/lib/subscription";
 import { loadSavings, savingsSummary } from "@/lib/savings";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
@@ -54,6 +56,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     { count: payLinks },
     { count: cateringSetUp },
     { data: topService },
+    { data: customDomain },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -96,6 +99,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       .order("price_cents", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase.from("custom_domains").select("domain, status").eq("tech_id", user!.id).maybeSingle(),
   ]);
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
 
@@ -133,7 +137,17 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const stepsDone = [profileDone, stripeStatus === "done", servicesDone, firstLinkSent].filter(
     Boolean,
   ).length;
-  const menuUrl = profile.slug ? menuPageUrl(publicEnv().NEXT_PUBLIC_APP_URL, profile.slug) : null;
+  const ownDomain = customDomain?.status === "active" ? customDomain.domain : null;
+  // Their own website address once they have one; it shows the same page.
+  const menuUrl = ownDomain
+    ? `https://${ownDomain}`
+    : profile.slug
+      ? menuPageUrl(publicEnv().NEXT_PUBLIC_APP_URL, profile.slug)
+      : null;
+  const domainOffer =
+    !ownDomain && registrarConfigured()
+      ? `${domainLabel(profile.business_name ?? "") ?? "yourbusiness"}.com`
+      : null;
   // Their first pay link is out without a card; the next one asks for it. Say so on the
   // button that leads there, so the trial card is never a surprise.
   const nextNeedsCard = firstLinkSent && !subscribed;
@@ -529,6 +543,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           savedServices={(activeServices ?? 0) - (starterServices ?? 0)}
           photos={(gallery ?? []).length}
           inBio={inBio}
+          domainOffer={domainOffer}
         />
       )}
       <TourLauncher />

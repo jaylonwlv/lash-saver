@@ -60,6 +60,11 @@ async function ensureCustomer(profile: Awaited<ReturnType<typeof loadProfile>>):
   return customer.id;
 }
 
+/** The tech's Stripe customer id (created on first use), for other subscriptions like the website add-on. */
+export async function stripeCustomerFor(techId: string): Promise<string> {
+  return ensureCustomer(await loadProfile(techId));
+}
+
 /** Fingerprints of the tech's payout bank accounts. Empty if Stripe won't list them. */
 async function bankFingerprints(accountId: string | null): Promise<string[]> {
   if (!accountId) return [];
@@ -195,7 +200,10 @@ export async function startSubscriptionCheckout(techId: string): Promise<string>
   const customer = await ensureCustomer(profile);
   // Never a second subscription: a stale page or a second tab would bill them twice.
   const live = await getStripe().subscriptions.list({ customer, status: "all", limit: 10 });
-  if (live.data.some((s) => LIVE_STATUSES.has(s.status))) throw new AlreadySubscribedError();
+  // The "Your own website" add-on is its own subscription (lib/stripe/domains.ts); it doesn't count.
+  if (live.data.some((s) => LIVE_STATUSES.has(s.status) && s.metadata?.kind !== "domain")) {
+    throw new AlreadySubscribedError();
+  }
   const withTrial = await trialEligible(techId);
   const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
 
@@ -241,6 +249,8 @@ const toIso = (unix: number | null | undefined) =>
 
 /** Copies a subscription's state onto the tech's profile. Returns the previous status. */
 export async function syncSubscription(sub: Stripe.Subscription): Promise<string | null> {
+  // The website add-on has its own subscription; it never touches the Dibs one.
+  if (sub.metadata?.kind === "domain") return null;
   const admin = createAdminClient();
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
   const techId = sub.metadata?.tech_id;

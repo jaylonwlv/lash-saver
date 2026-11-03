@@ -36,6 +36,16 @@ const serverSchema = z.object({
   // Cloudflare Turnstile bot check on instant sign-up (optional; needs the site key too).
   TURNSTILE_SECRET_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
 
+  /**
+   * "Your own website" (custom domains): buys domains through Vercel's registrar and
+   * adds them to this project. Optional: unset hides the add-on. The token needs access
+   * to the team that owns the project (Vercel → Account Settings → Tokens).
+   */
+  VERCEL_API_TOKEN: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(20).optional()),
+  VERCEL_PROJECT_ID: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(1).optional()),
+  /** The team's id (team_…), if the project belongs to a team. */
+  VERCEL_TEAM_ID: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(1).optional()),
+
   /** Texting provider. "none" disables SMS; "log" prints messages (dev). */
   SMS_PROVIDER: z.enum(["none", "log"]).default("none"),
 });

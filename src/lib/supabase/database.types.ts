@@ -279,6 +279,30 @@ type GalleryPhotoRow = {
   created_at: string;
 };
 
+/** "Your own website" (20261026000000). */
+type CustomDomainRow = {
+  id: string;
+  tech_id: string;
+  domain: string;
+  plan: "yearly" | "monthly";
+  status: "pending" | "registering" | "active" | "failed" | "cancelled";
+  stripe_checkout_session_id: string | null;
+  stripe_subscription_id: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  purchase_cents: number | null;
+  renewal_cents: number | null;
+  registrant: Json | null;
+  terms_agreed_at: string | null;
+  registrar_order_id: string | null;
+  renewal_order_id: string | null;
+  registered_at: string | null;
+  expires_at: string | null;
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type Insertable<Row, Required extends keyof Row> = Pick<Row, Required> &
   Partial<Omit<Row, Required>>;
 
@@ -373,6 +397,12 @@ export type Database = {
         Update: Partial<CateringBookingRow>;
         Relationships: [];
       };
+      custom_domains: {
+        Row: CustomDomainRow;
+        Insert: Insertable<CustomDomainRow, "tech_id" | "domain" | "plan">;
+        Update: Partial<CustomDomainRow>;
+        Relationships: [];
+      };
       gallery_photos: {
         Row: GalleryPhotoRow;
         Insert: Insertable<GalleryPhotoRow, "tech_id" | "path" | "width" | "height">;
@@ -400,6 +430,10 @@ export type Database = {
           | "accent_color"
           | "page_style"
         >;
+        Relationships: [];
+      };
+      public_custom_domains: {
+        Row: { domain: string; slug: string };
         Relationships: [];
       };
     };

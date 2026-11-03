@@ -143,6 +143,12 @@ export type TemplateData = {
   };
   /** To the owner of Dibs, for any dispute on the platform account. */
   dispute_alert: { summary: string; amount: string; dueBy: string; disputeUrl: string };
+  /** To the pro: their own domain is live. */
+  domain_live: { domain: string; url: string; dashboardUrl: string };
+  /** To the pro: we couldn't register the name they paid for, so they were refunded. */
+  domain_failed: { domain: string; amount: string; dashboardUrl: string };
+  /** To the owner: something about a custom domain needs a look. */
+  domain_alert: { summary: string };
   // Catering (lib/catering). Messages to hosts come from the business by name, and
   // replies go to the owner.
   catering_booked_host: {
@@ -392,6 +398,18 @@ ${FOUNDER_NAME}`,
     text: d.won
       ? `The bank ruled in your favor on ${d.clientName}'s ${d.amount} deposit. The money is back in your Stripe balance. ${d.appointmentUrl}`
       : `The bank ruled for ${d.clientName} on their ${d.amount} deposit, so it went back to them. ${d.appointmentUrl}`,
+  }),
+  domain_live: (d) => ({
+    subject: `Your website is live: ${d.domain}`,
+    text: `${d.url} now shows your page. Put it in your Instagram bio (Edit profile, Links) and anywhere you share your business. It's yours: registered in your name, and it renews with your plan. Manage it here: ${d.dashboardUrl}`,
+  }),
+  domain_failed: (d) => ({
+    subject: `We couldn't set up ${d.domain}`,
+    text: `Sorry, ${d.domain} couldn't be registered (it may have just been taken, or its price changed). We refunded your ${d.amount} in full and cancelled the plan. Pick another name here: ${d.dashboardUrl}`,
+  }),
+  domain_alert: (d) => ({
+    subject: `${APP_NAME}: custom domain needs a look`,
+    text: d.summary,
   }),
   dispute_alert: (d) => ({
     subject: `Dispute: ${d.amount}`,

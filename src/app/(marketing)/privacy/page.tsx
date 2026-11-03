@@ -46,6 +46,12 @@ export default function PrivacyPage() {
             and your handles.
           </li>
           <li>
+            <strong>Your own website (optional):</strong> if you buy a web address through{" "}
+            {APP_NAME}, the owner details the domain registry requires (your name, address, phone
+            and email). We pass them to our registrar to register the domain in your name and delete
+            our copy once it&apos;s registered; the registrar keeps them as registry rules require.
+          </li>
+          <li>
             <strong>How you found us:</strong> if you signed up from the &ldquo;Powered by{" "}
             {APP_NAME}&rdquo; link on another pro&apos;s pay link, menu page or confirmation email,
             which pro&apos;s page it was. It&apos;s kept for 7 days on your phone before you sign
@@ -141,10 +147,10 @@ export default function PrivacyPage() {
           <li>
             <strong>Service providers</strong> who run parts of {APP_NAME} for us, under their own
             privacy and security commitments: Supabase (database and sign-in), Vercel (hosting),
-            Stripe (payments and billing), Resend (email), Cloudflare (a check on the sign-up page
-            that you&apos;re a person, not a bot), Meta (ad measurement for our own marketing,
-            described above) and Microsoft Clarity (how people use our marketing pages, described
-            above).
+            Stripe (payments and billing), Vercel and its registrar partner name.com (registering
+            web addresses pros buy), Resend (email), Cloudflare (a check on the sign-up page that
+            you&apos;re a person, not a bot), Meta (ad measurement for our own marketing, described
+            above) and Microsoft Clarity (how people use our marketing pages, described above).
           </li>
           <li>
             <strong>Apple and Google sign-in:</strong> if a pro chooses &ldquo;Continue with

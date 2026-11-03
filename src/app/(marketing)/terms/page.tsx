@@ -10,11 +10,15 @@ import {
   MIN_TRIAL_DAYS,
 } from "@/lib/config";
 import { formatCents } from "@/lib/money";
+import { DOMAIN_MONTHLY_CENTS, DOMAIN_SETUP_CENTS, DOMAIN_YEARLY_CENTS } from "@/lib/domains";
 import { LegalPage, Section } from "../legal-page";
 
 export const metadata: Metadata = { title: "Terms of Service" };
 
 const price = formatCents(SUBSCRIPTION_PRICE_CENTS);
+const domainYearly = formatCents(DOMAIN_YEARLY_CENTS);
+const domainMonthly = formatCents(DOMAIN_MONTHLY_CENTS);
+const domainSetup = formatCents(DOMAIN_SETUP_CENTS);
 const email = <a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a>;
 
 export default function TermsPage() {
@@ -101,7 +105,38 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="5. Deposits paid by card (Stripe)">
+      <Section title="5. Your own website (optional)">
+        <ul>
+          <li>
+            Pros on a plan or free trial can buy a web address (such as yourbusiness.com) that shows
+            their page: {domainYearly} per year, or {domainMonthly} per month plus a {domainSetup}{" "}
+            one-time setup charge that covers registering the name. It&apos;s billed separately from
+            your {APP_NAME} plan and renews automatically until you cancel.
+          </li>
+          <li>
+            We register the domain for you through our registrar partner, with you as its owner, so
+            you must give your real name, address, phone and email. We buy it only after your
+            payment goes through. If we can&apos;t register it, we refund that payment in full.
+          </li>
+          <li>
+            <strong>No refunds once the domain is registered</strong>, because the registration
+            can&apos;t be undone. Cancelling stops the next charge; your page stays on your domain
+            until the end of the period you paid for. After that we stop renewing it and your page
+            goes back to its {APP_NAME} address. The domain stays registered to you until it
+            expires.
+          </li>
+          <li>
+            You can move the domain to another provider: ask for its transfer code in the app.
+            Registry rules lock new domains for 60 days after registration.
+          </li>
+          <li>
+            Email at your domain isn&apos;t included. Your use of the domain must follow these Terms
+            and the registry&apos;s rules.
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="6. Deposits paid by card (Stripe)">
         <ul>
           <li>
             Card payments are processed by Stripe. To receive card deposits, a pro connects a Stripe
@@ -146,7 +181,7 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="6. Deposits paid directly (Cash App, Zelle, Venmo)">
+      <Section title="7. Deposits paid directly (Cash App, Zelle, Venmo)">
         <ul>
           <li>
             A pro can instead ask clients to send deposits to the pro&apos;s own Cash App, Zelle or
@@ -165,7 +200,7 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="7. Clients">
+      <Section title="8. Clients">
         <ul>
           <li>
             When you tick &ldquo;I agree&rdquo; on a pay link, you&apos;re agreeing to the
@@ -194,7 +229,7 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="8. Things you can't do">
+      <Section title="9. Things you can't do">
         <ul>
           <li>Use {APP_NAME} for anything illegal, or for services Stripe prohibits.</li>
           <li>
@@ -210,7 +245,7 @@ export default function TermsPage() {
         <p>We may suspend or close accounts that break these rules.</p>
       </Section>
 
-      <Section title="9. Your content">
+      <Section title="10. Your content">
         <p>
           You keep ownership of what you put into {APP_NAME} (your business name, services, policy
           and so on). You give us permission to store, display and send it as needed to run the
@@ -224,7 +259,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="10. Ending your account">
+      <Section title="11. Ending your account">
         <p>
           You can stop using {APP_NAME} anytime: cancel your subscription from the Billing page, and
           email {email} if you also want your account deleted. We may suspend or end access if you
@@ -234,7 +269,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="11. Disclaimers">
+      <Section title="12. Disclaimers">
         <p>
           {APP_NAME} is provided &ldquo;as is.&rdquo; We work hard to keep it running and to deliver
           messages on time, but we don&apos;t guarantee it will be uninterrupted or error-free, that
@@ -243,7 +278,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="12. Limitation of liability">
+      <Section title="13. Limitation of liability">
         <p>
           To the fullest extent the law allows, {APP_NAME} is not liable for indirect, incidental,
           special or consequential damages, or for lost profits or revenue. Our total liability for
@@ -253,7 +288,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="13. Indemnity">
+      <Section title="14. Indemnity">
         <p>
           If you&apos;re a pro, you agree to cover {APP_NAME}&apos;s losses and reasonable costs
           (including legal fees) from claims by your clients or others that arise from your
@@ -261,7 +296,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="14. Governing law">
+      <Section title="15. Governing law">
         <p>
           These terms are governed by the laws of the State of {GOVERNING_STATE}, without regard to
           its conflict of law rules. Any dispute will be handled in the state or federal courts
@@ -270,7 +305,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="15. Changes">
+      <Section title="16. Changes">
         <p>
           We may update these terms as {APP_NAME} changes. We&apos;ll change the date at the top,
           and for significant changes we&apos;ll email pros before they take effect. Continuing to
@@ -278,7 +313,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="16. Contact">
+      <Section title="17. Contact">
         <p>Questions about these terms? Email {email}.</p>
       </Section>
     </LegalPage>

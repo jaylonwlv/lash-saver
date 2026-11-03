@@ -17,6 +17,7 @@ import {
 } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { menuPageUrl } from "@/lib/slugs";
+import { runDomainJobs } from "@/lib/stripe/domains";
 import { formatCents } from "@/lib/money";
 import { serverEnv } from "@/lib/env";
 import {
@@ -64,6 +65,10 @@ export async function GET(request: NextRequest) {
   const setupNudges = await sendSetupNudges(now);
   const founderCheckins = await sendFounderCheckins(now);
   const firstLinkFollowups = await sendFirstLinkFollowups(now);
+  const domains = await runDomainJobs(now).catch((err: unknown) => {
+    console.error("Custom domain jobs failed", err);
+    return { error: 1 };
+  });
   const bioNudges = await sendBioNudges(now).catch((err: unknown) => {
     console.error("Bio reminders failed", err);
     return -1;
@@ -86,6 +91,7 @@ export async function GET(request: NextRequest) {
     founderCheckins,
     firstLinkFollowups,
     bioNudges,
+    domains,
     catering,
     nurture,
   });
