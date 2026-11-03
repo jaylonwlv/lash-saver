@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { sendMagicLink } from "@/app/(auth)/login/actions";
-import { SLUG_PATTERN, slugFromName } from "@/app/(tech)/dashboard/profile/schema";
+import { menuPageUrl, pageSlugFor } from "@/lib/slugs";
 import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { serverEnv } from "@/lib/env";
 import { fieldErrors, formValues, type FormState } from "@/lib/forms";
@@ -148,11 +148,17 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     } catch (err) {
       console.error("Welcome sign-in link failed; sending the email without it", err);
     }
+    const { data: saved } = await admin
+      .from("profiles")
+      .select("slug")
+      .eq("id", techId)
+      .maybeSingle();
     await notifyOnce(`founder_welcome:${techId}`, {
       to: { email: data.email },
       template: "founder_welcome",
       data: {
         appUrl,
+        pageUrl: saved?.slug ? menuPageUrl(appUrl, saved.slug) : undefined,
         needsHandle: data.method !== "stripe" && !data.handles,
         signInUrl,
         nextLink: await freeUntil(techId).then(
@@ -205,7 +211,7 @@ async function setUpAccount(
   };
 
   // The menu page link comes from the business name; add a number if it's taken.
-  const base = slugBase(data.business_name);
+  const base = pageSlugFor(data.business_name);
   const candidates = [base, ...[2, 3, 4, 5].map((n) => `${base}-${n}`)];
   candidates.push(`${base.slice(0, 33)}-${Math.random().toString(36).slice(2, 7)}`);
   let saved = false;
@@ -256,13 +262,6 @@ async function setUpAccount(
       console.error("Instant sign-up: catering setup failed", err),
     );
   }
-}
-
-/** A valid menu page link from the business name, e.g. "Fresh Cuts" → "fresh-cuts". */
-function slugBase(name: string): string {
-  let slug = slugFromName(name).slice(0, 34).replace(/-+$/, "");
-  if (slug.length < 3) slug = `${slug || "my"}-studio`.replace(/^-/, "");
-  return SLUG_PATTERN.test(slug) ? slug : "my-studio";
 }
 
 /** Cloudflare Turnstile, when configured. Fails open if Cloudflare can't be reached. */

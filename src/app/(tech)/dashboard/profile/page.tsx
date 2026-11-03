@@ -20,7 +20,7 @@ export default async function ProfilePage() {
     .single();
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
 
-  const menuPrefix = `${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}/b/`;
+  const menuPrefix = `${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}/`;
 
   return (
     <div className="flex flex-col gap-6">

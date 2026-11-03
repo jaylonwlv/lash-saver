@@ -110,6 +110,8 @@ export type TemplateData = {
    */
   founder_welcome: {
     appUrl: string;
+    /** Their own menu page (getdibs.pro/<slug>), for their Instagram bio. */
+    pageUrl?: string;
     needsHandle?: boolean;
     signInUrl?: string;
     /** What the second pay link needs, so the trial card isn't a surprise: trial days, or null (no trial: price). */
@@ -317,7 +319,7 @@ Your first pay link doesn't need a card. ${d.nextLink.freeUntil ? `When you send
 `
     : ""
 }
-${d.signInUrl ? `Open ${APP_NAME} on your phone, already signed in (one tap): ${d.signInUrl}` : `Your dashboard: ${d.appUrl}/dashboard`}
+${d.pageUrl ? `Your own page for your Instagram bio, with your services, prices and policy: ${d.pageUrl}\n` : ""}${d.signInUrl ? `Open ${APP_NAME} on your phone, already signed in (one tap): ${d.signInUrl}` : `Your dashboard: ${d.appUrl}/dashboard`}
 See what your client sees: ${d.appUrl}/demo
 
 ${FOUNDER_NAME}`,

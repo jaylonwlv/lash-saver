@@ -16,6 +16,7 @@ import {
   MIN_TRIAL_DAYS,
   TRIAL_ENDING_NOTICE_DAYS,
 } from "@/lib/config";
+import { publicEnv } from "@/lib/env.public";
 import { formatCents, techPayoutCents } from "@/lib/money";
 import clientPays from "./images/step-client-pays.jpg";
 import zoomBooked from "./images/zoom-booked.png";
@@ -24,6 +25,9 @@ import zoomNoShow from "./images/zoom-no-show.png";
 import zoomPayLink from "./images/zoom-pay-link.png";
 import { NoShowCalculator } from "./no-show-calculator";
 import { StickyCta } from "./sticky-cta";
+
+/** Every pro gets a menu page at the root of the site, e.g. getdibs.pro/fresh-cuts. */
+const PAGE_HOST = new URL(publicEnv().NEXT_PUBLIC_APP_URL).host;
 
 export const metadata: Metadata = {
   title: {
@@ -97,6 +101,7 @@ export default function HomePage() {
             <Check>Cards by Stripe</Check>
             <Check>Clients don&apos;t need an app</Check>
             <Check>Ready in 2 minutes</Check>
+            <Check>Your own page: {PAGE_HOST}/yourname</Check>
             <Check>Cancel anytime</Check>
           </ul>
         </section>
@@ -333,7 +338,10 @@ export default function HomePage() {
               <Check>Automatic reminders and confirmations</Check>
               <Check>Client cancellations with automatic refund rules</Check>
               <Check>One-tap no-show, keep the deposit</Check>
-              <Check>A menu page for your Instagram bio: your services, prices and policy</Check>
+              <Check>
+                Your own page for your Instagram bio, {PAGE_HOST}/yourname: your services, prices
+                and policy
+              </Check>
               <Check>No marketplace: your clients never see other pros</Check>
             </ul>
             <p className="text-muted text-sm">

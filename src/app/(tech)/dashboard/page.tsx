@@ -4,6 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
 import { APP_NAME, depositAnnouncement, SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
+import { menuPageUrl } from "@/lib/slugs";
 import { formatCents } from "@/lib/money";
 import { freeUntil } from "@/lib/stripe/billing";
 import { syncAccountStatus } from "@/lib/stripe/connect";
@@ -125,7 +126,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const stepsDone = [profileDone, stripeStatus === "done", servicesDone, firstLinkSent].filter(
     Boolean,
   ).length;
-  const menuUrl = profile.slug ? `${publicEnv().NEXT_PUBLIC_APP_URL}/b/${profile.slug}` : null;
+  const menuUrl = profile.slug ? menuPageUrl(publicEnv().NEXT_PUBLIC_APP_URL, profile.slug) : null;
   // Their first pay link is out without a card; the next one asks for it. Say so on the
   // button that leads there, so the trial card is never a surprise.
   const nextNeedsCard = firstLinkSent && !subscribed;
@@ -413,7 +414,10 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             status={statuses[0]}
             current={current === 0}
             description="Your business name, menu page link and cancellation policy."
-            edit={{ href: "/dashboard/profile", label: `Menu page at /b/${profile.slug}` }}
+            edit={{
+              href: "/dashboard/profile",
+              label: `Your page: ${menuUrl?.replace(/^https?:\/\//, "")}`,
+            }}
             i={6}
           >
             <ButtonLink href="/dashboard/profile" variant={profileDone ? "secondary" : "primary"}>
@@ -509,7 +513,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         <p className="text-muted px-1 text-sm">
           Your menu page goes live at{" "}
           <Link href={menuUrl} className="text-brand underline">
-            /b/{profile.slug}
+            {menuUrl.replace(/^https?:\/\//, "")}
           </Link>{" "}
           once{" "}
           {stripeStatus === "done"

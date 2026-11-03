@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TRIAL_DAYS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
+import { pageSlugFor } from "@/lib/slugs";
 import { isInAppBrowser } from "@/lib/in-app-browser";
 import { readRef, REF_KEY } from "@/lib/referral";
 import { dollarsToCents, formatCents } from "@/lib/money";
@@ -448,6 +449,7 @@ export function StartFlow({
         }
       : trade.service;
   const methodLabel = METHODS.find((m) => m.id === method)?.label ?? "";
+  const pageHost = new URL(publicEnv().NEXT_PUBLIC_APP_URL).host;
   return (
     <section className="flex flex-col gap-5">
       <Back onClick={() => go(isOther ? "business" : "trade")} />
@@ -537,7 +539,10 @@ export function StartFlow({
         </div>
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-bold">Make it yours</h2>
-          <p className="text-muted text-sm">Your name goes at the top of every pay link.</p>
+          <p className="text-muted text-sm">
+            Your name goes at the top of every pay link, and on your own page for your Instagram
+            bio.
+          </p>
         </div>
         <Input
           id="business_name"
@@ -551,6 +556,20 @@ export function StartFlow({
           error={errors.business_name}
           placeholder="Studio Nova"
         />
+        {/* Their own page comes with it: show the address as they type. */}
+        <div className="bg-ink flex items-center gap-3 rounded-2xl px-4 py-3 text-white">
+          <span aria-hidden className="text-lg">
+            🔗
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="text-pink text-xs font-bold tracking-[0.1em] uppercase">
+              Your own page, free
+            </span>
+            <span className="truncate font-semibold">
+              {pageHost}/{pageSlugFor(businessName.trim() || "your business")}
+            </span>
+          </span>
+        </div>
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1.5 text-sm font-medium">How do clients pay you?</legend>
           <div className="grid grid-cols-4 gap-2">

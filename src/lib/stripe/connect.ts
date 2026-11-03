@@ -1,4 +1,5 @@
 import "server-only";
+import { menuPageUrl } from "@/lib/slugs";
 import type Stripe from "stripe";
 import { publicEnv } from "@/lib/env.public";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -51,7 +52,7 @@ export async function ensureConnectedAccount(techId: string): Promise<string> {
           // Stripe rejects non-public URLs such as localhost.
           business_url:
             profile.slug && appUrl.startsWith("https://")
-              ? `${appUrl}/b/${profile.slug}`
+              ? menuPageUrl(appUrl, profile.slug)
               : undefined,
         },
       },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
@@ -58,6 +58,9 @@ export function ProfileForm({
   // pro doesn't have to invent one before their first pay link.
   const slugInput = useRef<HTMLInputElement>(null);
   const slugEdited = useRef(Boolean(v.slug));
+  // The link already live; changing it breaks the one in their bio, so say so.
+  const [savedSlug] = useState(initial.slug);
+  const [slugChanged, setSlugChanged] = useState(false);
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -79,8 +82,11 @@ export function ProfileForm({
         ref={slugInput}
         label="Menu page link"
         defaultValue={v.slug}
-        onChange={() => {
+        onChange={(event) => {
           slugEdited.current = true;
+          setSlugChanged(
+            Boolean(savedSlug) && event.target.value.trim().toLowerCase() !== savedSlug,
+          );
         }}
         error={e.slug}
         hint={
@@ -88,6 +94,12 @@ export function ProfileForm({
             Your menu page, for your Instagram bio: {menuPrefix}
             <strong>your-link</strong>. Filled in from your business name; change it if you like.
             Lowercase letters, numbers and dashes.
+            {slugChanged ? (
+              <strong className="text-danger mt-1 block">
+                Your old link ({menuPrefix}
+                {savedSlug}) will stop working. Update your Instagram bio after you save.
+              </strong>
+            ) : null}
           </>
         }
         autoCapitalize="none"

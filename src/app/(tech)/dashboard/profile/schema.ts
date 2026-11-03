@@ -1,21 +1,10 @@
 import { z } from "zod";
 import { instagramHandle, optionalText } from "@/lib/forms";
+import { isReservedSlug, SLUG_PATTERN } from "@/lib/slugs";
 import { TRADE_IDS } from "@/lib/trades";
 
-export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
-
-/** A menu page link suggested from the business name: "Fresh Cuts & Co." → "fresh-cuts-and-co". */
-export function slugFromName(name: string): string {
-  return name
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40)
-    .replace(/-+$/, "");
-}
+// Kept here too, for the imports that already use them.
+export { SLUG_PATTERN, slugFromName } from "@/lib/slugs";
 
 /** Must match the checks in supabase/migrations (profiles.slug). */
 export const profileSchema = z.object({
@@ -31,7 +20,8 @@ export const profileSchema = z.object({
     .regex(
       SLUG_PATTERN,
       "Use 3–40 lowercase letters, numbers or dashes, starting and ending with a letter or number.",
-    ),
+    )
+    .refine((slug) => !isReservedSlug(slug), "That link is taken. Try adding your city or name."),
   instagram_handle: instagramHandle,
   phone: optionalText(30),
   timezone: z
