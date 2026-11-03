@@ -120,8 +120,11 @@ src/
                                   once the hero is gone. opengraph-image.tsx is the link preview. The page itself is
                                   components/pro-page (ProPage, shared with the preview). Three page styles
                                   (profiles.page_style, 20261021000000; lib/page-styles.ts, tested): Editorial (serif),
-                                  Bold (Anton, caps), Clean (sans); new pros get one from their trade
-                                  (pageStyleForTrade at /start and the trade picker). Slugs can't
+                                  Bold (Anton, caps), Clean (sans), plus fonts from a trade's own world, shown first in
+                                  its picker (stylesForTrade): tattoo gets Metal / 90s anime / Old-school, detailing gets
+                                  Ultra luxury / Performance / Professional (20261022000000). New pros get a style from
+                                  their trade (pageStyleForTrade at /start and the trade picker). Fonts aren't preloaded:
+                                  a page fetches only the one it uses. Slugs can't
                                   be a reserved word (lib/slugs.ts RESERVED_SLUGS, kept in sync with the
                                   profiles_slug_not_reserved check in 20261019000000 and every top-level route by a
                                   test). b/[slug] permanently redirects here. Sold as "your own page" on /start (live

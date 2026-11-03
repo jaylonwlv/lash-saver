@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { LOOKS } from "@/components/pro-page/looks";
 import { ACCENTS, ACCENT_IDS } from "@/lib/accents";
-import { PAGE_STYLES, PAGE_STYLE_IDS } from "@/lib/page-styles";
+import { PAGE_STYLES, stylesForTrade, type PageStyleId } from "@/lib/page-styles";
 import { savePageLook } from "./look-actions";
 
 /**
@@ -18,6 +18,7 @@ export function LookPicker({
   address,
   examplePrices,
   mode,
+  trade,
 }: {
   initialStyle: string;
   initialAccent: string;
@@ -25,7 +26,10 @@ export function LookPicker({
   address: string | null;
   examplePrices: boolean;
   mode: "instant" | "form";
+  /** The pro's trade: some get fonts from their own world, shown first. */
+  trade: string | null;
 }) {
+  const styles = stylesForTrade(trade);
   const [style, setStyle] = useState(initialStyle);
   const [accent, setAccent] = useState(initialAccent);
   const [replay, setReplay] = useState(0);
@@ -140,27 +144,21 @@ export function LookPicker({
         </button>
       </div>
 
-      {/* Style */}
-      <div role="radiogroup" aria-label="Page style" className="grid grid-cols-3 gap-2">
-        {PAGE_STYLE_IDS.map((id) => (
-          <button
-            key={id}
-            type="button"
-            role="radio"
-            aria-checked={style === id}
-            onClick={() => choose({ style: id })}
-            className={`press flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 p-2 ${
-              style === id ? "border-foreground bg-surface" : "bg-surface/60 border-transparent"
-            }`}
-          >
-            <span className={`${LOOKS[id].display} text-[28px] leading-none`}>
-              {id === "editorial" ? <span className="italic">Aa</span> : "Aa"}
-            </span>
-            <span className="text-xs font-bold">{PAGE_STYLES[id].label}</span>
-            <span className="text-muted text-[10px] leading-tight">{PAGE_STYLES[id].note}</span>
-          </button>
-        ))}
-      </div>
+      {/* Style: their trade's own fonts first, when it has some, then the general three. */}
+      {styles.trade.length > 0 && (
+        <StyleRow
+          label="Made for your trade"
+          ids={styles.trade}
+          value={style}
+          onPick={(id) => choose({ style: id })}
+        />
+      )}
+      <StyleRow
+        label={styles.trade.length > 0 ? "Classic" : undefined}
+        ids={styles.general}
+        value={style}
+        onPick={(id) => choose({ style: id })}
+      />
 
       {/* Color */}
       <div role="radiogroup" aria-label="Color" className="flex flex-wrap justify-center gap-2">
@@ -196,6 +194,46 @@ export function LookPicker({
             : "Couldn't save that. Try again in Profile."}
         </p>
       )}
+    </div>
+  );
+}
+
+function StyleRow({
+  label,
+  ids,
+  value,
+  onPick,
+}: {
+  label?: string;
+  ids: PageStyleId[];
+  value: string;
+  onPick: (id: PageStyleId) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {label && <p className="text-muted text-xs font-bold tracking-[0.12em] uppercase">{label}</p>}
+      <div role="radiogroup" aria-label={label ?? "Page style"} className="grid grid-cols-3 gap-2">
+        {ids.map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="radio"
+            aria-checked={value === id}
+            onClick={() => onPick(id)}
+            className={`press flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 p-2 ${
+              value === id ? "border-foreground bg-surface" : "bg-surface/60 border-transparent"
+            }`}
+          >
+            <span className={`${LOOKS[id].display} text-[26px] leading-none`}>
+              {id === "editorial" ? <span className="italic">Aa</span> : "Aa"}
+            </span>
+            <span className="text-center text-xs font-bold">{PAGE_STYLES[id].label}</span>
+            <span className="text-muted text-center text-[10px] leading-tight">
+              {PAGE_STYLES[id].note}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

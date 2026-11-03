@@ -39,6 +39,7 @@ export type TourLook = {
   accent: string;
   address: string | null;
   examplePrices: boolean;
+  trade: string | null;
 };
 
 const noSubscribe = () => () => {};
@@ -350,6 +351,7 @@ function SLIDES(
           initialAccent={look.accent}
           address={look.address}
           examplePrices={look.examplePrices}
+          trade={look.trade}
         />
       ),
     },

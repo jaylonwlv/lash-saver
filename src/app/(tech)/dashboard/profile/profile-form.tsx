@@ -125,6 +125,7 @@ export function ProfileForm({
           initialAccent={v.accent_color}
           address={initial.slug ? `${menuPrefix}${initial.slug}` : null}
           examplePrices={examplePrices}
+          trade={v.trade || null}
         />
         {(e.page_style || e.accent_color) && (
           <p className="text-danger text-sm">{e.page_style ?? e.accent_color}</p>

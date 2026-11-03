@@ -210,6 +210,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           accent: profile.accent_color,
           address: menuUrl ? menuUrl.replace(/^https?:\/\//, "") : null,
           examplePrices: (starterServices ?? 0) > 0,
+          trade: profile.trade,
         }}
         example={
           topService && topService.price_cents > topService.deposit_cents
