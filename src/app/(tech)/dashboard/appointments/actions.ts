@@ -317,7 +317,7 @@ export async function confirmManualDeposit(appointmentId: string): Promise<FormS
         when: formatWhen(ctx.appointment.starts_at, ctx.tech.timezone),
         amount: formatCents(appointment.deposit_cents),
         cancelNote: cancelNote(ctx),
-        detailsUrl: payUrl(appointmentId),
+        detailsUrl: payUrl(ctx.appointment),
         calendar: clientCalendarAttachment(ctx),
         proInviteUrl: inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, ctx.tech.slug, "email"),
       },
@@ -355,7 +355,7 @@ export async function rejectManualDeposit(appointmentId: string): Promise<FormSt
       data: {
         businessName: ctx.tech.business_name ?? "Your provider",
         amount: formatCents(appointment.deposit_cents ?? 0),
-        payUrl: payUrl(appointmentId),
+        payUrl: payUrl(ctx.appointment),
       },
     });
   }

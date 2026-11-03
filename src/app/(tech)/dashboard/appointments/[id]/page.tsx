@@ -143,13 +143,13 @@ export default async function AppointmentPage({
             appointment is confirmed and they get an email.
           </p>
           <SharePayLink
-            url={payUrl(a.id)}
+            url={payUrl(a)}
             message={payLinkMessage({
               clientName: a.client_name,
               serviceName: service?.name ?? null,
               when: formatDayTime(a.starts_at, tz),
               deposit: a.deposit_cents !== null ? formatCents(a.deposit_cents) : null,
-              url: payUrl(a.id),
+              url: payUrl(a),
             })}
           />
         </section>

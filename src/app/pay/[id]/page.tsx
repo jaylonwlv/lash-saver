@@ -4,7 +4,6 @@ import { ProInvite } from "@/components/ui/pro-invite";
 import { publicEnv } from "@/lib/env.public";
 import { inviteUrl } from "@/lib/referral";
 import { notFound } from "next/navigation";
-import { z } from "zod";
 import { accentStyle } from "@/lib/accents";
 import {
   cancellationTerms,
@@ -12,6 +11,7 @@ import {
   loadSettledDeposit,
   payability,
   policySummary,
+  resolvePayId,
 } from "@/lib/appointments";
 import { formatCents } from "@/lib/money";
 import { formatWhen } from "@/lib/time";
@@ -31,13 +31,14 @@ export const metadata: Metadata = {
 
 /**
  * Public pay page, sent to the client in an Instagram DM. The unguessable
- * appointment id in the URL is what grants access, so show only what the
+ * code (or, on old links, the appointment id) in the URL is what grants access, so show only what the
  * client needs.
  */
 export default async function PayPage({ params, searchParams }: PageProps<"/pay/[id]">) {
-  const { id } = await params;
+  const { id: param } = await params;
   const { paid } = await searchParams;
-  if (!z.uuid().safeParse(id).success) notFound();
+  const id = await resolvePayId(param);
+  if (!id) notFound();
   const ctx = await loadAppointmentContext(id);
   if (!ctx) notFound();
 

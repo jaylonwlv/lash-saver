@@ -74,6 +74,8 @@ type ServiceRow = Timestamps & {
 
 type AppointmentRow = Timestamps & {
   id: string;
+  /** Short pay link code (20261024000000), made by the database. */
+  pay_code: string;
   tech_id: string;
   service_id: string | null;
   client_name: string;

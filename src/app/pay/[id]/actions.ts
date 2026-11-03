@@ -11,6 +11,7 @@ import {
   payability,
   policySummary,
 } from "@/lib/appointments";
+import { payPath } from "@/lib/pay-codes";
 import { MANUAL_APP_LABEL, manualHandles } from "@/lib/payments";
 import { fieldErrors, formValues, optionalText, type FormState } from "@/lib/forms";
 import { formatCents } from "@/lib/money";
@@ -132,7 +133,7 @@ export async function cancelByClient(
   // The page was loaded before the refund deadline passed: don't cancel on terms
   // the client didn't see. Refresh the page so they can decide again.
   if ((formData.get("expect_refund") === "1") !== terms.refundable) {
-    revalidatePath(`/pay/${a.id}`);
+    revalidatePath(payPath(a));
     return {
       message: terms.refundable
         ? "Good news: you can still get your deposit back. Tap cancel again to confirm."
@@ -160,7 +161,7 @@ export async function cancelByClient(
     .select("id");
   if (error) throw new Error(`Cancelling appointment failed: ${error.message}`);
   // A double tap: the other request cancelled it and sends the emails.
-  if (!cancelled?.length) redirect(`/pay/${a.id}`);
+  if (!cancelled?.length) redirect(payPath(a));
 
   const when = formatWhen(a.starts_at, tech.timezone);
   const amountText = formatCents(amount ?? a.deposit_cents ?? 0);
@@ -208,8 +209,8 @@ export async function cancelByClient(
     });
   }
 
-  revalidatePath(`/pay/${a.id}`);
-  redirect(`/pay/${a.id}`);
+  revalidatePath(payPath(a));
+  redirect(payPath(a));
 }
 
 const manualAppSchema = z.enum(["cashapp", "zelle", "venmo"]);
@@ -265,7 +266,7 @@ export async function clientSentDeposit(
     .select("id");
   if (error) throw new Error(`Recording sent deposit failed: ${error.message}`);
   // Already marked as sent (a double tap or a resubmit): the pro was told once.
-  if (!marked?.length) redirect(`/pay/${a.id}`);
+  if (!marked?.length) redirect(payPath(a));
 
   // One pending manual deposit per appointment; replace an earlier attempt.
   await admin
@@ -299,6 +300,6 @@ export async function clientSentDeposit(
     },
   });
 
-  revalidatePath(`/pay/${a.id}`);
-  redirect(`/pay/${a.id}`);
+  revalidatePath(payPath(a));
+  redirect(payPath(a));
 }

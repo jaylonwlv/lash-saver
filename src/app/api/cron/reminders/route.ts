@@ -443,7 +443,7 @@ async function sendReminders(now: Date) {
           serviceName: ctx.serviceName,
           when: formatWhen(ctx.appointment.starts_at, ctx.tech.timezone),
           cancelNote: cancelNote(ctx, now),
-          manageUrl: payUrl(a.id),
+          manageUrl: payUrl(ctx.appointment),
         },
       });
       reminders++;

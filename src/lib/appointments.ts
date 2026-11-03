@@ -2,6 +2,7 @@ import "server-only";
 import { buildCalendar } from "@/lib/calendar";
 import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
+import { isUuid, normalizePayCode, payPath } from "@/lib/pay-codes";
 import { formatWhen } from "@/lib/time";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Enums, Tables } from "@/lib/supabase/database.types";
@@ -18,8 +19,25 @@ export const STATUS_LABEL: Record<AppointmentStatus, string> = {
   expired: "Pay link expired",
 };
 
-export const payUrl = (appointmentId: string) =>
-  `${publicEnv().NEXT_PUBLIC_APP_URL}/pay/${appointmentId}`;
+/** The client's pay link: the short code (getdibs.pro/pay/k7m2x9qa4h). */
+export const payUrl = (a: { id: string; pay_code?: string | null }) =>
+  `${publicEnv().NEXT_PUBLIC_APP_URL}${payPath(a)}`;
+/**
+ * The appointment id behind a pay link: a short code (getdibs.pro/pay/k7m2x9qa4h)
+ * or an old /pay/<uuid> link. Null for anything else.
+ */
+export async function resolvePayId(param: string): Promise<string | null> {
+  if (isUuid(param)) return param.toLowerCase();
+  const code = normalizePayCode(param);
+  if (!code) return null;
+  const { data } = await createAdminClient()
+    .from("appointments")
+    .select("id")
+    .eq("pay_code", code)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
 export const appointmentUrl = (appointmentId: string) =>
   `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard/appointments/${appointmentId}`;
 
@@ -174,8 +192,8 @@ export function clientCalendar(ctx: AppointmentContext): string {
       start: new Date(a.starts_at),
       end: new Date(a.ends_at),
       summary: `${serviceName} with ${business}`,
-      description: `${deposit}${cancelNote(ctx)}\n\nDetails, policy or cancel: ${payUrl(a.id)}`,
-      url: payUrl(a.id),
+      description: `${deposit}${cancelNote(ctx)}\n\nDetails, policy or cancel: ${payUrl(a)}`,
+      url: payUrl(a),
       alarmMinutesBefore: CLIENT_ALARM_MINUTES,
       status: "CONFIRMED",
     },
