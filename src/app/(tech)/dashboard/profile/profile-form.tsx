@@ -7,7 +7,7 @@ import type { FormState } from "@/lib/forms";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
 import { LookPicker } from "../look-picker";
 import { saveProfile } from "./actions";
-import { slugFromName } from "./schema";
+import { slugFromName } from "@/lib/slugs";
 
 export type ProfileValues = {
   business_name: string;

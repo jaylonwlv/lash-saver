@@ -11,12 +11,16 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  // Rarely used; not worth a high-priority download on every page.
+  preload: false,
 });
 
 /** Display face for the wordmark and headings in the pro's app. */
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
+  // Only the pro's app uses it, so marketing pages and pay links don't preload it.
+  preload: false,
 });
 
 export const metadata: Metadata = {
