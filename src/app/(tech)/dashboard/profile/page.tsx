@@ -14,12 +14,18 @@ export default async function ProfilePage() {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(
-      "email, business_name, slug, instagram_handle, phone, timezone, cancellation_window_hours, policy_text, trade, accent_color",
+      "email, business_name, slug, instagram_handle, phone, timezone, cancellation_window_hours, policy_text, trade, accent_color, page_style",
     )
     .eq("id", user!.id)
     .single();
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
 
+  const { count: starters } = await supabase
+    .from("services")
+    .select("id", { count: "exact", head: true })
+    .eq("tech_id", user!.id)
+    .eq("is_active", true)
+    .eq("is_starter", true);
   const menuPrefix = `${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}/`;
 
   return (
@@ -31,6 +37,7 @@ export default async function ProfilePage() {
       </div>
       <ProfileForm
         menuPrefix={menuPrefix}
+        examplePrices={(starters ?? 0) > 0}
         timeZones={Intl.supportedValuesOf("timeZone")}
         initial={{
           business_name: profile.business_name ?? "",
@@ -42,6 +49,7 @@ export default async function ProfilePage() {
           policy_text: profile.policy_text ?? "",
           trade: profile.trade ?? "",
           accent_color: profile.accent_color,
+          page_style: profile.page_style,
         }}
       />
       <div className="border-line flex flex-col gap-3 border-t pt-6">

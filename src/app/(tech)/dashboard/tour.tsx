@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { APP_NAME } from "@/lib/config";
+import { LookPicker } from "./look-picker";
 import { markTourSeen } from "./tour-actions";
 
 /*
- * First-run tour: how Dibs works in five short cards, then what's left before the
+ * First-run tour: how Dibs works in short cards (one is their own page, live), then what's left before the
  * first booking, with a button straight to the next step. Shown once per account
  * (profiles.tour_seen_at, plus the browser for an instant hide) to pros who
  * haven't sent a pay link yet; "Take the tour" brings it back.
@@ -32,6 +33,13 @@ export type TourStep = { title: string; detail: string; href: string; done: bool
 
 /** The pro's priciest service, so the value card speaks in their own numbers. */
 export type TourExample = { service: string; price: string; deposit: string } | null;
+/** The pro's page and its current look, for the live preview slide. */
+export type TourLook = {
+  style: string;
+  accent: string;
+  address: string | null;
+  examplePrices: boolean;
+};
 
 const noSubscribe = () => () => {};
 function seenSnapshot(): boolean {
@@ -47,9 +55,11 @@ export function Tour({
   eligible,
   force,
   example,
+  look,
 }: {
   steps: TourStep[];
   example: TourExample;
+  look: TourLook;
   /** A pro who hasn't sent a pay link yet and hasn't closed the tour on any device. */
   eligible: boolean;
   /** Opened from "Take the tour". */
@@ -95,7 +105,7 @@ export function Tour({
   if (!open) return null;
 
   const next = steps.find((s) => !s.done);
-  const slides = SLIDES(steps, next, example);
+  const slides = SLIDES(steps, next, example, look);
   const last = slide === slides.length - 1;
 
   return (
@@ -197,7 +207,12 @@ export function Tour({
 
 type Slide = { eyebrow: string; title: string; body: ReactNode; visual: ReactNode };
 
-function SLIDES(steps: TourStep[], next: TourStep | undefined, example: TourExample): Slide[] {
+function SLIDES(
+  steps: TourStep[],
+  next: TourStep | undefined,
+  example: TourExample,
+  look: TourLook,
+): Slide[] {
   return [
     {
       eyebrow: `Welcome to ${APP_NAME}`,
@@ -315,6 +330,27 @@ function SLIDES(steps: TourStep[], next: TourStep | undefined, example: TourExam
             ))}
           </ul>
         </Frame>
+      ),
+    },
+    {
+      eyebrow: "Your own page",
+      title: "Your own page. Make it yours.",
+      body: (
+        <p>
+          This is your page at{" "}
+          <strong className="text-foreground">{look.address ?? "your own link"}</strong>, made for
+          your Instagram bio: your services, prices and policy, so new clients message you ready to
+          book. Tap a style and a color to make it yours.
+        </p>
+      ),
+      visual: (
+        <LookPicker
+          mode="instant"
+          initialStyle={look.style}
+          initialAccent={look.accent}
+          address={look.address}
+          examplePrices={look.examplePrices}
+        />
       ),
     },
     {

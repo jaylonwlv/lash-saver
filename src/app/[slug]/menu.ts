@@ -16,7 +16,7 @@ export const loadMenu = cache(async (rawSlug: string) => {
   const { data: tech, error: techError } = await supabase
     .from("public_profiles")
     .select(
-      "id, business_name, policy_text, instagram_handle, cancellation_window_hours, accent_color",
+      "id, business_name, policy_text, instagram_handle, cancellation_window_hours, accent_color, page_style",
     )
     .eq("slug", slug)
     .maybeSingle();

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
-import { AccentPicker } from "./accent-picker";
+import { LookPicker } from "../look-picker";
 import { saveProfile } from "./actions";
 import { slugFromName } from "./schema";
 
@@ -19,6 +19,7 @@ export type ProfileValues = {
   policy_text: string;
   trade: string;
   accent_color: string;
+  page_style: string;
 };
 
 const COMMON_TIME_ZONES = [
@@ -46,10 +47,12 @@ export function ProfileForm({
   initial,
   timeZones,
   menuPrefix,
+  examplePrices,
 }: {
   initial: ProfileValues;
   timeZones: string[];
   menuPrefix: string;
+  examplePrices: boolean;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveProfile, {});
   const v = { ...initial, ...state.values };
@@ -63,7 +66,6 @@ export function ProfileForm({
   // The link already live; changing it breaks the one in their bio, so say so.
   const [savedSlug] = useState(initial.slug);
   const [slugChanged, setSlugChanged] = useState(false);
-  const [businessName, setBusinessName] = useState(v.business_name);
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -74,7 +76,6 @@ export function ProfileForm({
         error={e.business_name}
         autoComplete="organization"
         onChange={(event) => {
-          setBusinessName(event.target.value);
           if (!slugEdited.current && slugInput.current) {
             slugInput.current.value = slugFromName(event.target.value);
           }
@@ -112,12 +113,23 @@ export function ProfileForm({
         placeholder="your-business"
         required
       />
-      <AccentPicker
-        key={v.accent_color}
-        defaultValue={v.accent_color}
-        error={e.accent_color}
-        businessName={businessName}
-      />
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-1.5 text-sm font-medium">Your page&apos;s look</legend>
+        <p className="text-muted -mt-1 text-sm">
+          The style and color of your page and pay links. Scroll the preview to see it.
+        </p>
+        <LookPicker
+          key={`${v.page_style}-${v.accent_color}`}
+          mode="form"
+          initialStyle={v.page_style}
+          initialAccent={v.accent_color}
+          address={initial.slug ? `${menuPrefix}${initial.slug}` : null}
+          examplePrices={examplePrices}
+        />
+        {(e.page_style || e.accent_color) && (
+          <p className="text-danger text-sm">{e.page_style ?? e.accent_color}</p>
+        )}
+      </fieldset>
       <Input
         id="instagram_handle"
         label="Instagram handle (optional)"

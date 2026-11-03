@@ -83,7 +83,13 @@ src/
                                   "Example price" until saved, and kept off the public menu page until then)
                                   and policy. Skip records "other". Pros who already have services only save
                                   their trade.
-    (tech)/dashboard/profile/     Business name, menu page link (slug), trade, time zone, policy; sign out
+    (tech)/dashboard/profile/     Business name, menu page link (slug), page look, trade, time zone, policy; sign out
+    (tech)/dashboard/look-picker.tsx  The pro's real page live in a phone frame (iframe of dashboard/preview), with
+                                  style and color choices: it scrolls itself until touched, each change replays the
+                                  entrance. In the tour's "Your own page" card it saves on tap (savePageLook,
+                                  look-actions.ts); on Profile it posts with the form.
+    dashboard/preview/            The signed-in pro's page for that iframe, outside the (tech) layout (no app chrome);
+                                  ?style= / ?accent= try a look unsaved; shows example (starter) prices.
     (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete
     (tech)/dashboard/payments/    Deposit method: Cash App / Zelle / Venmo handles, or switch to Stripe
     (tech)/dashboard/stripe/      Onboarding + Express dashboard actions; refresh/ and return/ routes
@@ -111,7 +117,11 @@ src/
                                   behind), service-name marquee, numbered price list, stats, how booking works, policy,
                                   closing CTA. Sections fade up on scroll (reveal.tsx arms [data-reveal]; everything
                                   shows without JS or with reduced motion); the sticky "Message to book" bar slides in
-                                  once the hero is gone. opengraph-image.tsx is the link preview. Slugs can't
+                                  once the hero is gone. opengraph-image.tsx is the link preview. The page itself is
+                                  components/pro-page (ProPage, shared with the preview). Three page styles
+                                  (profiles.page_style, 20261021000000; lib/page-styles.ts, tested): Editorial (serif),
+                                  Bold (Anton, caps), Clean (sans); new pros get one from their trade
+                                  (pageStyleForTrade at /start and the trade picker). Slugs can't
                                   be a reserved word (lib/slugs.ts RESERVED_SLUGS, kept in sync with the
                                   profiles_slug_not_reserved check in 20261019000000 and every top-level route by a
                                   test). b/[slug] permanently redirects here. Sold as "your own page" on /start (live

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { FormState } from "@/lib/forms";
 import { createClient, getUser } from "@/lib/supabase/server";
+import { pageStyleForTrade } from "@/lib/page-styles";
 import { TRADE_IDS, tradeById } from "@/lib/trades";
 import { setUpCatering } from "@/lib/catering/starter";
 
@@ -40,6 +41,7 @@ export async function chooseTrade(_prev: FormState, formData: FormData): Promise
     .from("profiles")
     .update({
       trade: parsed.data,
+      page_style: pageStyleForTrade(parsed.data),
       ...(validTimeZone ? { timezone: validTimeZone } : {}),
       ...(usePreset && !profile.policy_text
         ? { cancellation_window_hours: trade.windowHours, policy_text: trade.policyText }

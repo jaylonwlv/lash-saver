@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { sendMagicLink } from "@/app/(auth)/login/actions";
+import { pageStyleForTrade } from "@/lib/page-styles";
 import { menuPageUrl, pageSlugFor } from "@/lib/slugs";
 import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { serverEnv } from "@/lib/env";
@@ -206,6 +207,7 @@ async function setUpAccount(
   const profile = {
     business_name: data.business_name,
     trade: data.trade,
+    page_style: pageStyleForTrade(data.trade),
     timezone: data.timezone,
     deposit_method: data.method === "stripe" ? ("stripe" as const) : ("manual" as const),
     ...(data.handles ?? {}),
