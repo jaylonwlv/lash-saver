@@ -27,7 +27,7 @@ export async function chooseTrade(_prev: FormState, formData: FormData): Promise
   const validTimeZone = Intl.supportedValuesOf("timeZone").includes(timeZone) ? timeZone : null;
   const supabase = await createClient();
   const [{ data: profile, error: profileError }, { count, error: countError }] = await Promise.all([
-    supabase.from("profiles").select("policy_text").eq("id", user.id).single(),
+    supabase.from("profiles").select("policy_text, tour_seen_at").eq("id", user.id).single(),
     supabase.from("services").select("id", { count: "exact", head: true }).eq("tech_id", user.id),
   ]);
   if (profileError || countError || !profile) {
@@ -82,5 +82,7 @@ export async function chooseTrade(_prev: FormState, formData: FormData): Promise
   }
 
   revalidatePath("/dashboard", "layout");
-  redirect(usePreset ? "/dashboard/services?starter=1" : "/dashboard");
+  // A new pro goes back to the dashboard, where the tour opens and ends at their next
+  // step; someone who's seen it goes straight to their example prices.
+  redirect(usePreset && profile.tour_seen_at ? "/dashboard/services?starter=1" : "/dashboard");
 }

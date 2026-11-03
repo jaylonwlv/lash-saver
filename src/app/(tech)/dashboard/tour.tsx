@@ -13,7 +13,8 @@ import { markTourSeen } from "./tour-actions";
  * haven't sent a pay link yet; "Take the tour" brings it back.
  */
 
-const DONE_KEY = "dibs:tour-done-v1";
+// Per account: a phone that closed one pro's tour must still show it to the next account.
+const doneKey = (accountId: string) => `dibs:tour-done-v1:${accountId}`;
 const LAUNCH_EVENT = "dibs:tour";
 
 /** "Take the tour": reopens it from the first card. */
@@ -43,9 +44,9 @@ export type TourLook = {
 };
 
 const noSubscribe = () => () => {};
-function seenSnapshot(): boolean {
+function readSeen(accountId: string): boolean {
   try {
-    return localStorage.getItem(DONE_KEY) === "1";
+    return localStorage.getItem(doneKey(accountId)) === "1";
   } catch {
     return false;
   }
@@ -57,7 +58,9 @@ export function Tour({
   force,
   example,
   look,
+  accountId,
 }: {
+  accountId: string;
   steps: TourStep[];
   example: TourExample;
   look: TourLook;
@@ -67,7 +70,11 @@ export function Tour({
   force: boolean;
 }) {
   // Treated as seen until the page is running, so returning pros never see it flash.
-  const seen = useSyncExternalStore(noSubscribe, seenSnapshot, () => true);
+  const seen = useSyncExternalStore(
+    noSubscribe,
+    () => readSeen(accountId),
+    () => true,
+  );
   const [closed, setClosed] = useState(false);
   // Reopened with "Take the tour" (TourLauncher), any number of times.
   const [launched, setLaunched] = useState(false);
@@ -91,7 +98,7 @@ export function Tour({
 
   function close() {
     try {
-      localStorage.setItem(DONE_KEY, "1");
+      localStorage.setItem(doneKey(accountId), "1");
     } catch {
       // Storage blocked (private mode): the account flag below still covers it.
     }

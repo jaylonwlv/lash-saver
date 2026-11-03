@@ -201,6 +201,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   return (
     <div className="flex flex-col gap-4">
       <Tour
+        accountId={user!.id}
         steps={tourSteps}
         // After the "What do you do?" picker, never on top of it.
         eligible={!firstLinkSent && profile.trade !== null && !profile.tour_seen_at}
