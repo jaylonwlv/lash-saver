@@ -1,10 +1,11 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { markEmailConfirmed } from "@/lib/email-confirmed";
 import { trackSignUp } from "@/lib/meta";
 import { safeNextPath } from "@/lib/redirects";
 import { signInErrorCode } from "@/lib/sign-in-errors";
 import { createClient } from "@/lib/supabase/server";
+import { welcomeNewPro } from "@/lib/welcome";
 
 const OTP_TYPES: readonly string[] = ["email", "magiclink", "signup", "invite", "recovery"];
 
@@ -29,16 +30,22 @@ export async function GET(request: NextRequest) {
       type: type as EmailOtpType,
     });
     if (!error) {
-      if (data.user)
-        await Promise.all([markEmailConfirmed(supabase, data.user.id), trackSignUp(data.user)]);
+      if (data.user) {
+        const user = data.user;
+        await Promise.all([markEmailConfirmed(supabase, user.id), trackSignUp(user)]);
+        after(() => welcomeNewPro(user));
+      }
       return NextResponse.redirect(new URL(next, origin));
     }
     failure = error.message;
   } else if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      if (data.user)
-        await Promise.all([markEmailConfirmed(supabase, data.user.id), trackSignUp(data.user)]);
+      if (data.user) {
+        const user = data.user;
+        await Promise.all([markEmailConfirmed(supabase, user.id), trackSignUp(user)]);
+        after(() => welcomeNewPro(user));
+      }
       return NextResponse.redirect(new URL(next, origin));
     }
     // Most often: the sign-in started on another address (its code check is in that

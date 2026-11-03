@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ProPage } from "@/components/pro-page/pro-page";
 import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
 import { inviteUrl } from "@/lib/referral";
+import { SLUG_PATTERN } from "@/lib/slugs";
 import { loadMenu } from "./menu";
 
 /*
@@ -24,7 +25,11 @@ export async function generateMetadata({ params }: PageProps<"/[slug]">): Promis
 }
 
 export default async function MenuPage({ params }: PageProps<"/[slug]">) {
-  const menu = await loadMenu((await params).slug);
+  const raw = (await params).slug;
+  // getdibs.pro/Studio-Nova → getdibs.pro/studio-nova: one address per page (links, previews, search).
+  const lower = raw.toLowerCase();
+  if (raw !== lower && SLUG_PATTERN.test(lower)) permanentRedirect(`/${lower}`);
+  const menu = await loadMenu(raw);
   if (!menu) notFound();
   const { tech, services, name, slug } = menu;
   return (
