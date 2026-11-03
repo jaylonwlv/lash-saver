@@ -28,7 +28,7 @@ The product's job is preventing no-shows: deposit up front, a policy the client 
 - **Stripe Connect** with Express accounts. Deposits are **destination charges** made on the platform with `transfer_data.destination` set to the tech's account and an `application_fee_amount`: the **processing fee**, 3.5% + 30¢ (`PROCESSING_FEE_*` in `config.ts`, `processingFeeCents` in `money.ts`). It covers Stripe's card fee, which the platform pays on destination charges. Show techs what they receive (`techPayoutCents`) wherever deposit amounts appear.
 - **Resend** for email, behind the notifications interface.
 - **zod** for validating env vars and every input from outside the app.
-- **Vercel Cron** for reminders and expiring unpaid holds (`vercel.json`). It runs daily (14:00 UTC) because the Vercel Hobby plan allows only daily crons. On Pro, switch to hourly (`0 * * * *`) for tighter reminder timing.
+- **Vercel Cron** (`vercel.json`, Pro plan) runs `/api/cron/reminders` hourly: client reminders, expiring unpaid pay links and custom domains every hour; scheduled emails to pros and caterers (setup reminders, check-ins, drip, bio and trial notices, catering jobs) only on the `DAILY_JOBS_UTC_HOUR` (14:00 UTC) run, so they arrive in the US morning. `?daily=1` forces the daily part.
 
 ## Folder structure
 

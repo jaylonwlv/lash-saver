@@ -8,6 +8,7 @@ import {
   FOUNDER_CHECKIN_STOP_AFTER_DAYS,
   REMINDER_OFFSETS_HOURS,
   BIO_NUDGE_AFTER_HOURS,
+  DAILY_JOBS_UTC_HOUR,
   BIO_NUDGE_STOP_AFTER_DAYS,
   SETUP_NUDGE_FIRST_AFTER_HOURS,
   SETUP_NUDGE_NEXT_AFTER_HOURS,
@@ -60,15 +61,23 @@ export async function GET(request: NextRequest) {
     .select("id");
   if (error) throw new Error(`Expiring pay links failed: ${error.message}`);
 
+  // Hourly: what's time-sensitive (client reminders, custom domains).
   const reminders = await sendReminders(now);
-  const trialNotices = await sendTrialEndingNotices(now);
-  const setupNudges = await sendSetupNudges(now);
-  const founderCheckins = await sendFounderCheckins(now);
-  const firstLinkFollowups = await sendFirstLinkFollowups(now);
   const domains = await runDomainJobs(now).catch((err: unknown) => {
     console.error("Custom domain jobs failed", err);
     return { error: 1 };
   });
+  // Once a day, at a sociable hour in the US: everything that emails pros or caterers on
+  // a schedule, so it never lands at 3 a.m. (?daily=1 runs it now, for testing.)
+  const daily =
+    now.getUTCHours() === DAILY_JOBS_UTC_HOUR || request.nextUrl.searchParams.get("daily") === "1";
+  if (!daily) {
+    return NextResponse.json({ ok: true, expired: expired?.length ?? 0, ...reminders, domains });
+  }
+  const trialNotices = await sendTrialEndingNotices(now);
+  const setupNudges = await sendSetupNudges(now);
+  const founderCheckins = await sendFounderCheckins(now);
+  const firstLinkFollowups = await sendFirstLinkFollowups(now);
   const bioNudges = await sendBioNudges(now).catch((err: unknown) => {
     console.error("Bio reminders failed", err);
     return -1;

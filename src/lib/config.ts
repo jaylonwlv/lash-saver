@@ -45,6 +45,12 @@ export const SETUP_NUDGE_FIRST_AFTER_HOURS = 20;
 export const SETUP_NUDGE_NEXT_AFTER_HOURS = 68;
 export const SETUP_NUDGE_STOP_AFTER_DAYS = 7;
 /**
+ * The cron runs hourly (vercel.json). Scheduled emails to pros and caterers (setup
+ * reminders, check-ins, tips, trial notices, catering messages) go out only on this
+ * run: 14:00 UTC is morning across the US.
+ */
+export const DAILY_JOBS_UTC_HOUR = 14;
+/**
  * "Is your page in your bio yet?": one email about two days after sign-up, until a
  * week and a half, if their page hasn't had a visit from Instagram.
  */
