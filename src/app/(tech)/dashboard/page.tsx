@@ -36,7 +36,7 @@ import {
   Tile,
 } from "./home";
 import { loadPulse } from "./pulse";
-import { Tour, type TourStep } from "./tour";
+import { Tour, TourLauncher, type TourStep } from "./tour";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -51,6 +51,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     { count: starterServices },
     { count: payLinks },
     { count: cateringSetUp },
+    { data: topService },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -79,6 +80,15 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       .from("catering_settings")
       .select("tech_id", { count: "exact", head: true })
       .eq("tech_id", user!.id),
+    // The tour's value card puts a no-show in the pro's own numbers.
+    supabase
+      .from("services")
+      .select("name, price_cents, deposit_cents")
+      .eq("tech_id", user!.id)
+      .eq("is_active", true)
+      .order("price_cents", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
 
@@ -188,7 +198,21 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
   return (
     <div className="flex flex-col gap-4">
-      <Tour steps={tourSteps} eligible={!firstLinkSent} force={tour === "1"} />
+      <Tour
+        steps={tourSteps}
+        // After the "What do you do?" picker, never on top of it.
+        eligible={!firstLinkSent && profile.trade !== null}
+        force={tour === "1"}
+        example={
+          topService && topService.price_cents > topService.deposit_cents
+            ? {
+                service: topService.name,
+                price: dollars(topService.price_cents),
+                deposit: dollars(topService.deposit_cents),
+              }
+            : null
+        }
+      />
       <Hero
         today={today}
         greeting={`Hey${profile.business_name ? `, ${profile.business_name}` : ""}`}
@@ -495,12 +519,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               : "deposits are set up and you add a service."}
         </p>
       )}
-      <Link
-        href="/dashboard?tour=1"
-        className="text-muted mx-auto inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold"
-      >
-        <span aria-hidden>✨</span> Take the 30-second tour
-      </Link>
+      <TourLauncher />
     </div>
   );
+}
+
+/** "$150" for whole dollars, "$12.50" otherwise. */
+function dollars(cents: number): string {
+  return formatCents(cents).replace(/\.00$/, "");
 }

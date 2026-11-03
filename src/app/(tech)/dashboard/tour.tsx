@@ -11,8 +11,25 @@ import { APP_NAME } from "@/lib/config";
  */
 
 const DONE_KEY = "dibs:tour-done-v1";
+const LAUNCH_EVENT = "dibs:tour";
+
+/** "Take the tour": reopens it from the first card. */
+export function TourLauncher() {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event(LAUNCH_EVENT))}
+      className="text-muted mx-auto inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold"
+    >
+      <span aria-hidden>✨</span> Take the 30-second tour
+    </button>
+  );
+}
 
 export type TourStep = { title: string; detail: string; href: string; done: boolean };
+
+/** The pro's priciest service, so the value card speaks in their own numbers. */
+export type TourExample = { service: string; price: string; deposit: string } | null;
 
 const noSubscribe = () => () => {};
 function seenSnapshot(): boolean {
@@ -27,8 +44,10 @@ export function Tour({
   steps,
   eligible,
   force,
+  example,
 }: {
   steps: TourStep[];
+  example: TourExample;
   /** A pro who hasn't sent a pay link yet. */
   eligible: boolean;
   /** Opened from "Take the tour". */
@@ -37,14 +56,25 @@ export function Tour({
   // Treated as seen until the page is running, so returning pros never see it flash.
   const seen = useSyncExternalStore(noSubscribe, seenSnapshot, () => true);
   const [closed, setClosed] = useState(false);
+  // Reopened with "Take the tour" (TourLauncher), any number of times.
+  const [launched, setLaunched] = useState(false);
   const [slide, setSlide] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
-  const open = !closed && (force || (eligible && !seen));
+  const open = launched || (!closed && (force || (eligible && !seen)));
 
   useEffect(() => {
     const d = dialog.current;
     if (open && d && !d.open) d.showModal();
   }, [open]);
+
+  useEffect(() => {
+    const relaunch = () => {
+      setSlide(0);
+      setLaunched(true);
+    };
+    window.addEventListener(LAUNCH_EVENT, relaunch);
+    return () => window.removeEventListener(LAUNCH_EVENT, relaunch);
+  }, []);
 
   function close() {
     try {
@@ -54,6 +84,7 @@ export function Tour({
     }
     dialog.current?.close();
     setClosed(true);
+    setLaunched(false);
     // Opened from "Take the tour": drop ?tour=1 so a refresh doesn't reopen it.
     if (force) window.history.replaceState(null, "", window.location.pathname);
   }
@@ -61,7 +92,7 @@ export function Tour({
   if (!open) return null;
 
   const next = steps.find((s) => !s.done);
-  const slides = SLIDES(steps, next);
+  const slides = SLIDES(steps, next, example);
   const last = slide === slides.length - 1;
 
   return (
@@ -99,7 +130,7 @@ export function Tour({
           key={slide}
           tabIndex={-1}
           autoFocus
-          className="rise flex flex-col gap-5 overflow-y-auto px-6 pt-4 pb-2 outline-none"
+          className="rise flex min-h-0 flex-col gap-5 overflow-y-auto px-6 pt-4 pb-2 outline-none [&>*]:shrink-0"
         >
           {slides[slide].visual}
           <div className="flex flex-col gap-2">
@@ -163,7 +194,7 @@ export function Tour({
 
 type Slide = { eyebrow: string; title: string; body: ReactNode; visual: ReactNode };
 
-function SLIDES(steps: TourStep[], next: TourStep | undefined): Slide[] {
+function SLIDES(steps: TourStep[], next: TourStep | undefined, example: TourExample): Slide[] {
   return [
     {
       eyebrow: `Welcome to ${APP_NAME}`,
@@ -322,6 +353,52 @@ function SLIDES(steps: TourStep[], next: TourStep | undefined): Slide[] {
             </div>
           </div>
         </Frame>
+      ),
+    },
+    {
+      eyebrow: "Why it's worth it",
+      title: "Their no-show, not your loss",
+      body: example ? (
+        <p>
+          A no-show on your {example.service} used to cost you the whole {example.price}. Now they
+          lose their {example.deposit} deposit, and you keep it. You keep your Cash App, Zelle or
+          Venmo; {APP_NAME} adds what it can&apos;t do.
+        </p>
+      ) : (
+        <p>
+          A no-show used to cost you the whole appointment. Now they lose their deposit, and you
+          keep it. You keep your Cash App, Zelle or Venmo; {APP_NAME} adds what it can&apos;t do.
+        </p>
+      ),
+      visual: (
+        <div className="bg-surface overflow-hidden rounded-[22px] shadow-[0_0_0_1px_var(--line)]">
+          <div className="text-muted grid grid-cols-[1fr_1fr] text-[10px] font-bold tracking-widest uppercase">
+            <span className="px-3 pt-3 pb-2">A Cash App deposit</span>
+            <span className="bg-ink text-pink px-3 pt-3 pb-2">With {APP_NAME}</span>
+          </div>
+          {[
+            [
+              "“I didn't know it was non-refundable”",
+              "They agreed to your policy first, saved with the time",
+            ],
+            ["Texting “still coming?”", "Reminder emails 48h and 24h before"],
+            ["Arguing over a refund", "Cancel on the link; your deadline decides"],
+            [
+              example ? `No-show: you're out ${example.price}` : "No-show: you're out the slot",
+              example
+                ? `No-show: one tap, you keep ${example.deposit}`
+                : "No-show: one tap, you keep the deposit",
+            ],
+          ].map(([without, withDibs]) => (
+            <div
+              key={without}
+              className="border-line grid grid-cols-[1fr_1fr] border-t text-xs leading-snug"
+            >
+              <span className="text-muted px-3 py-2.5">{without}</span>
+              <span className="bg-ink px-3 py-2.5 font-semibold text-white">{withDibs}</span>
+            </div>
+          ))}
+        </div>
       ),
     },
     {

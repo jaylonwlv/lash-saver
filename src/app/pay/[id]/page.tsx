@@ -160,11 +160,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
         ) : state === "ok" ? (
           <>
             <PolicyCard
-              refundBy={
-                terms.windowHours > 0 && terms.refundable
-                  ? formatWhen(terms.refundDeadline, tech.timezone)
-                  : null
-              }
+              refundBy={terms.refundable ? formatWhen(terms.refundDeadline, tech.timezone) : null}
               policy={policy}
             />
             {manual ? (

@@ -90,7 +90,7 @@ export function Badge({ href, children }: { href: string; children: ReactNode })
       href={href}
       className="press bg-ink text-pink inline-flex min-h-10 w-fit items-center gap-2 rounded-full px-4 text-sm font-bold"
     >
-      <span aria-hidden className="bg-pink size-2 animate-pulse rounded-full" />
+      <span aria-hidden className="bg-pink size-2 rounded-full motion-safe:animate-pulse" />
       {children}
     </Link>
   );

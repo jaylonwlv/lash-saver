@@ -129,6 +129,12 @@ export function PolicyCard({ refundBy, policy }: { refundBy: string | null; poli
       style={{ "--i": 2 } as CSSProperties}
     >
       <h2 className="font-display text-lg font-extrabold tracking-tight">Deposit policy</h2>
+      {!refundBy && (
+        <p className="bg-brand-soft/60 text-brand rounded-2xl px-4 py-3 text-sm font-semibold">
+          Your appointment is inside the cancellation window, so this deposit can&apos;t be refunded
+          if you cancel.
+        </p>
+      )}
       {refundBy && (
         <ol className="flex flex-col">
           <li className="flex gap-3">
