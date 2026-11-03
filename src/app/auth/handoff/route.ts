@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "email" });
     if (!error) return NextResponse.redirect(new URL("/dashboard", origin));
+    console.error("Handoff sign-in failed:", error.message);
   }
   // Used already or expired: signing in normally still works.
-  return NextResponse.redirect(new URL("/login?error=link", origin));
+  return NextResponse.redirect(new URL("/login?error=link&reason=expired", origin));
 }

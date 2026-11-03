@@ -68,7 +68,10 @@ src/
                                   PKCE path), then email sign-in: 6-digit code (any browser) or link (page, form, actions). The code
                                   screen survives a reload for an hour (localStorage) and shows an "Open Gmail /
                                   Mail / Outlook" button picked from the email domain and phone (inbox.ts)
-    auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code
+    auth/callback/route.ts        Sign-in link landing: verifies token_hash (any browser) or a PKCE code. Failures go to
+                                  /login?error=link&reason=<code> (lib/sign-in-errors.ts: a fixed message per code; the
+                                  raw provider text is only logged, never put in the URL). proxy.ts leaves auth/callback
+                                  and auth/handoff alone (it redirects stray ?code / ?token_hash elsewhere to the callback).
     (tech)/layout.tsx             Signed-in shell: server-side auth check + bottom tab bar (nav.tsx)
     (tech)/install-banner.tsx     Pros sign up inside Instagram's browser, whose sign-in doesn't carry over: once they've made
                                   a pay link (not before, so they reach value first), banner offers "Open in Safari / Chrome"

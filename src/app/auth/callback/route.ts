@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { markEmailConfirmed } from "@/lib/email-confirmed";
 import { trackSignUp } from "@/lib/meta";
 import { safeNextPath } from "@/lib/redirects";
+import { signInErrorCode } from "@/lib/sign-in-errors";
 import { createClient } from "@/lib/supabase/server";
 
 const OTP_TYPES: readonly string[] = ["email", "magiclink", "signup", "invite", "recovery"];
@@ -50,6 +51,6 @@ export async function GET(request: NextRequest) {
 
   const failed = new URL("/login", origin);
   failed.searchParams.set("error", "link");
-  if (failure) failed.searchParams.set("reason", failure.slice(0, 200));
+  failed.searchParams.set("reason", signInErrorCode(failure));
   return NextResponse.redirect(failed);
 }

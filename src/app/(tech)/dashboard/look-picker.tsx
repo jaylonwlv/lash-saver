@@ -63,7 +63,30 @@ export function LookPicker({
   }, []);
   const raf = useRef(0);
 
-  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  // Tour: save once they stop tapping, so quick taps can't land out of order. A look
+  // still waiting when the card closes (Next, Skip) is saved right away.
+  const pendingLook = useRef<{ page_style: string; accent_color: string } | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  function flushSave() {
+    clearTimeout(saveTimer.current);
+    const look = pendingLook.current;
+    pendingLook.current = null;
+    if (!look) return;
+    startSaving(async () => {
+      const { ok } = await savePageLook(look);
+      setSaved(ok ? "saved" : "failed");
+    });
+  }
+
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(raf.current);
+      clearTimeout(saveTimer.current);
+      // Unmounting: send what's waiting without touching state.
+      if (pendingLook.current) void savePageLook(pendingLook.current);
+    },
+    [],
+  );
 
   // The iframe can finish loading before React attaches onLoad (first paint): catch up.
   useEffect(() => {
@@ -77,10 +100,9 @@ export function LookPicker({
     if (next.accent) setAccent(next.accent);
     setTouched(false);
     if (mode === "instant") {
-      startSaving(async () => {
-        const { ok } = await savePageLook(look);
-        setSaved(ok ? "saved" : "failed");
-      });
+      pendingLook.current = look;
+      clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(flushSave, 600);
     }
   }
 

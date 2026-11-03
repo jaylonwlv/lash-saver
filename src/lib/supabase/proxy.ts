@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { signInErrorCode } from "@/lib/sign-in-errors";
 import type { Database } from "./database.types";
 
 const PROTECTED_PREFIXES = ["/dashboard"];
@@ -12,7 +13,8 @@ export async function updateSession(request: NextRequest) {
   // If Supabase rejects the redirect URL it falls back to the Site URL (usually "/"),
   // with the auth code or error attached. Route those to the callback / login page.
   const { pathname, searchParams } = request.nextUrl;
-  if (pathname !== "/auth/callback") {
+  // The two sign-in landings handle their own tokens (auth/handoff has no `type`).
+  if (pathname !== "/auth/callback" && pathname !== "/auth/handoff") {
     if (searchParams.has("code") || searchParams.has("token_hash")) {
       const callback = request.nextUrl.clone();
       callback.pathname = "/auth/callback";
@@ -27,10 +29,12 @@ export async function updateSession(request: NextRequest) {
     if (searchParams.has("error_description") && pathname !== "/login") {
       const login = request.nextUrl.clone();
       login.pathname = "/login";
-      // Keep Supabase's or the provider's reason, so a failed sign-in can be fixed.
+      // A short reason code, never the raw text (see lib/sign-in-errors.ts).
+      const description = searchParams.get("error_description");
+      console.error("Sign-in failed before the callback:", description);
       login.search = new URLSearchParams({
         error: "link",
-        reason: (searchParams.get("error_description") ?? "").slice(0, 200),
+        reason: signInErrorCode(description),
       }).toString();
       return NextResponse.redirect(login);
     }

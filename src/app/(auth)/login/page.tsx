@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { MetaPixel } from "@/components/meta-pixel";
 import { APP_NAME, TRIAL_DAYS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
+import { signInErrorText } from "@/lib/sign-in-errors";
 import { LoginForm } from "./login-form";
 import { OAuthButtons } from "./oauth-buttons";
 
@@ -25,17 +26,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       </header>
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-5 pt-4 pb-12">
         <h1 className="text-2xl font-bold">Sign in</h1>
-        {error && (
-          <div className="flex flex-col gap-1">
-            <p className="text-danger text-sm">
-              That sign-in didn&apos;t work or has expired. Try again, or send yourself a code
-              below.
-            </p>
-            {typeof reason === "string" && reason && (
-              <p className="text-muted text-xs break-words">Details: {reason}</p>
-            )}
-          </div>
-        )}
+        {error && <p className="text-danger text-sm">{signInErrorText(reason)}</p>}
         <OAuthButtons
           providers={publicEnv().NEXT_PUBLIC_AUTH_PROVIDERS}
           next={typeof next === "string" ? next : undefined}

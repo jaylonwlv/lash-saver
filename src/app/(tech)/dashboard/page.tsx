@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { CopyLink } from "@/components/ui/copy-link";
 import { APP_NAME, depositAnnouncement, SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
-import { menuPageUrl } from "@/lib/slugs";
+import { menuPageUrl, pageSlugFor } from "@/lib/slugs";
 import { formatCents } from "@/lib/money";
 import { freeUntil } from "@/lib/stripe/billing";
 import { syncAccountStatus } from "@/lib/stripe/connect";
@@ -209,7 +209,10 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         look={{
           style: profile.page_style,
           accent: profile.accent_color,
-          address: menuUrl ? menuUrl.replace(/^https?:\/\//, "") : null,
+          // No link yet (signed up without /start): the address their page will get.
+          address: menuUrl
+            ? menuUrl.replace(/^https?:\/\//, "")
+            : `${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}/${pageSlugFor(profile.business_name ?? "your business")}`,
           examplePrices: (starterServices ?? 0) > 0,
           trade: profile.trade,
         }}
