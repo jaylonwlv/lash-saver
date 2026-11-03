@@ -119,7 +119,7 @@ export function LookPicker({
   const src = `/dashboard/preview?style=${style}&accent=${accent}`;
 
   return (
-    <div className={compact ? "flex h-full min-h-0 flex-col gap-3" : "flex flex-col gap-4"}>
+    <div className={compact ? "flex h-full min-h-0 flex-col gap-2" : "flex flex-col gap-4"}>
       {mode === "form" && (
         <>
           <input type="hidden" name="page_style" value={style} />
@@ -218,14 +218,16 @@ export function LookPicker({
               role="radio"
               aria-checked={style === id}
               onClick={() => choose({ style: id })}
-              className={`press flex min-h-12 shrink-0 snap-start items-center gap-2 rounded-full border-2 px-4 ${
+              className={`press flex min-h-11 shrink-0 snap-start items-center gap-1.5 rounded-full border-2 px-3 ${
                 style === id ? "border-foreground bg-surface" : "bg-surface/70 border-transparent"
               }`}
             >
-              <span className={`${LOOKS[id].display} text-xl leading-none`}>
+              <span className={`${LOOKS[id].display} text-base leading-none`}>
                 {id === "editorial" ? <span className="italic">Aa</span> : "Aa"}
               </span>
-              <span className="text-sm font-bold whitespace-nowrap">{PAGE_STYLES[id].label}</span>
+              <span className="text-[13px] font-bold whitespace-nowrap">
+                {PAGE_STYLES[id].label}
+              </span>
             </button>
           ))}
         </SwipeRow>
@@ -254,7 +256,7 @@ export function LookPicker({
         aria-label="Color"
         className={
           compact
-            ? "-mx-6 flex snap-x scroll-px-6 gap-1 overflow-x-auto px-6 pt-1 pb-1"
+            ? "-mx-6 flex snap-x scroll-px-6 overflow-x-auto px-5 py-1"
             : "flex flex-wrap justify-center gap-2"
         }
       >
@@ -267,14 +269,14 @@ export function LookPicker({
             aria-label={ACCENTS[id].label}
             title={ACCENTS[id].label}
             onClick={() => choose({ accent: id })}
-            className={`press flex shrink-0 snap-start items-center justify-center rounded-full ${compact ? "size-10" : "size-11"} ${
+            className={`press flex size-11 shrink-0 snap-start items-center justify-center rounded-full ${
               accent === id
                 ? "ring-foreground ring-2 ring-offset-2 ring-offset-[var(--background)]"
                 : ""
             }`}
           >
             <span
-              className={`flex overflow-hidden rounded-full ring-1 ring-black/10 ${compact ? "size-8" : "size-9"}`}
+              className={`flex overflow-hidden rounded-full ring-1 ring-black/10 ${compact ? "size-7" : "size-9"}`}
             >
               <span className="w-1/2" style={{ background: ACCENTS[id].brand }} />
               <span className="w-1/2" style={{ background: ACCENTS[id].bright }} />

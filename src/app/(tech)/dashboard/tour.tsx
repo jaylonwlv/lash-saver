@@ -151,26 +151,39 @@ export function Tour({
           key={slide}
           tabIndex={-1}
           autoFocus
-          className={`rise flex min-h-0 flex-1 flex-col justify-center-safe overflow-y-auto px-6 pt-4 pb-2 outline-none [&>*]:shrink-0 ${slides[slide].textFirst ? "gap-4" : "gap-6"}`}
+          className={`rise flex min-h-0 flex-1 flex-col justify-center-safe overflow-y-auto px-6 pb-2 outline-none [&>*]:shrink-0 ${slides[slide].textFirst ? "gap-3 pt-2" : "gap-6 pt-4"}`}
         >
           {!slides[slide].textFirst && slides[slide].visual}
-          <div className="flex flex-col gap-2">
-            <p className="text-brand text-xs font-bold tracking-[0.12em] uppercase">
-              {slides[slide].eyebrow}
-            </p>
-            <h2
-              id="tour-title"
-              className="font-display text-[32px] leading-[1.04] font-extrabold tracking-tight"
-            >
-              {slides[slide].title}
-            </h2>
-            <div className="text-muted flex flex-col gap-2 text-[17px] leading-relaxed">
-              {slides[slide].body}
+          {slides[slide].textFirst ? (
+            // A slim heading, so the visual below gets the height.
+            <div className="flex flex-col gap-0.5">
+              <h2
+                id="tour-title"
+                className="font-display text-[24px] leading-tight font-extrabold tracking-tight"
+              >
+                {slides[slide].title}
+              </h2>
+              <div className="text-muted text-[15px]">{slides[slide].body}</div>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-brand text-xs font-bold tracking-[0.12em] uppercase">
+                {slides[slide].eyebrow}
+              </p>
+              <h2
+                id="tour-title"
+                className="font-display text-[32px] leading-[1.04] font-extrabold tracking-tight"
+              >
+                {slides[slide].title}
+              </h2>
+              <div className="text-muted flex flex-col gap-2 text-[17px] leading-relaxed">
+                {slides[slide].body}
+              </div>
+            </div>
+          )}
           {slides[slide].textFirst && (
             // The visual gets every pixel the heading and buttons leave (scrolls below a floor).
-            <div className="flex min-h-[330px] flex-1 flex-col">{slides[slide].visual}</div>
+            <div className="flex min-h-[320px] flex-1 flex-col">{slides[slide].visual}</div>
           )}
         </div>
 
