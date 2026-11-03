@@ -23,6 +23,7 @@ export function LookPicker({
   mode,
   trade,
   compact = false,
+  startAtWork = false,
 }: {
   initialStyle: string;
   initialAccent: string;
@@ -34,6 +35,8 @@ export function LookPicker({
   trade: string | null;
   /** The tour: a shorter phone and one swipeable row each for styles and colors. */
   compact?: boolean;
+  /** Open scrolled to their work photos (from the tour's gallery card) instead of gliding down. */
+  startAtWork?: boolean;
 }) {
   const styles = stylesForTrade(trade);
   const [style, setStyle] = useState(initialStyle);
@@ -92,6 +95,7 @@ export function LookPicker({
   useEffect(() => {
     const doc = frame.current?.contentDocument;
     if (doc && doc.readyState === "complete" && doc.location.href !== "about:blank") onLoad();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, for the first iframe only
   }, []);
 
   function choose(next: { style?: string; accent?: string }) {
@@ -111,7 +115,16 @@ export function LookPicker({
     cancelAnimationFrame(raf.current);
     const win = frame.current?.contentWindow;
     const doc = frame.current?.contentDocument;
-    if (!win || !doc || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!win || !doc) return;
+    if (startAtWork) {
+      const work = doc.querySelector<HTMLElement>('section[aria-label="Photos of the work"]');
+      if (work) {
+        win.scrollTo({ top: Math.max(0, work.offsetTop - 24), behavior: "smooth" });
+        setTouched(true);
+        return;
+      }
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let stopped = false;
     const stop = () => {
       stopped = true;

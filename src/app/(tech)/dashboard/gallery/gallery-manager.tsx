@@ -1,6 +1,7 @@
 "use client";
 
 import { type CSSProperties, useRef, useState } from "react";
+import { accentStyle } from "@/lib/accents";
 import { publicEnv } from "@/lib/env.public";
 import {
   GALLERY_BUCKET,
@@ -22,11 +23,17 @@ export function GalleryManager({
   techId,
   initial,
   compact = false,
+  accent,
+  onSeeOnPage,
 }: {
   techId: string;
   initial: GalleryPhoto[];
   /** The tour: a bigger add button and a single row of photos. */
   compact?: boolean;
+  /** Tour: their page color, for the blank frames. */
+  accent?: string;
+  /** Tour: jump to the page card, scrolled to their photos. */
+  onSeeOnPage?: () => void;
 }) {
   const [photos, setPhotos] = useState(initial);
   const [busy, setBusy] = useState(0);
@@ -89,6 +96,46 @@ export function GalleryManager({
         className="sr-only"
         onChange={(e) => void addFiles(e.target.files)}
       />
+      {compact && (
+        // The tour: a gliding strip first. Blank frames in their page's color until they add
+        // photos, then their photos, moving the way they will on their page.
+        <div
+          className="-mx-6 overflow-hidden motion-reduce:overflow-x-auto"
+          style={accentStyle(accent)}
+        >
+          <div
+            className="marquee flex w-max gap-2 px-6"
+            style={
+              { "--marquee": `${Math.max(16, Math.max(photos.length, 4) * 4)}s` } as CSSProperties
+            }
+          >
+            {photos.length > 0
+              ? [...fill(photos), ...fill(photos)].map((photo, i, all) => (
+                  // eslint-disable-next-line @next/next/no-img-element -- already sized on upload
+                  <img
+                    key={`${photo.id}-${i}`}
+                    src={galleryPhotoUrl(supabaseUrl, photo.path)}
+                    alt=""
+                    className={`aspect-[4/5] h-40 w-auto rounded-2xl object-cover ${
+                      i >= all.length / 2 ? "motion-reduce:hidden" : ""
+                    }`}
+                  />
+                ))
+              : Array.from({ length: 10 }, (_, i) => (
+                  <span
+                    key={i}
+                    aria-hidden
+                    className={`from-brand-soft to-brand/35 text-brand flex aspect-[4/5] h-40 flex-col items-center justify-center gap-1 rounded-2xl border border-white/60 bg-gradient-to-br text-xs font-bold ${
+                      i >= 5 ? "motion-reduce:hidden" : ""
+                    }`}
+                  >
+                    <span className="text-2xl leading-none font-medium">＋</span>
+                    Your work here
+                  </span>
+                ))}
+          </div>
+        </div>
+      )}
       {left > 0 && (
         <button
           type="button"
@@ -113,33 +160,20 @@ export function GalleryManager({
       )}
       {error && <p className="text-danger text-sm">{error}</p>}
       {compact && photos.length > 0 && (
-        // The tour: their photos start gliding right away, the way they will on their page.
-        <div className="flex flex-col gap-2">
-          <div className="-mx-6 overflow-hidden motion-reduce:overflow-x-auto">
-            <div
-              className="marquee flex w-max gap-2 px-6"
-              style={
-                { "--marquee": `${Math.max(16, Math.max(photos.length, 4) * 4)}s` } as CSSProperties
-              }
+        <>
+          {onSeeOnPage && (
+            <button
+              type="button"
+              onClick={onSeeOnPage}
+              className="press bg-ink text-pink flex min-h-12 items-center justify-center rounded-2xl px-4 font-bold"
             >
-              {[...fill(photos), ...fill(photos)].map((photo, i, all) => (
-                // eslint-disable-next-line @next/next/no-img-element -- already sized on upload
-                <img
-                  key={`${photo.id}-${i}`}
-                  src={galleryPhotoUrl(supabaseUrl, photo.path)}
-                  alt=""
-                  className={`aspect-[4/5] h-40 w-auto rounded-2xl object-cover ${
-                    i >= all.length / 2 ? "motion-reduce:hidden" : ""
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
+              See them on your page →
+            </button>
+          )}
           <p className="text-muted text-center text-xs">
-            That&apos;s how they&apos;ll move on your page. Remove or add more anytime under Profile
-            → Your work photos.
+            Remove or add more anytime under Profile → Your work photos.
           </p>
-        </div>
+        </>
       )}
       {!compact && photos.length > 0 && (
         <ul className="grid grid-cols-3 gap-2">

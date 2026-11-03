@@ -105,7 +105,9 @@ src/
                                   straight to the public "gallery" bucket under <tech id>/ (storage policies: own folder
                                   only), then addGalleryPhoto lists it in gallery_photos (12 max, also a DB trigger).
                                   On ProPage they glide in two rows under the hero ("The work"), hidden with none. A
-                                  tour card ("Show off your work", after the page card) uploads and shows them gliding;
+                                  tour card ("Show off your work", after the page card) glides blank "Your work here" frames in the pro's
+                                  color until they add photos, then their photos, plus "See them on your page →" (jumps back
+                                  to the page card with the preview scrolled to "The work": LookPicker startAtWork);
                                   linked from the dashboard menu card and Profile. Terms: own work, no nudity etc.
     dashboard/preview/            The signed-in pro's page for that iframe, outside the (tech) layout (no app chrome);
                                   ?style= / ?accent= try a look unsaved; shows example (starter) prices.

@@ -86,6 +86,8 @@ export function Tour({
   // Reopened with "Take the tour" (TourLauncher), any number of times.
   const [launched, setLaunched] = useState(false);
   const [slide, setSlide] = useState(0);
+  // Arrived on the page card from "See them on your page": open the preview at their photos.
+  const [focusWork, setFocusWork] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const open = launched || (!closed && (force || (eligible && !seen)));
 
@@ -120,7 +122,13 @@ export function Tour({
   if (!open) return null;
 
   const next = steps.find((s) => !s.done);
-  const slides = SLIDES(steps, next, example, look, gallery);
+  const slides = SLIDES(steps, next, example, look, gallery, {
+    focusWork,
+    seeOnPage: () => {
+      setFocusWork(true);
+      setSlide(slides.findIndex((s) => s.id === "page"));
+    },
+  });
   const last = slide === slides.length - 1;
 
   return (
@@ -198,7 +206,10 @@ export function Tour({
           {slide > 0 && (
             <button
               type="button"
-              onClick={() => setSlide(slide - 1)}
+              onClick={() => {
+                setFocusWork(false);
+                setSlide(slide - 1);
+              }}
               className="press border-line bg-surface min-h-14 rounded-2xl border px-5 font-bold"
             >
               Back
@@ -225,7 +236,10 @@ export function Tour({
           ) : (
             <button
               type="button"
-              onClick={() => setSlide(slide + 1)}
+              onClick={() => {
+                setFocusWork(false);
+                setSlide(slide + 1);
+              }}
               className="press bg-ink text-pink min-h-14 flex-1 rounded-2xl px-5 text-lg font-extrabold"
             >
               {slide === 0 ? "Show me" : "Next"}
@@ -238,6 +252,8 @@ export function Tour({
 }
 
 type Slide = {
+  /** For jumping to a card ("page"). */
+  id?: string;
   eyebrow: string;
   title: string;
   body: ReactNode;
@@ -252,6 +268,7 @@ function SLIDES(
   example: TourExample,
   look: TourLook,
   gallery: TourGallery,
+  nav: { focusWork: boolean; seeOnPage: () => void },
 ): Slide[] {
   return [
     {
@@ -373,6 +390,7 @@ function SLIDES(
       ),
     },
     {
+      id: "page",
       eyebrow: "Your own page",
       title: "Make your page yours",
       textFirst: true,
@@ -386,6 +404,7 @@ function SLIDES(
           examplePrices={look.examplePrices}
           trade={look.trade}
           compact
+          startAtWork={nav.focusWork}
         />
       ),
     },
@@ -399,7 +418,15 @@ function SLIDES(
           anytime.
         </p>
       ),
-      visual: <GalleryManager techId={gallery.techId} initial={gallery.photos} compact />,
+      visual: (
+        <GalleryManager
+          techId={gallery.techId}
+          initial={gallery.photos}
+          compact
+          accent={look.accent}
+          onSeeOnPage={nav.seeOnPage}
+        />
+      ),
     },
     {
       eyebrow: "Your home screen",
