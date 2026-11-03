@@ -37,6 +37,8 @@ export type ProPageProps = {
   inviteHref: string | null;
   /** In the dashboard preview, links open outside it. */
   preview?: boolean;
+  /** Photos of their work (optional): a moving gallery under the hero. */
+  photos?: { id: string; url: string; width: number; height: number }[];
 };
 
 const dollars = (cents: number) => formatCents(cents).replace(/\.00$/, "");
@@ -52,6 +54,7 @@ export function ProPage({
   style,
   inviteHref,
   preview = false,
+  photos = [],
 }: ProPageProps) {
   const look = LOOKS[pageStyleFor(style)];
   const dm = handle ? `https://ig.me/m/${handle}` : null;
@@ -160,6 +163,24 @@ export function ProPage({
 
       {/* Service names gliding by, in the pro's color. */}
       {sorted.length > 0 && <Marquee items={sorted.map((s) => s.name)} look={look} />}
+
+      {/* Their work, gliding by: two rows in opposite directions once there are enough. */}
+      {photos.length > 0 && (
+        <section aria-label="Photos of the work" className="pt-14">
+          <div className="mx-auto w-full max-w-xl px-6">
+            <Eyebrow>The work</Eyebrow>
+            <h2 data-reveal className={`${look.display} ${look.h2} mt-3`}>
+              See it <span className={look.em}>for yourself.</span>
+            </h2>
+          </div>
+          <div data-reveal className="mt-8 flex flex-col gap-3" style={delay(120)}>
+            <PhotoRow photos={photos.length >= 4 ? photos.filter((_, i) => i % 2 === 0) : photos} />
+            {photos.length >= 4 && (
+              <PhotoRow photos={photos.filter((_, i) => i % 2 === 1)} reverse />
+            )}
+          </div>
+        </section>
+      )}
 
       <main className="flex flex-1 flex-col">
         {/* The menu: numbered, hairline-ruled, like a printed price list. */}
@@ -407,6 +428,51 @@ function Marquee({ items, look }: { items: string[]; look: Look }) {
             <span className={`${look.display} ${look.marquee}`}>{item}</span>
             <span className="text-sm opacity-70">✦</span>
           </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One gliding row of photos. Repeated to fill a wide screen and doubled for a
+ * seamless loop; it pauses while touched or hovered. With reduced motion it's a
+ * plain row you swipe through.
+ */
+function PhotoRow({
+  photos,
+  reverse = false,
+}: {
+  photos: { id: string; url: string; width: number; height: number }[];
+  reverse?: boolean;
+}) {
+  const base = Array.from(
+    { length: Math.max(1, Math.ceil(6 / photos.length)) },
+    () => photos,
+  ).flat();
+  return (
+    <div className="group overflow-hidden motion-reduce:overflow-x-auto">
+      <div
+        className={`marquee flex w-max gap-3 group-hover:[animation-play-state:paused] group-active:[animation-play-state:paused] ${
+          reverse ? "[animation-direction:reverse]" : ""
+        }`}
+        style={{ "--marquee": `${Math.max(30, base.length * 7)}s` } as CSSProperties}
+      >
+        {[...base, ...base].map((photo, i) => (
+          // eslint-disable-next-line @next/next/no-img-element -- sized on upload, served from storage
+          <img
+            key={`${photo.id}-${i}`}
+            src={photo.url}
+            alt={i < photos.length ? "Photo of the work" : ""}
+            aria-hidden={i >= photos.length || undefined}
+            width={photo.width}
+            height={photo.height}
+            loading={i < 4 ? "eager" : "lazy"}
+            decoding="async"
+            className={`aspect-[4/5] h-64 w-auto rounded-[22px] object-cover shadow-[0_10px_30px_-18px_rgb(0_0_0/0.45)] sm:h-80 ${
+              i >= base.length ? "motion-reduce:hidden" : ""
+            }`}
+          />
         ))}
       </div>
     </div>

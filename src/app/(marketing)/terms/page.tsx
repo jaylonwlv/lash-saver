@@ -216,6 +216,12 @@ export default function TermsPage() {
           and so on). You give us permission to store, display and send it as needed to run the
           service, for example showing your services on your menu page and your policy on pay links.
         </p>
+        <p>
+          Photos you add to your page must be your own work, taken by you or used with permission,
+          and must not show anyone who hasn&apos;t agreed to be shown. No nudity, hateful or violent
+          content. We may remove any photo that breaks these terms or that we&apos;re told infringes
+          someone&apos;s rights.
+        </p>
       </Section>
 
       <Section title="10. Ending your account">

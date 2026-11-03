@@ -53,6 +53,9 @@ export default async function ProfilePage() {
         }}
       />
       <div className="border-line flex flex-col gap-3 border-t pt-6">
+        <ButtonLink href="/dashboard/gallery" variant="secondary">
+          Your work photos
+        </ButtonLink>
         <ButtonLink href="/dashboard/payments" variant="secondary">
           Deposits
         </ButtonLink>
