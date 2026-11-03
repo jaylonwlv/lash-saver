@@ -136,7 +136,7 @@ export default function HomePage() {
               title="Create a pay link in seconds"
               body="Pick the service and time, then paste the link into your chat."
               image={zoomPayLink}
-              alt="Appointment created: a pay link with a Copy pay link button"
+              alt="Appointment created: a ready-made message with the pay link and a Share pay link button"
             />
             <Step
               n={2}
