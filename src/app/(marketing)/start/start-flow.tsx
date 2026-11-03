@@ -562,15 +562,13 @@ export function StartFlow({
         </div>
         {/* What it costs them to try: nothing, and they keep how they get paid. */}
         <ul className="flex flex-wrap gap-2 text-sm font-semibold">
-          {[
-            `Free for ${TRIAL_DAYS} days`,
-            "No card to start",
-            "Keep your Cash App, Zelle or Venmo",
-          ].map((chip) => (
-            <li key={chip} className="border-line bg-surface rounded-full border px-3 py-1.5">
-              ✓ {chip}
-            </li>
-          ))}
+          {[`Free for ${TRIAL_DAYS} days`, "No card to start", "Deposits go straight to you"].map(
+            (chip) => (
+              <li key={chip} className="border-line bg-surface rounded-full border px-3 py-1.5">
+                ✓ {chip}
+              </li>
+            ),
+          )}
         </ul>
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-bold">Make it yours</h2>

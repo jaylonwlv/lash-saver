@@ -53,7 +53,7 @@ src/
                                   (the Privacy Policy says so); a Meta Pixel belongs on marketing pages only.
     (marketing)/start/            Instant sign-up, value first. Both screens open with the ads' promise ("No more getting ghosted
                                   by clients.", matching the landing page); the pay link screen adds the mechanism line and
-                                  chips (free, no card, keep your Cash App). Funnel events also go to Clarity, and the
+                                  chips (free, no card, deposits go straight to you). Funnel events also go to Clarity, and the
                                   session is tagged start_step / start_trade so heatmaps and recordings filter by step.
                                   Flow: trade → their pay link right away (placeholder name, Cash App
                                   pre-selected) with "Make it yours" below it: business name, payment method (handle optional;
