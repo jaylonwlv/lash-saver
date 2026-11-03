@@ -54,7 +54,7 @@ export function DomainFlow({
         <label htmlFor="domain-name" className="font-bold">
           Find your name
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <input
             id="domain-name"
             value={name}
@@ -69,10 +69,10 @@ export function DomainFlow({
             autoCorrect="off"
             spellCheck={false}
             placeholder="studionova"
-            className="border-line bg-surface min-h-12 w-full min-w-0 rounded-xl border px-3 text-base"
+            className="border-line bg-surface min-h-12 w-full rounded-xl border px-3 text-base"
           />
-          <Button type="button" onClick={search} disabled={searching} className="shrink-0 px-5">
-            {searching ? "…" : "Search"}
+          <Button type="button" onClick={search} disabled={searching}>
+            {searching ? "Checking…" : "Search .com and .pro"}
           </Button>
         </div>
         {searchError && <p className="text-danger text-sm">{searchError}</p>}
