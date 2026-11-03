@@ -175,9 +175,8 @@ export default function HomePage() {
               Keep your Cash App. Add what it&apos;s missing.
             </h2>
             <p className="text-muted mt-2 max-w-2xl">
-              Payment apps take money but don&apos;t protect you. Booking apps protect you but make
-              your clients use a booking site and pay through their checkout. {APP_NAME} adds the
-              protection to the way you already book and get paid.
+              Payment apps take the money but don&apos;t protect you. {APP_NAME} adds the protection
+              to the way you already book and get paid.
             </p>
             <div className="border-line bg-background mt-8 overflow-hidden rounded-2xl border">
               <table className="w-full text-left text-sm">
@@ -187,21 +186,18 @@ export default function HomePage() {
                     <th className="w-16 px-1 py-3 text-center text-xs font-medium sm:w-auto sm:px-3">
                       Cash App alone
                     </th>
-                    <th className="w-16 px-1 py-3 text-center text-xs font-medium sm:w-auto sm:px-3">
-                      Most booking apps
-                    </th>
                     <th className="text-brand bg-brand-soft/50 w-16 px-1 py-3 text-center text-xs font-bold sm:w-auto sm:px-3">
                       {APP_NAME}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <Row label="Keep booking in your DMs or texts" cash booking={false} />
-                  <Row label="Clients pay with Cash App, Zelle or Venmo" cash booking={false} />
-                  <Row label="Client agrees to your policy before paying" cash={false} booking />
-                  <Row label="Automatic reminders" cash={false} booking />
-                  <Row label="Refund or keep, decided by your policy" cash={false} booking />
-                  <Row label="One tap to keep a no-show's deposit" cash={false} booking />
+                  <Row label="Keep booking in your DMs or texts" cash />
+                  <Row label="Clients pay with Cash App, Zelle or Venmo" cash />
+                  <Row label="Client agrees to your policy before paying" cash={false} />
+                  <Row label="Automatic reminders" cash={false} />
+                  <Row label="Refund or keep, decided by your policy" cash={false} />
+                  <Row label="One tap to keep a no-show's deposit" cash={false} />
                 </tbody>
               </table>
             </div>
@@ -651,15 +647,12 @@ function Mark({ yes }: { yes: boolean }) {
   );
 }
 
-function Row({ label, cash, booking }: { label: string; cash: boolean; booking: boolean }) {
+function Row({ label, cash }: { label: string; cash: boolean }) {
   return (
     <tr className="border-line border-b last:border-0">
       <td className="p-3">{label}</td>
       <td className="p-3 text-center">
         <Mark yes={cash} />
-      </td>
-      <td className="p-3 text-center">
-        <Mark yes={booking} />
       </td>
       <td className="bg-brand-soft/50 p-3 text-center">
         <Mark yes />
