@@ -39,6 +39,8 @@ export type ProPageProps = {
   preview?: boolean;
   /** Photos of their work (optional): a moving gallery under the hero. */
   photos?: { id: string; url: string; width: number; height: number }[];
+  /** The homepage's sample page: where "Message to book" goes instead of a real DM. */
+  messageHref?: string;
 };
 
 const dollars = (cents: number) => formatCents(cents).replace(/\.00$/, "");
@@ -55,9 +57,10 @@ export function ProPage({
   inviteHref,
   preview = false,
   photos = [],
+  messageHref,
 }: ProPageProps) {
   const look = LOOKS[pageStyleFor(style)];
-  const dm = handle ? `https://ig.me/m/${handle}` : null;
+  const dm = messageHref ?? (handle ? `https://ig.me/m/${handle}` : null);
   const out = preview ? ({ target: "_blank", rel: "noreferrer" } as const) : {};
   const lines = splitName(name);
   const sorted = [...services].sort((a, b) => a.price_cents - b.price_cents);

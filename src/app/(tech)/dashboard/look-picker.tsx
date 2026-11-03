@@ -24,21 +24,32 @@ export function LookPicker({
   trade,
   compact = false,
   startAtWork = false,
+  previewPath = "/dashboard/preview",
+  styleIds,
+  swipe = false,
 }: {
   initialStyle: string;
   initialAccent: string;
   /** "getdibs.pro/studio-nova", shown in the phone's address bar. */
   address: string | null;
   examplePrices: boolean;
-  mode: "instant" | "form";
+  /** instant: saves as they tap (tour) · form: posts with Profile · demo: the homepage, never saves. */
+  mode: "instant" | "form" | "demo";
   /** The pro's trade: some get fonts from their own world, shown first. */
   trade: string | null;
   /** The tour: a shorter phone and one swipeable row each for styles and colors. */
   compact?: boolean;
   /** Open scrolled to their work photos (from the tour's gallery card) instead of gliding down. */
   startAtWork?: boolean;
+  /** The page shown in the phone (the homepage uses a public sample). */
+  previewPath?: string;
+  /** Every style to offer, in order, instead of the trade's and the general three. */
+  styleIds?: PageStyleId[];
+  /** One swipeable row each for styles and colors, without the tour's full-height phone. */
+  swipe?: boolean;
 }) {
-  const styles = stylesForTrade(trade);
+  const styles = styleIds ? { trade: [], general: styleIds } : stylesForTrade(trade);
+  const rows = compact || swipe;
   const [style, setStyle] = useState(initialStyle);
   const [accent, setAccent] = useState(initialAccent);
   const [replay, setReplay] = useState(0);
@@ -151,7 +162,7 @@ export function LookPicker({
     raf.current = requestAnimationFrame(step);
   }
 
-  const src = `/dashboard/preview?style=${style}&accent=${accent}`;
+  const src = `${previewPath}?style=${style}&accent=${accent}`;
 
   return (
     <div className={compact ? "flex h-full min-h-0 flex-col gap-2" : "flex flex-col gap-4"}>
@@ -244,7 +255,7 @@ export function LookPicker({
       )}
 
       {/* Style: their trade's own fonts first, when it has some, then the general three. */}
-      {compact ? (
+      {rows ? (
         <SwipeRow label="Page style">
           {[...styles.trade, ...styles.general].map((id) => (
             <button
@@ -290,7 +301,7 @@ export function LookPicker({
         role="radiogroup"
         aria-label="Color"
         className={
-          compact
+          rows
             ? "-mx-6 flex snap-x scroll-px-6 overflow-x-auto px-5 py-1"
             : "flex flex-wrap justify-center gap-2"
         }
@@ -311,7 +322,7 @@ export function LookPicker({
             }`}
           >
             <span
-              className={`flex overflow-hidden rounded-full ring-1 ring-black/10 ${compact ? "size-7" : "size-9"}`}
+              className={`flex overflow-hidden rounded-full ring-1 ring-black/10 ${rows ? "size-7" : "size-9"}`}
             >
               <span className="w-1/2" style={{ background: ACCENTS[id].brand }} />
               <span className="w-1/2" style={{ background: ACCENTS[id].bright }} />

@@ -36,7 +36,10 @@ The product's job is preventing no-shows: deposit up front, a policy the client 
 src/
   proxy.ts                        Refreshes the Supabase session; guards /dashboard
   app/
-    (marketing)/page.tsx          Landing page (static): hero with DM + pay page, no-show cost calculator,
+    (marketing)/page.tsx          Landing page (static): hero with DM + pay page; right under it the hook, "Plus a page
+                                  that sells for you": a sample pro page live in a phone (page-showcase.tsx → LookPicker
+                                  mode "demo", iframe of demo/sample: "Studio Nova", outside the marketing layout so no
+                                  Pixel/Clarity inside), every style and color one tap; then no-show cost calculator,
                                   4 steps with close-up crops of real app screens (images/zoom-*.png, neutral
                                   "Studio Nova" example, no trade names), vs Cash App alone, founder note, pricing, FAQ,
                                   sticky phone CTA. The price shows under the hero button and in the sticky bar.

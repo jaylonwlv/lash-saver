@@ -3,10 +3,8 @@ import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
-import { CopyLink } from "@/components/ui/copy-link";
 import {
   APP_NAME,
-  depositAnnouncement,
   FOUNDER_NAME,
   LEGAL_CONTACT_EMAIL,
   PROCESSING_FEE_LABEL,
@@ -24,6 +22,7 @@ import zoomClientPays from "./images/zoom-client-pays.png";
 import zoomNoShow from "./images/zoom-no-show.png";
 import zoomPayLink from "./images/zoom-pay-link.png";
 import { NoShowCalculator } from "./no-show-calculator";
+import { PageShowcase } from "./page-showcase";
 import { StickyCta } from "./sticky-cta";
 
 /** Every pro gets a menu page at the root of the site, e.g. getdibs.pro/fresh-cuts. */
@@ -50,7 +49,6 @@ const SAMPLE_DEPOSIT = 4000;
 const START = `Start free for ${TRIAL_DAYS} days`;
 // Every "Start free" goes to instant sign-up (StartSignup and Lead Pixel events fire there).
 const SIGN_UP = "/start";
-const ANNOUNCEMENT = depositAnnouncement(48);
 const HERO_NOTE = `Then ${price}/month, cancel anytime. No card for your first pay link; you add one for the next, and you're not charged until the trial ends.`;
 const CARD_NOTE = `No card for your first pay link. You add one for the next, and you're not charged until the trial ends.`;
 
@@ -104,6 +102,28 @@ export default function HomePage() {
             <Check>Your own page: {PAGE_HOST}/yourname</Check>
             <Check>Cancel anytime</Check>
           </ul>
+        </section>
+
+        {/* Their own page: the interactive hook */}
+        <section className="bg-surface border-line overflow-x-clip border-y">
+          <div className="mx-auto grid w-full max-w-5xl gap-6 px-5 py-14 md:grid-cols-2 md:items-center md:gap-10">
+            <div className="flex min-w-0 flex-col gap-3">
+              <p className="text-brand text-sm font-bold tracking-[0.12em] uppercase">
+                Included free
+              </p>
+              <h2 className="text-3xl font-bold tracking-tight">Plus a page that sells for you.</h2>
+              <p className="text-muted">
+                Your services, prices and policy at{" "}
+                <strong className="text-foreground">{PAGE_HOST}/yourname</strong>, styled your way.
+                Put it in your bio and clients message you ready to book.{" "}
+                <strong className="text-foreground">Try it: pick a style and a color.</strong>
+              </p>
+            </div>
+            {/* min-w-0: the swipe rows inside must scroll, not widen the column. */}
+            <div className="min-w-0">
+              <PageShowcase address={`${PAGE_HOST}/studio-nova`} />
+            </div>
+          </div>
         </section>
 
         {/* The cost */}
@@ -204,40 +224,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* The awkward part */}
-        <section className="mx-auto grid w-full max-w-5xl gap-8 px-5 py-14 md:grid-cols-2 md:items-center">
-          <div className="flex flex-col gap-4">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Deposits, without the awkward conversation.
-            </h2>
-            <p className="text-muted">
-              The hard part was never the money. It&apos;s asking for it, and enforcing it when
-              someone flakes. {APP_NAME} does that part, so your policy is the bad guy, not you.
-            </p>
-            <ul className="flex flex-col gap-3">
-              <Check>
-                <strong>Your policy does the talking.</strong> Clients agree to it before they pay,
-                so there&apos;s nothing to argue about in the DMs.
-              </Check>
-              <Check>
-                <strong>You never chase anyone.</strong> Reminders go out on their own, and so does
-                the polite &ldquo;you missed your appointment&rdquo; email.
-              </Check>
-              <Check>
-                <strong>It feels fair, not greedy.</strong> Clients who cancel in time get their
-                deposit back, and they see that up front.
-              </Check>
-            </ul>
-          </div>
-          <div className="border-line bg-surface flex flex-col gap-3 rounded-3xl border p-5">
-            <p className="font-semibold">Starting deposits? Send your clients this:</p>
-            <CopyLink url={ANNOUNCEMENT} label="Copy this message" prose />
-            <p className="text-muted text-xs">
-              Edit it however you like. Change 48 hours to your policy.
-            </p>
-          </div>
-        </section>
-
         {/* What clients get */}
         <section className="bg-surface border-line border-y">
           <div className="mx-auto w-full max-w-5xl px-5 py-14">
@@ -277,57 +263,6 @@ export default function HomePage() {
                   Cancel my appointment
                 </span>
               </ClientPerk>
-            </div>
-          </div>
-        </section>
-
-        {/* Their own page */}
-        <section className="mx-auto grid w-full max-w-5xl gap-8 px-5 py-14 md:grid-cols-2 md:items-center">
-          <div className="flex flex-col gap-4">
-            <h2 className="text-3xl font-bold tracking-tight">Your own page, in your bio.</h2>
-            <p className="text-muted">
-              Every pro gets a page at{" "}
-              <strong className="text-foreground">{PAGE_HOST}/yourname</strong> with your services,
-              prices and policy. Put it in your Instagram bio and let it answer the questions before
-              anyone messages you.
-            </p>
-            <ul className="flex flex-col gap-3">
-              <Check>
-                <strong>New clients find you easier.</strong> Anyone who taps your bio sees what you
-                offer and what it costs, so they message you ready to book.
-              </Check>
-              <Check>
-                <strong>Fewer &ldquo;how much?&rdquo; DMs.</strong> Prices and deposits are right
-                there, so you skip the back-and-forth.
-              </Check>
-              <Check>
-                <strong>Your rules, up front.</strong> Clients see your deposit and cancellation
-                policy before they book, so it&apos;s never a surprise.
-              </Check>
-              <Check>
-                <strong>Easy to pass along.</strong> Regulars send one link to a friend, and the
-                preview shows your name and prices.
-              </Check>
-            </ul>
-          </div>
-          <div className="border-line bg-surface mx-auto flex w-full max-w-sm flex-col gap-3 rounded-3xl border p-5">
-            <p className="text-muted text-xs font-semibold tracking-[0.1em] uppercase">
-              In your bio
-            </p>
-            <p className="font-semibold">Studio Nova</p>
-            <p className="text-brand text-sm font-semibold">🔗 {PAGE_HOST}/studio-nova</p>
-            <div className="border-line flex flex-col gap-2 border-t pt-3 text-sm">
-              <p className="flex justify-between">
-                <span>Touch-up · 45 min</span>
-                <strong>$55</strong>
-              </p>
-              <p className="flex justify-between">
-                <span>Signature service · 1 hr 30 min</span>
-                <strong>$95</strong>
-              </p>
-              <p className="text-muted text-xs">
-                Deposit holds your spot. Cancel 48 hours ahead for a refund.
-              </p>
             </div>
           </div>
         </section>
