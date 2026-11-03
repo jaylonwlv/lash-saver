@@ -128,7 +128,9 @@ export default function PrivacyPage() {
           <li>
             <strong>Between pros and their clients:</strong> a client&apos;s booking details are
             shared with the pro they&apos;re booking with, and a pro&apos;s business details, policy
-            and payment handles are shown to their clients.
+            and payment handles are shown to their clients. Photos a pro adds to their page are
+            public: anyone with the link to their page can see them. We shrink photos and remove
+            their location data before they&apos;re stored.
           </li>
           <li>
             <strong>Calendars you choose to use:</strong> a client who adds their appointment to

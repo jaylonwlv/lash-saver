@@ -1,5 +1,7 @@
 import "server-only";
 import { cache } from "react";
+import { publicEnv } from "@/lib/env.public";
+import { galleryPhotoUrl } from "@/lib/gallery";
 import { isReservedSlug, SLUG_PATTERN } from "@/lib/slugs";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,5 +37,20 @@ export const loadMenu = cache(async (rawSlug: string) => {
   if (servicesError)
     throw new Error(`Menu page: loading services failed: ${servicesError.message}`);
 
-  return { slug, tech, services: services ?? [], name: tech.business_name ?? slug };
+  const { data: photos, error: photosError } = await supabase
+    .from("gallery_photos")
+    .select("id, path, width, height")
+    .eq("tech_id", tech.id)
+    .order("created_at");
+  // The page still works without its gallery.
+  if (photosError) console.error("Menu page: loading gallery failed", photosError);
+  const supabaseUrl = publicEnv().NEXT_PUBLIC_SUPABASE_URL;
+
+  return {
+    slug,
+    tech,
+    services: services ?? [],
+    name: tech.business_name ?? slug,
+    photos: (photos ?? []).map((p) => ({ ...p, url: galleryPhotoUrl(supabaseUrl, p.path) })),
+  };
 });

@@ -31,7 +31,7 @@ export default async function MenuPage({ params }: PageProps<"/[slug]">) {
   if (raw !== lower && SLUG_PATTERN.test(lower)) permanentRedirect(`/${lower}`);
   const menu = await loadMenu(raw);
   if (!menu) notFound();
-  const { tech, services, name, slug } = menu;
+  const { tech, services, name, slug, photos } = menu;
   return (
     <ProPage
       name={name}
@@ -42,6 +42,7 @@ export default async function MenuPage({ params }: PageProps<"/[slug]">) {
       accent={tech.accent_color}
       style={tech.page_style}
       inviteHref={inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, slug, "menu")}
+      photos={photos}
     />
   );
 }

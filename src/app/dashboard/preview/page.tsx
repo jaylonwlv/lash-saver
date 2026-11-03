@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProPage } from "@/components/pro-page/pro-page";
 import { ACCENTS } from "@/lib/accents";
+import { publicEnv } from "@/lib/env.public";
+import { galleryPhotoUrl } from "@/lib/gallery";
 import { PAGE_STYLES } from "@/lib/page-styles";
 import { createClient, getUser } from "@/lib/supabase/server";
 
@@ -19,7 +21,7 @@ export default async function PagePreview({ searchParams }: PageProps<"/dashboar
   if (!user) notFound();
   const { style, accent } = await searchParams;
   const supabase = await createClient();
-  const [{ data: profile }, { data: services }] = await Promise.all([
+  const [{ data: profile }, { data: services }, { data: photos }] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -32,6 +34,11 @@ export default async function PagePreview({ searchParams }: PageProps<"/dashboar
       .select("id, name, duration_minutes, price_cents, deposit_cents")
       .eq("tech_id", user.id)
       .eq("is_active", true),
+    supabase
+      .from("gallery_photos")
+      .select("id, path, width, height")
+      .eq("tech_id", user.id)
+      .order("created_at"),
   ]);
   if (!profile) notFound();
   const pick = (value: unknown, allowed: object, saved: string) =>
@@ -48,6 +55,10 @@ export default async function PagePreview({ searchParams }: PageProps<"/dashboar
       accent={pick(accent, ACCENTS, profile.accent_color)}
       style={pick(style, PAGE_STYLES, profile.page_style)}
       inviteHref={null}
+      photos={(photos ?? []).map((p) => ({
+        ...p,
+        url: galleryPhotoUrl(publicEnv().NEXT_PUBLIC_SUPABASE_URL, p.path),
+      }))}
     />
   );
 }

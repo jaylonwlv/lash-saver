@@ -266,6 +266,15 @@ type CateringPaymentRow = Timestamps & {
 };
 
 /** Insert type: columns with DB defaults become optional. */
+type GalleryPhotoRow = {
+  id: string;
+  tech_id: string;
+  path: string;
+  width: number;
+  height: number;
+  created_at: string;
+};
+
 type Insertable<Row, Required extends keyof Row> = Pick<Row, Required> &
   Partial<Omit<Row, Required>>;
 
@@ -358,6 +367,12 @@ export type Database = {
           | "balance_cents"
         >;
         Update: Partial<CateringBookingRow>;
+        Relationships: [];
+      };
+      gallery_photos: {
+        Row: GalleryPhotoRow;
+        Insert: Insertable<GalleryPhotoRow, "tech_id" | "path" | "width" | "height">;
+        Update: Partial<GalleryPhotoRow>;
         Relationships: [];
       };
       catering_payments: {

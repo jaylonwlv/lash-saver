@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { APP_NAME } from "@/lib/config";
+import type { GalleryPhoto } from "@/lib/gallery";
+import { GalleryManager } from "./gallery/gallery-manager";
 import { LookPicker } from "./look-picker";
 import { markTourSeen } from "./tour-actions";
 
@@ -35,6 +37,9 @@ export type TourStep = { title: string; detail: string; href: string; done: bool
 /** The pro's priciest service, so the value card speaks in their own numbers. */
 export type TourExample = { service: string; price: string; deposit: string } | null;
 /** The pro's page and its current look, for the live preview slide. */
+/** The pro's work photos, for the "Show off your work" card. */
+export type TourGallery = { techId: string; photos: GalleryPhoto[] };
+
 export type TourLook = {
   style: string;
   accent: string;
@@ -58,9 +63,11 @@ export function Tour({
   force,
   example,
   look,
+  gallery,
   accountId,
 }: {
   accountId: string;
+  gallery: TourGallery;
   steps: TourStep[];
   example: TourExample;
   look: TourLook;
@@ -113,7 +120,7 @@ export function Tour({
   if (!open) return null;
 
   const next = steps.find((s) => !s.done);
-  const slides = SLIDES(steps, next, example, look);
+  const slides = SLIDES(steps, next, example, look, gallery);
   const last = slide === slides.length - 1;
 
   return (
@@ -244,6 +251,7 @@ function SLIDES(
   next: TourStep | undefined,
   example: TourExample,
   look: TourLook,
+  gallery: TourGallery,
 ): Slide[] {
   return [
     {
@@ -380,6 +388,18 @@ function SLIDES(
           compact
         />
       ),
+    },
+    {
+      eyebrow: "Optional, but worth it",
+      title: "Show off your work",
+      body: (
+        <p>
+          Add a few photos of your best work. They glide across your page, so new clients see
+          exactly what they&apos;re booking before they message you. Up to 12, and you can add more
+          anytime.
+        </p>
+      ),
+      visual: <GalleryManager techId={gallery.techId} initial={gallery.photos} compact />,
     },
     {
       eyebrow: "Your home screen",

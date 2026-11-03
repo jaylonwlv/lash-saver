@@ -96,6 +96,13 @@ src/
                                   style and color choices: it scrolls itself until touched, each change replays the
                                   entrance. In the tour's "Your own page" card it saves on tap (savePageLook,
                                   look-actions.ts); on Profile it posts with the form.
+    (tech)/dashboard/gallery/     "Your work": optional photos of the pro's work (lib/gallery.ts, 20261023000000). GalleryManager
+                                  shrinks each photo on the phone (longest side 1600px, JPEG, no EXIF/location), uploads it
+                                  straight to the public "gallery" bucket under <tech id>/ (storage policies: own folder
+                                  only), then addGalleryPhoto lists it in gallery_photos (12 max, also a DB trigger).
+                                  On ProPage they glide in two rows under the hero ("The work"), hidden with none. A
+                                  tour card ("Show off your work", after the page card) uploads and shows them gliding;
+                                  linked from the dashboard menu card and Profile. Terms: own work, no nudity etc.
     dashboard/preview/            The signed-in pro's page for that iframe, outside the (tech) layout (no app chrome);
                                   ?style= / ?accent= try a look unsaved; shows example (starter) prices.
     (tech)/dashboard/services/    List / new / [id] edit; hide/show instead of delete

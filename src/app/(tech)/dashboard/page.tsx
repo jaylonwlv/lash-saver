@@ -51,6 +51,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     { data: profile, error },
     { count: activeServices },
     { count: starterServices },
+    { data: gallery },
     { count: payLinks },
     { count: cateringSetUp },
     { data: topService },
@@ -73,6 +74,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       .eq("tech_id", user!.id)
       .eq("is_active", true)
       .eq("is_starter", true),
+    supabase
+      .from("gallery_photos")
+      .select("id, path, width, height")
+      .eq("tech_id", user!.id)
+      .order("created_at"),
     supabase
       .from("appointments")
       .select("id", { count: "exact", head: true })
@@ -206,6 +212,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         // After the "What do you do?" picker, never on top of it.
         eligible={!firstLinkSent && profile.trade !== null && !profile.tour_seen_at}
         force={tour === "1"}
+        gallery={{ techId: user!.id, photos: gallery ?? [] }}
         look={{
           style: profile.page_style,
           accent: profile.accent_color,
@@ -394,6 +401,24 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                 before you add it to your bio.
               </p>
             )}
+            <Link
+              href="/dashboard/gallery"
+              className="press bg-brand-soft/60 flex min-h-12 items-center justify-between gap-3 rounded-2xl px-4 py-3"
+            >
+              <span className="flex flex-col">
+                <span className="font-bold">
+                  {(gallery ?? []).length ? "Your work photos" : "Add photos of your work"}
+                </span>
+                <span className="text-muted text-sm">
+                  {(gallery ?? []).length
+                    ? `${(gallery ?? []).length} on your page`
+                    : "Optional: they glide across your page"}
+                </span>
+              </span>
+              <span aria-hidden className="text-brand text-xl">
+                →
+              </span>
+            </Link>
             <p className="text-muted text-sm">
               <strong className="text-foreground">To add it:</strong> on Instagram, tap Edit profile
               → Links → Add external link, and paste it.
