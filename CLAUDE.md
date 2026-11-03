@@ -162,7 +162,8 @@ src/
   components/meta-pixel.tsx       Meta Pixel; rendered by (marketing)/layout.tsx and the login page only
   components/clarity.tsx          Microsoft Clarity (heatmaps, recordings) via NEXT_PUBLIC_CLARITY_ID; (marketing)/layout.tsx
                                   only. clarity-scope.tsx stops it when the visitor leaves those pages without a reload
-                                  (/start → dashboard). Europe time zones get the no-consent signal (cookieless).
+                                  (/start → dashboard). Runs only on the NEXT_PUBLIC_APP_URL host and not for navigator.webdriver (keeps Vercel
+                                  preview deployments and their screenshot bot out). Europe time zones get the no-consent signal (cookieless).
                                   Typed text masked; the /start email has data-clarity-mask. In the Privacy Policy.
   lib/
     config.ts                     App constants (name, pay link validity, checkout lifetime, reminders)

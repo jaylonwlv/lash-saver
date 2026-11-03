@@ -8,7 +8,10 @@ export default function MarketingLayout({ children }: LayoutProps<"/">) {
     <>
       {/* First in the page, so Meta's script starts loading right away. */}
       <MetaPixel pixelId={publicEnv().NEXT_PUBLIC_META_PIXEL_ID} />
-      <Clarity projectId={publicEnv().NEXT_PUBLIC_CLARITY_ID} />
+      <Clarity
+        projectId={publicEnv().NEXT_PUBLIC_CLARITY_ID}
+        host={new URL(publicEnv().NEXT_PUBLIC_APP_URL).hostname}
+      />
       <RememberTrade />
       {children}
     </>

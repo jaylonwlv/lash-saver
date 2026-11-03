@@ -17,9 +17,11 @@ declare global {
  * signal, so it runs without cookies there (its terms ask for consent in the
  * EEA, UK and Switzerland).
  */
-export function Clarity({ projectId }: { projectId: string | undefined }) {
+export function Clarity({ projectId, host }: { projectId: string | undefined; host: string }) {
   if (!projectId || !/^[a-z0-9]{6,20}$/i.test(projectId)) return null;
-  const snippet = `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${projectId}");try{if(/^Europe\\//.test(Intl.DateTimeFormat().resolvedOptions().timeZone)){window.clarity("consentv2",{ad_Storage:"denied",analytics_Storage:"denied"});}}catch(e){}`;
+  // Only real visitors on the live site: not Vercel preview deployments (whose bot
+  // screenshots each deploy) or other automated browsers.
+  const snippet = `if(location.hostname===${JSON.stringify(host)}&&!navigator.webdriver){(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${projectId}");try{if(/^Europe\\//.test(Intl.DateTimeFormat().resolvedOptions().timeZone)){window.clarity("consentv2",{ad_Storage:"denied",analytics_Storage:"denied"});}}catch(e){}}`;
   return (
     <>
       {/* Runs while the HTML is parsed; React never runs it again on the client. */}
