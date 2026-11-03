@@ -51,7 +51,11 @@ src/
                                   the product: update them, and LEGAL_UPDATED in config.ts, when data, fees,
                                   providers or billing change. No ad trackers on pay links or menu pages
                                   (the Privacy Policy says so); a Meta Pixel belongs on marketing pages only.
-    (marketing)/start/            Instant sign-up, value first: trade → their pay link right away (placeholder name, Cash App
+    (marketing)/start/            Instant sign-up, value first. Both screens open with the ads' promise ("No more getting ghosted
+                                  by clients.", matching the landing page); the pay link screen adds the mechanism line and
+                                  chips (free, no card, keep your Cash App). Funnel events also go to Clarity, and the
+                                  session is tagged start_step / start_trade so heatmaps and recordings filter by step.
+                                  Flow: trade → their pay link right away (placeholder name, Cash App
                                   pre-selected) with "Make it yours" below it: business name, payment method (handle optional;
                                   the dashboard's deposits step asks for a missing one), email. "Something else" adds one step
                                   for its service first. createAccount (actions.ts) creates the user with the admin API

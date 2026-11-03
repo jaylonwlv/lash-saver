@@ -243,7 +243,15 @@ export function StartFlow({
   const funnel = (event: string, extra: Record<string, string> = {}) => {
     const params = { in_app: isInAppBrowser(navigator.userAgent) ? "yes" : "no", ...extra };
     trackPixel(event, { custom: event !== "Lead", params });
+    // The same steps as Clarity events, for its funnels and recording filters.
+    window.clarity?.("event", event);
   };
+  // /start is one address for every step, so tag the session with the furthest screen
+  // reached (and the trade): Clarity can then filter heatmaps and recordings by step.
+  useEffect(() => {
+    window.clarity?.("set", "start_step", step);
+    if (tradeId) window.clarity?.("set", "start_trade", tradeId);
+  }, [step, tradeId]);
   useEffect(() => {
     funnel("StartSignup");
     // Runs once on arrival.
@@ -328,9 +336,18 @@ export function StartFlow({
     return (
       <section className="flex flex-col gap-4">
         <Progress step={1} of={tradeId === "other" ? 3 : 2} />
+        {/* The ads' promise, word for word, so the page continues what they clicked on. */}
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold">What do you do?</h1>
+          <h1 className="text-[28px] leading-tight font-extrabold tracking-tight">
+            No more getting ghosted by clients. 👻
+          </h1>
           <p className="text-muted">
+            Clients pay a deposit before the slot is theirs. Pick what you do to see your pay link.
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-bold">What do you do?</h2>
+          <p className="text-muted text-sm">
             We&apos;ll set you up with typical prices and a deposit policy. You can change them
             anytime.
           </p>
@@ -456,9 +473,12 @@ export function StartFlow({
       <Progress step={isOther ? 3 : 2} of={isOther ? 3 : 2} />
       {resumed && <ResumedNote onStartOver={startOver} />}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold">Here&apos;s your pay link</h1>
+        <h1 className="text-[28px] leading-tight font-extrabold tracking-tight">
+          No more getting ghosted by clients. 👻
+        </h1>
         <p className="text-muted">
-          Send it in your DMs. Your client taps it and lands on this page. Make it yours below.
+          This is your pay link. Send it in your DMs: clients agree to your policy and pay a deposit
+          before the slot is theirs.
         </p>
       </div>
 
@@ -471,6 +491,9 @@ export function StartFlow({
         handle={displayHandle(method, handle)}
         example={tradeId !== "other"}
       />
+      <p className="bg-brand-soft/60 rounded-2xl px-4 py-3 text-sm font-medium">
+        If they ghost, you keep the deposit. If they cancel in time, they get it back automatically.
+      </p>
 
       <form
         action={action}
@@ -537,6 +560,18 @@ export function StartFlow({
           <label htmlFor="website">Website</label>
           <input id="website" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
         </div>
+        {/* What it costs them to try: nothing, and they keep how they get paid. */}
+        <ul className="flex flex-wrap gap-2 text-sm font-semibold">
+          {[
+            `Free for ${TRIAL_DAYS} days`,
+            "No card to start",
+            "Keep your Cash App, Zelle or Venmo",
+          ].map((chip) => (
+            <li key={chip} className="border-line bg-surface rounded-full border px-3 py-1.5">
+              ✓ {chip}
+            </li>
+          ))}
+        </ul>
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-bold">Make it yours</h2>
           <p className="text-muted text-sm">
