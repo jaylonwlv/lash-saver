@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* `dark:` follows data-theme (the pro's own choice), not the phone's setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * Design tokens. Use the Tailwind names (bg-brand, text-muted, border-line...)
  * rather than raw colors so the palette can change in one place.
@@ -40,6 +43,14 @@
   --success: #4cc38a;
   --danger: #ff6b6b;
   color-scheme: dark;
+}
+
+/*
+ * The pro's app in dark mode: "ink" panels (New appointment, results, tab bar)
+ * lift a step above the near-black page so they still read as cards.
+ */
+[data-app][data-theme="dark"] {
+  --ink: #1f1a1d;
 }
 
 [data-theme="light"] {

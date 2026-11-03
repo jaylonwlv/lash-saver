@@ -239,13 +239,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           </StatRow>
         ) : (
           !firstLinkSent && (
-            <div className="flex items-center gap-4 rounded-[22px] bg-white/55 p-3.5">
+            <div className="flex items-center gap-4 rounded-[22px] bg-white/55 p-3.5 dark:bg-white/10">
               <ProgressRing done={stepsDone} total={4} />
               <p className="font-display text-lg leading-tight font-extrabold">
                 {stepsDone === 3
                   ? "One step to your first pay link"
                   : `${4 - stepsDone} steps to your first pay link`}
-                <span className="text-ink/70 block text-sm font-semibold">
+                <span className="text-ink/70 block text-sm font-semibold dark:text-white/60">
                   No card needed for it.
                 </span>
               </p>
@@ -297,7 +297,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       {(profile.trade === "catering" || (cateringSetUp ?? 0) > 0) && (
         <Link
           href="/dashboard/catering"
-          className="rise press bg-ink flex min-h-12 items-center justify-between gap-3 rounded-[28px] p-5 text-white"
+          className="rise press bg-ink flex min-h-12 items-center justify-between gap-3 rounded-[28px] p-5 text-white dark:ring-1 dark:ring-white/10"
         >
           <span className="flex flex-col gap-1">
             <span className="font-display text-pink text-lg font-bold">🚚 Catering quote page</span>

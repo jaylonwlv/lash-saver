@@ -21,15 +21,15 @@ export function Hero({
   children?: ReactNode;
 }) {
   return (
-    <section className="bg-pink text-ink relative -mx-5 -mt-6 overflow-hidden rounded-b-[32px] px-5 pt-1 pb-6 sm:mx-0 sm:mt-0 sm:rounded-[32px] sm:pt-6">
+    <section className="bg-pink text-ink dark:bg-ink relative -mx-5 -mt-6 overflow-hidden rounded-b-[32px] px-5 pt-1 pb-6 sm:mx-0 sm:mt-0 sm:rounded-[32px] sm:pt-6 dark:text-white">
       {/* A soft glow in the corner gives the band some depth. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full bg-white/30 blur-3xl"
+        className="dark:bg-pink/20 pointer-events-none absolute -top-24 -right-20 size-72 rounded-full bg-white/30 blur-3xl"
       />
       <div className="relative flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-ink/70 text-sm font-semibold">{today}</p>
+          <p className="text-ink/70 dark:text-pink text-sm font-semibold">{today}</p>
           <h1
             className={`${greeting.length > 24 ? "text-[30px]" : "text-[38px]"} leading-[1] font-extrabold tracking-[-0.03em] break-words`}
           >
@@ -62,7 +62,7 @@ export function Stat({
     <Link
       href={href}
       className={`press flex min-h-[86px] flex-col justify-between rounded-[20px] p-3.5 ${
-        hot ? "bg-ink text-white" : "text-ink bg-white/55"
+        hot ? "bg-ink text-white" : "text-ink bg-white/55 dark:bg-white/10 dark:text-white"
       }`}
     >
       <span
@@ -71,7 +71,7 @@ export function Stat({
         {value}
       </span>
       <span
-        className={`text-xs leading-tight font-semibold ${hot ? "text-white/80" : "text-ink/70"}`}
+        className={`text-xs leading-tight font-semibold ${hot ? "text-white/80" : "text-ink/70 dark:text-white/60"}`}
       >
         {label}
       </span>
@@ -88,9 +88,12 @@ export function Badge({ href, children }: { href: string; children: ReactNode })
   return (
     <Link
       href={href}
-      className="press bg-ink text-pink inline-flex min-h-10 w-fit items-center gap-2 rounded-full px-4 text-sm font-bold"
+      className="press bg-ink text-pink dark:bg-pink dark:text-ink inline-flex min-h-10 w-fit items-center gap-2 rounded-full px-4 text-sm font-bold"
     >
-      <span aria-hidden className="bg-pink size-2 rounded-full motion-safe:animate-pulse" />
+      <span
+        aria-hidden
+        className="bg-pink dark:bg-ink size-2 rounded-full motion-safe:animate-pulse"
+      />
       {children}
     </Link>
   );
@@ -102,7 +105,7 @@ export function NewAppointmentCard({ hint, i = 0 }: { hint: string; i?: number }
     <Link
       href="/dashboard/appointments/new"
       style={order(i)}
-      className="rise press bg-ink relative flex min-h-28 items-center justify-between gap-4 overflow-hidden rounded-[28px] p-5 text-white"
+      className="rise press bg-ink relative flex min-h-28 items-center justify-between gap-4 overflow-hidden rounded-[28px] p-5 text-white dark:ring-1 dark:ring-white/10"
     >
       <div
         aria-hidden
@@ -232,7 +235,7 @@ export function Results({
   return (
     <section
       style={order(i)}
-      className="rise bg-ink relative flex flex-col gap-2 overflow-hidden rounded-[28px] p-5 text-white"
+      className="rise bg-ink relative flex flex-col gap-2 overflow-hidden rounded-[28px] p-5 text-white dark:ring-1 dark:ring-white/10"
     >
       <div
         aria-hidden
@@ -296,7 +299,14 @@ export function ProgressRing({ done, total }: { done: number; total: number }) {
   return (
     <div className="relative size-16 shrink-0">
       <svg aria-hidden viewBox="0 0 64 64" className="size-16 -rotate-90">
-        <circle cx="32" cy="32" r={r} fill="none" strokeWidth="8" className="stroke-ink/15" />
+        <circle
+          cx="32"
+          cy="32"
+          r={r}
+          fill="none"
+          strokeWidth="8"
+          className="stroke-ink/15 dark:stroke-white/15"
+        />
         <circle
           cx="32"
           cy="32"
@@ -304,7 +314,7 @@ export function ProgressRing({ done, total }: { done: number; total: number }) {
           fill="none"
           strokeWidth="8"
           strokeLinecap="round"
-          className="stroke-ink"
+          className="stroke-ink dark:stroke-pink"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - done / total)}
         />

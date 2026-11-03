@@ -276,7 +276,7 @@ function SLIDES(steps: TourStep[], next: TourStep | undefined, example: TourExam
               </span>
             </div>
             <span className="border-brand bg-brand-soft/50 flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-semibold">
-              <span className="bg-brand flex size-5 items-center justify-center rounded text-xs text-white">
+              <span className="bg-brand text-brand-foreground flex size-5 items-center justify-center rounded text-xs">
                 ✓
               </span>
               I agree to the deposit policy
@@ -459,7 +459,7 @@ function Bubble({ side, children }: { side: "in" | "out"; children: ReactNode })
       className={`max-w-[80%] rounded-[20px] px-4 py-2 text-sm ${
         side === "in"
           ? "bg-surface self-start shadow-[0_0_0_1px_var(--line)]"
-          : "bg-brand self-end text-white"
+          : "bg-brand text-brand-foreground self-end"
       }`}
     >
       {children}

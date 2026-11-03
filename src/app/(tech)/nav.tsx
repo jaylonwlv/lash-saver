@@ -64,7 +64,7 @@ export function TechNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-ink fixed inset-x-0 bottom-0 z-10 rounded-t-[26px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgb(0_0_0_/_0.5)]">
+    <nav className="bg-ink fixed inset-x-0 bottom-0 z-10 rounded-t-[26px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgb(0_0_0_/_0.5)] dark:ring-1 dark:ring-white/10">
       <ul className="mx-auto flex max-w-2xl items-end px-2">
         {items.map((item) => {
           if (item.href === NEW_APPOINTMENT) {
