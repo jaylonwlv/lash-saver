@@ -106,8 +106,12 @@ src/
                                   addons/ (per person or flat), settings/ (pricing rules, deposit, balance due, policy,
                                   availability), dates/ (blocked dates), bookings/ (list, [id] detail: notes, resend,
                                   mark done, cancel, refund a payment). Publishing needs a name + slug, a package and Stripe.
-    [slug]/                       Public menu page at the site root (getdibs.pro/<slug>): services, how to book (DM),
-                                  policy, sticky "Message to book"; opengraph-image.tsx is the link preview. Slugs can't
+    [slug]/                       Public menu page at the site root (getdibs.pro/<slug>), editorial and photo-free: full-
+                                  screen hero (name in Instrument Serif rising out of a mask, the pro's color drifting
+                                  behind), service-name marquee, numbered price list, stats, how booking works, policy,
+                                  closing CTA. Sections fade up on scroll (reveal.tsx arms [data-reveal]; everything
+                                  shows without JS or with reduced motion); the sticky "Message to book" bar slides in
+                                  once the hero is gone. opengraph-image.tsx is the link preview. Slugs can't
                                   be a reserved word (lib/slugs.ts RESERVED_SLUGS, kept in sync with the
                                   profiles_slug_not_reserved check in 20261019000000 and every top-level route by a
                                   test). b/[slug] permanently redirects here. Sold as "your own page" on /start (live
