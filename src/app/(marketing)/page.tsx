@@ -150,7 +150,7 @@ export default function HomePage() {
               title="They're booked and reminded"
               body="Reminders 48 and 24 hours before. Cancel in time, they get it back."
               image={zoomBooked}
-              alt="The client's confirmation: deposit paid, with the last day to cancel for a refund"
+              alt="The client's ticket stamped Booked: deposit paid and confirmation emailed"
             />
             <Step
               n={4}
