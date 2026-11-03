@@ -97,9 +97,12 @@ export default function PrivacyPage() {
           sets a cookie and tells Meta (Facebook and Instagram) which pages were visited and whether
           someone started signing up (without their email address). When a pro signs up, starts a
           trial or subscribes, we also tell Meta, using a scrambled (hashed) email address, so we
-          can see which ads work. We don&apos;t use advertising cookies or trackers on pay links,
-          menu pages or the pro dashboard, and we never share clients&apos; information with
-          advertisers.
+          can see which ads work. To see how people use those pages (where they tap and how far they
+          scroll), the same marketing pages also use Microsoft Clarity, which records clicks, taps,
+          scrolling and mouse movement. Clarity hides what people type, such as email addresses, and
+          Microsoft processes this data under its own privacy statement. We don&apos;t use
+          advertising cookies, Clarity or other trackers on pay links, menu pages or the pro
+          dashboard, and we never share clients&apos; information with advertisers.
         </p>
       </Section>
 
@@ -137,8 +140,9 @@ export default function PrivacyPage() {
             <strong>Service providers</strong> who run parts of {APP_NAME} for us, under their own
             privacy and security commitments: Supabase (database and sign-in), Vercel (hosting),
             Stripe (payments and billing), Resend (email), Cloudflare (a check on the sign-up page
-            that you&apos;re a person, not a bot) and Meta (ad measurement for our own marketing,
-            described above).
+            that you&apos;re a person, not a bot), Meta (ad measurement for our own marketing,
+            described above) and Microsoft Clarity (how people use our marketing pages, described
+            above).
           </li>
           <li>
             <strong>Apple and Google sign-in:</strong> if a pro chooses &ldquo;Continue with

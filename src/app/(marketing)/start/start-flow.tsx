@@ -625,6 +625,8 @@ export function StartFlow({
         <Input
           id="email"
           type="email"
+          // Never in a session recording, whatever Clarity's masking setting.
+          data-clarity-mask="true"
           label="Your email"
           hint="For booking alerts. You're in straight away, no code."
           autoComplete="email"

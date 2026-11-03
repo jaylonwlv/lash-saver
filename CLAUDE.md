@@ -160,6 +160,10 @@ src/
     api/cron/reminders/           Vercel Cron: expire unpaid pay links, send reminders (reminders.ts: due rule)
   components/ui/                  Small shared building blocks (Button, Input, Textarea, Select, BackLink)
   components/meta-pixel.tsx       Meta Pixel; rendered by (marketing)/layout.tsx and the login page only
+  components/clarity.tsx          Microsoft Clarity (heatmaps, recordings) via NEXT_PUBLIC_CLARITY_ID; (marketing)/layout.tsx
+                                  only. clarity-scope.tsx stops it when the visitor leaves those pages without a reload
+                                  (/start → dashboard). Europe time zones get the no-consent signal (cookieless).
+                                  Typed text masked; the /start email has data-clarity-mask. In the Privacy Policy.
   lib/
     config.ts                     App constants (name, pay link validity, checkout lifetime, reminders)
     calendar.ts                   .ics building (escaping, 75-byte folding, alarms); no server deps
