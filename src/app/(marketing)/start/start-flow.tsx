@@ -568,6 +568,10 @@ export function StartFlow({
             <span className="truncate font-semibold">
               {pageHost}/{pageSlugFor(businessName.trim() || "your business")}
             </span>
+            <span className="mt-1 text-sm text-white/70">
+              Put it in your Instagram bio: new clients see your prices and policy before they
+              message you.
+            </span>
           </span>
         </div>
         <fieldset className="flex flex-col gap-2">

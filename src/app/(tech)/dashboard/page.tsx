@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
@@ -344,21 +345,39 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               </span>
               <div className="flex flex-col">
                 <h2 className="font-display text-xl leading-tight font-extrabold tracking-tight">
-                  Your menu page
+                  Put your page in your bio
                 </h2>
-                <p className="text-muted text-sm">For your Instagram bio</p>
+                <p className="text-muted text-sm">Your services, prices and policy, one link</p>
               </div>
             </div>
-            <p className="text-muted text-sm">
-              Your services, prices and policy on one page. People see what you offer, then message
-              you to book.
-            </p>
+            <ul className="flex flex-col gap-2 text-sm">
+              <BioPerk>
+                <strong>New clients find you easier.</strong> Anyone who taps your bio sees what you
+                offer and what it costs, so they message you ready to book.
+              </BioPerk>
+              <BioPerk>
+                <strong>Fewer &ldquo;how much?&rdquo; DMs.</strong> Prices and deposits are right
+                there, so you skip the back-and-forth.
+              </BioPerk>
+              <BioPerk>
+                <strong>Your rules, up front.</strong> Clients see your deposit and cancellation
+                policy before they ever message, so the deposit is never a surprise.
+              </BioPerk>
+              <BioPerk>
+                <strong>Easy to pass along.</strong> Regulars can send one link to a friend, and it
+                shows your name and prices in the preview.
+              </BioPerk>
+            </ul>
             <CopyLink
               url={menuUrl}
               display={menuUrl.replace(/^https?:\/\//, "")}
               label="Copy menu page link"
               tinted
             />
+            <p className="text-muted text-sm">
+              <strong className="text-foreground">To add it:</strong> on Instagram, tap Edit profile
+              → Links → Add external link, and paste it.
+            </p>
             <p className="text-muted text-sm">
               <strong className="text-foreground">This isn&apos;t a pay link.</strong> It
               doesn&apos;t book anyone or take a deposit. To lock in a client, tap{" "}
@@ -531,4 +550,16 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 /** "$150" for whole dollars, "$12.50" otherwise. */
 function dollars(cents: number): string {
   return formatCents(cents).replace(/\.00$/, "");
+}
+
+/** One reason to put the menu page in their bio. */
+function BioPerk({ children }: { children: ReactNode }) {
+  return (
+    <li className="text-muted flex gap-2">
+      <span aria-hidden className="text-brand font-bold">
+        ✓
+      </span>
+      <span className="[&_strong]:text-foreground">{children}</span>
+    </li>
+  );
 }

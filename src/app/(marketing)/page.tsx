@@ -285,6 +285,57 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Their own page */}
+        <section className="mx-auto grid w-full max-w-5xl gap-8 px-5 py-14 md:grid-cols-2 md:items-center">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-3xl font-bold tracking-tight">Your own page, in your bio.</h2>
+            <p className="text-muted">
+              Every pro gets a page at{" "}
+              <strong className="text-foreground">{PAGE_HOST}/yourname</strong> with your services,
+              prices and policy. Put it in your Instagram bio and let it answer the questions before
+              anyone messages you.
+            </p>
+            <ul className="flex flex-col gap-3">
+              <Check>
+                <strong>New clients find you easier.</strong> Anyone who taps your bio sees what you
+                offer and what it costs, so they message you ready to book.
+              </Check>
+              <Check>
+                <strong>Fewer &ldquo;how much?&rdquo; DMs.</strong> Prices and deposits are right
+                there, so you skip the back-and-forth.
+              </Check>
+              <Check>
+                <strong>Your rules, up front.</strong> Clients see your deposit and cancellation
+                policy before they book, so it&apos;s never a surprise.
+              </Check>
+              <Check>
+                <strong>Easy to pass along.</strong> Regulars send one link to a friend, and the
+                preview shows your name and prices.
+              </Check>
+            </ul>
+          </div>
+          <div className="border-line bg-surface mx-auto flex w-full max-w-sm flex-col gap-3 rounded-3xl border p-5">
+            <p className="text-muted text-xs font-semibold tracking-[0.1em] uppercase">
+              In your bio
+            </p>
+            <p className="font-semibold">Studio Nova</p>
+            <p className="text-brand text-sm font-semibold">🔗 {PAGE_HOST}/studio-nova</p>
+            <div className="border-line flex flex-col gap-2 border-t pt-3 text-sm">
+              <p className="flex justify-between">
+                <span>Touch-up · 45 min</span>
+                <strong>$55</strong>
+              </p>
+              <p className="flex justify-between">
+                <span>Signature service · 1 hr 30 min</span>
+                <strong>$95</strong>
+              </p>
+              <p className="text-muted text-xs">
+                Deposit holds your spot. Cancel 48 hours ahead for a refund.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Founder note */}
         <section className="mx-auto w-full max-w-2xl px-5 pb-4">
           <figure className="border-line bg-surface flex flex-col gap-4 rounded-3xl border p-6">
