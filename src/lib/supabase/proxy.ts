@@ -27,7 +27,11 @@ export async function updateSession(request: NextRequest) {
     if (searchParams.has("error_description") && pathname !== "/login") {
       const login = request.nextUrl.clone();
       login.pathname = "/login";
-      login.search = "?error=link";
+      // Keep Supabase's or the provider's reason, so a failed sign-in can be fixed.
+      login.search = new URLSearchParams({
+        error: "link",
+        reason: (searchParams.get("error_description") ?? "").slice(0, 200),
+      }).toString();
       return NextResponse.redirect(login);
     }
   }

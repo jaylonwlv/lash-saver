@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Sign in" };
 export const viewport: Viewport = { themeColor: "#0d0b0c" };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { next, error, start } = await searchParams;
+  const { next, error, start, reason } = await searchParams;
   // Older "Start free" links (?start=1) go to instant sign-up instead.
   if (start === "1") redirect("/start");
 
@@ -26,9 +26,15 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-5 pt-4 pb-12">
         <h1 className="text-2xl font-bold">Sign in</h1>
         {error && (
-          <p className="text-danger text-sm">
-            That sign-in link didn&apos;t work or has expired. Send yourself a new code below.
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-danger text-sm">
+              That sign-in didn&apos;t work or has expired. Try again, or send yourself a code
+              below.
+            </p>
+            {typeof reason === "string" && reason && (
+              <p className="text-muted text-xs break-words">Details: {reason}</p>
+            )}
+          </div>
         )}
         <OAuthButtons
           providers={publicEnv().NEXT_PUBLIC_AUTH_PROVIDERS}

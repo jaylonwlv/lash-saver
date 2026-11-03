@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type");
   const code = searchParams.get("code");
   const supabase = await createClient();
+  let failure: string | null = null;
 
   if (tokenHash && type && OTP_TYPES.includes(type)) {
     const { data, error } = await supabase.auth.verifyOtp({
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
         await Promise.all([markEmailConfirmed(supabase, data.user.id), trackSignUp(data.user)]);
       return NextResponse.redirect(new URL(next, origin));
     }
+    failure = error.message;
   } else if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
@@ -38,7 +40,16 @@ export async function GET(request: NextRequest) {
         await Promise.all([markEmailConfirmed(supabase, data.user.id), trackSignUp(data.user)]);
       return NextResponse.redirect(new URL(next, origin));
     }
+    // Most often: the sign-in started on another address (its code check is in that
+    // browser's cookies), or the provider's settings in Supabase are wrong.
+    failure = error.message;
+  } else if (searchParams.get("error_description")) {
+    failure = searchParams.get("error_description");
   }
+  if (failure) console.error("Sign-in callback failed:", failure);
 
-  return NextResponse.redirect(new URL("/login?error=link", origin));
+  const failed = new URL("/login", origin);
+  failed.searchParams.set("error", "link");
+  if (failure) failed.searchParams.set("reason", failure.slice(0, 200));
+  return NextResponse.redirect(failed);
 }
