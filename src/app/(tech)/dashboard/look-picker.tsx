@@ -6,6 +6,9 @@ import { ACCENTS, ACCENT_IDS } from "@/lib/accents";
 import { PAGE_STYLES, stylesForTrade, type PageStyleId } from "@/lib/page-styles";
 import { savePageLook } from "./look-actions";
 
+/** The width the preview lays the page out at: a typical phone. */
+const PHONE_WIDTH = 390;
+
 /**
  * The pro's real page, live in a phone, with its style and color one tap away.
  * It scrolls itself (so the reveals play) until they touch it, then it's theirs
@@ -40,6 +43,24 @@ export function LookPicker({
   const [saved, setSaved] = useState<"idle" | "saved" | "failed">("idle");
   const [, startSaving] = useTransition();
   const frame = useRef<HTMLIFrameElement>(null);
+  const screen = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0);
+  const [screenHeight, setScreenHeight] = useState(0);
+
+  // Track the screen's size so the page inside always renders at phone width, scaled.
+  useEffect(() => {
+    const el = screen.current;
+    if (!el) return;
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect();
+      setScale(width / PHONE_WIDTH);
+      setScreenHeight(height);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const raf = useRef(0);
 
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
@@ -98,7 +119,7 @@ export function LookPicker({
   const src = `/dashboard/preview?style=${style}&accent=${accent}`;
 
   return (
-    <div className={`flex flex-col ${compact ? "gap-3" : "gap-4"}`}>
+    <div className={compact ? "flex h-full min-h-0 flex-col gap-3" : "flex flex-col gap-4"}>
       {mode === "form" && (
         <>
           <input type="hidden" name="page_style" value={style} />
@@ -107,22 +128,47 @@ export function LookPicker({
       )}
 
       {/* The phone */}
-      <div className={`relative mx-auto w-full ${compact ? "max-w-[230px]" : "max-w-[290px]"}`}>
-        <div className="bg-ink rounded-[40px] p-2 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)] ring-1 ring-black/10">
-          <div className="relative overflow-hidden rounded-[32px] bg-[#0d0b0c]">
-            <div className="flex justify-center bg-[#0d0b0c] px-3 pt-2.5 pb-2">
+      {/* In the tour it takes all the height the card has left, at a phone's proportions. */}
+      <div
+        className={
+          compact
+            ? "relative flex min-h-0 w-full flex-1 justify-center"
+            : "relative mx-auto w-full max-w-[290px]"
+        }
+      >
+        <div
+          className={`bg-ink rounded-[40px] p-2 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)] ring-1 ring-black/10 ${
+            compact ? "aspect-[9/18] h-full max-w-full" : ""
+          }`}
+        >
+          <div
+            className={`relative overflow-hidden rounded-[32px] bg-[#0d0b0c] ${compact ? "flex h-full flex-col" : ""}`}
+          >
+            <div className="flex shrink-0 justify-center bg-[#0d0b0c] px-3 pt-2.5 pb-2">
               <span className="max-w-full truncate rounded-full bg-white/10 px-3 py-1 text-[10px] font-medium text-white/85">
-                🔒 {address ?? "your page"}
+                🔒 {address ?? "getdibs.pro"}
               </span>
             </div>
-            <iframe
-              key={`${src}#${replay}`}
-              ref={frame}
-              src={src}
-              onLoad={onLoad}
-              title="Your page, live"
-              className={`block w-full border-0 ${compact ? "h-[min(340px,29svh)]" : "h-[min(500px,56svh)]"}`}
-            />
+            {/* The page is laid out at a real phone's width, then scaled down to fit. */}
+            <div
+              ref={screen}
+              className={`relative w-full overflow-hidden ${compact ? "min-h-0 flex-1" : "h-[min(500px,56svh)]"}`}
+            >
+              <iframe
+                key={`${src}#${replay}`}
+                ref={frame}
+                src={src}
+                onLoad={onLoad}
+                title="Your page, live"
+                className="absolute top-0 left-0 block origin-top-left border-0"
+                style={{
+                  width: PHONE_WIDTH,
+                  height: scale ? screenHeight / scale : "100%",
+                  transform: `scale(${scale || 1})`,
+                  visibility: scale ? "visible" : "hidden",
+                }}
+              />
+            </div>
             {compact && (
               <button
                 type="button"
@@ -131,13 +177,13 @@ export function LookPicker({
                   setReplay((n) => n + 1);
                 }}
                 aria-label="Replay"
-                className="absolute right-2 bottom-2 z-10 flex size-9 items-center justify-center rounded-full bg-black/60 text-base text-white backdrop-blur"
+                className="absolute top-12 right-2 z-10 flex size-9 items-center justify-center rounded-full bg-black/60 text-base text-white backdrop-blur"
               >
                 ↻
               </button>
             )}
             {!touched && (
-              <span className="nudge pointer-events-none absolute inset-x-0 top-14 z-10 mx-auto w-max rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+              <span className="nudge pointer-events-none absolute inset-x-0 bottom-4 z-10 mx-auto w-max rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
                 👆 Scroll it yourself
               </span>
             )}

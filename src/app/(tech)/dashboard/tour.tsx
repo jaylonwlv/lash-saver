@@ -168,7 +168,10 @@ export function Tour({
               {slides[slide].body}
             </div>
           </div>
-          {slides[slide].textFirst && slides[slide].visual}
+          {slides[slide].textFirst && (
+            // The visual gets every pixel the heading and buttons leave (scrolls below a floor).
+            <div className="flex min-h-[330px] flex-1 flex-col">{slides[slide].visual}</div>
+          )}
         </div>
 
         <div className="flex gap-2 px-5 pt-3 pb-5">
