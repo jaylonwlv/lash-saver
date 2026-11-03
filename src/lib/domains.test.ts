@@ -7,16 +7,20 @@ import {
   affordable,
   domainLabel,
   firstChargeCents,
+  yearlySavingsCents,
   registrarPriceCents,
   sellableDomain,
 } from "./domains";
 
 test("the first charge always covers the most a name can cost", () => {
   assert.equal(firstChargeCents("yearly"), 9900);
-  assert.equal(firstChargeCents("monthly"), 2500);
-  // Stripe takes about 2.9% + 30¢ of the first charge.
+  assert.equal(firstChargeCents("monthly"), 4000);
+  // Stripe takes about 2.9% + 30¢. A pro who pays one month and leaves must still leave
+  // at least $10 after the most expensive name we offer.
   const afterStripe = (c: number) => c - Math.round(c * 0.029) - 30;
-  assert.ok(afterStripe(firstChargeCents("monthly")) >= MAX_DOMAIN_COST_CENTS);
+  assert.ok(afterStripe(firstChargeCents("monthly")) - MAX_DOMAIN_COST_CENTS >= 1000);
+  // Yearly is clearly the better deal.
+  assert.ok(yearlySavingsCents() >= 5000);
 });
 
 test("names are cleaned to a DNS label", () => {

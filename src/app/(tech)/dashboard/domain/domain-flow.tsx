@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
 import { revealTransferCode, searchDomains, startCheckout, type DomainOption } from "./actions";
 
-type Prices = { yearly: string; monthly: string; setup: string };
+type Prices = { yearly: string; monthly: string; setup: string; savings: string };
 
 /** Search a name, pick .com or .pro, choose a plan, fill in the owner's details, pay. */
 export function DomainFlow({
@@ -119,12 +119,8 @@ export function DomainFlow({
             <p className="font-bold">Choose your plan</p>
             {(
               [
-                ["yearly", `${prices.yearly}/year`, "Best value: about $8 a month"],
-                [
-                  "monthly",
-                  `${prices.monthly}/month`,
-                  `Plus ${prices.setup} setup to register the name`,
-                ],
+                ["yearly", `${prices.yearly}/year`, `Best value: save ${prices.savings} a year`],
+                ["monthly", `${prices.monthly}/month`, `Plus ${prices.setup} setup`],
               ] as const
             ).map(([id, label, note]) => (
               <button

@@ -6,6 +6,7 @@ import {
   DOMAIN_SETUP_CENTS,
   DOMAIN_YEARLY_CENTS,
   domainLabel,
+  yearlySavingsCents,
 } from "@/lib/domains";
 import { formatCents } from "@/lib/money";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -99,6 +100,7 @@ export default async function DomainPage({ searchParams }: PageProps<"/dashboard
               yearly: price(DOMAIN_YEARLY_CENTS),
               monthly: price(DOMAIN_MONTHLY_CENTS),
               setup: price(DOMAIN_SETUP_CENTS),
+              savings: price(yearlySavingsCents()),
             }}
           />
         </>

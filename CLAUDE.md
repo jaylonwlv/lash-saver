@@ -91,7 +91,7 @@ src/
                                   opened from Instagram ([slug]/instagram-visit.tsx beacon → api/page-visit sets
                                   profiles.instagram_visit_at once, 20261025000000; nothing about the visitor is
                                   stored). The cron sends one bio_nudge (marketing) ~2 days after sign-up if not.
-    (tech)/dashboard/domain/      "Your own website": search .com/.pro, pick yearly ($99) or monthly ($10 + $15 setup),
+    (tech)/dashboard/domain/      "Your own website": search .com/.pro, pick yearly ($99, the default and better deal) or monthly ($15 + $25 setup),
                                   owner details (the registrant), terms, Stripe Checkout; then status, transfer code.
     (tech)/dashboard/services/confirm/  "Confirm your prices": every example (starter) price on one screen, untick to hide.
     (tech)/dashboard/announcement-card.tsx  "No booking yet? Tell your regulars": the depositAnnouncement with

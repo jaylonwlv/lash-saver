@@ -5,9 +5,13 @@
  */
 
 export const DOMAIN_YEARLY_CENTS = 9900;
-export const DOMAIN_MONTHLY_CENTS = 1000;
+/**
+ * Monthly is priced well above yearly on purpose: yearly is the obvious deal, and a pro
+ * who pays one month and leaves still leaves real money after the domain.
+ */
+export const DOMAIN_MONTHLY_CENTS = 1500;
 /** Monthly only: covers the registration, so a pro who pays once and leaves costs nothing. */
-export const DOMAIN_SETUP_CENTS = 1500;
+export const DOMAIN_SETUP_CENTS = 2500;
 export const DOMAIN_PRODUCT_NAME = "Your own website";
 
 export type DomainPlan = "yearly" | "monthly";
@@ -19,9 +23,14 @@ export type DomainTld = (typeof DOMAIN_TLDS)[number];
 
 /**
  * The most a name may cost us, first year or renewal. The monthly plan's first charge
- * ($25) must cover the registration plus Stripe's fee.
+ * ($40) must cover the registration plus Stripe's fee with room to spare.
  */
 export const MAX_DOMAIN_COST_CENTS = 2200;
+
+/** What yearly saves over twelve monthly payments (setup not counted), in cents. */
+export function yearlySavingsCents(): number {
+  return DOMAIN_MONTHLY_CENTS * 12 - DOMAIN_YEARLY_CENTS;
+}
 
 /** What the pro pays first: a year, or a month plus setup. */
 export function firstChargeCents(plan: DomainPlan): number {
