@@ -38,7 +38,6 @@ export async function welcomeNewPro(user: {
       .eq("id", user.id)
       .maybeSingle();
     const hasHandle = profile ? manualHandles(profile).length > 0 : false;
-    const live = Boolean(profile?.stripe_charges_enabled) || hasHandle;
 
     await notifyOnce(key, {
       to: { email: user.email },
@@ -46,8 +45,8 @@ export async function welcomeNewPro(user: {
       data: {
         appUrl,
         needsHandle: profile?.deposit_method !== "stripe" && !hasHandle,
-        // Linked only once it's live (it needs a way to take deposits).
-        pageUrl: profile?.slug && live ? menuPageUrl(appUrl, profile.slug) : undefined,
+        // Live as soon as they have an address (it never takes money).
+        pageUrl: profile?.slug ? menuPageUrl(appUrl, profile.slug) : undefined,
         nextLink: await freeUntil(user.id).then(
           (until) => ({
             freeUntil: until,

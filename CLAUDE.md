@@ -86,6 +86,12 @@ src/
                                   manifest.ts + public/icon-*.png
     (tech)/dashboard/saved-reply-card.tsx  "Add Dibs to your DMs": a ready-made Instagram saved reply (shortcut "dibs")
                                   so the booking DM itself prompts a pay link; dismissed per phone.
+    (tech)/dashboard/bio-card.tsx  "Put your page in your bio" (#bio): perks, Copy link, Open Instagram, three steps; step 5
+                                  of the checklist and the tour's last card point here. Ticks itself once the page is
+                                  opened from Instagram ([slug]/instagram-visit.tsx beacon → api/page-visit sets
+                                  profiles.instagram_visit_at once, 20261025000000; nothing about the visitor is
+                                  stored). The cron sends one bio_nudge (marketing) ~2 days after sign-up if not.
+    (tech)/dashboard/services/confirm/  "Confirm your prices": every example (starter) price on one screen, untick to hide.
     (tech)/dashboard/announcement-card.tsx  "No booking yet? Tell your regulars": the depositAnnouncement with
                                   Share / Copy, shown until their first pay link goes out.
     (tech)/dashboard/             Tech home: "N of 4 done" progress, setup checklist (profile → deposits → services →
@@ -145,7 +151,8 @@ src/
                                   its picker (stylesForTrade): tattoo gets Metal / 90s anime / Old-school, detailing gets
                                   Ultra luxury / Performance / Professional (20261022000000). New pros get a style from
                                   their trade (pageStyleForTrade at /start and the trade picker). Fonts aren't preloaded:
-                                  a page fetches only the one it uses. Slugs can't
+                                  a page fetches only the one it uses. Live as soon as the pro has a slug (no deposit setup
+                                  needed since 20261025000000; a pro with no saved prices shows "coming soon"). Slugs can't
                                   be a reserved word (lib/slugs.ts RESERVED_SLUGS, kept in sync with the
                                   profiles_slug_not_reserved check in 20261019000000 and every top-level route by a
                                   test). b/[slug] permanently redirects here, and a capitalized address (/Studio-Nova) redirects to lowercase. Sold as "your own page" on /start (live

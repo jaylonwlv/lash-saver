@@ -34,6 +34,7 @@ export const MARKETING_KEY_PREFIXES = [
   "setup_nudge_next_booking:",
   "founder_checkin:",
   "first_link_followup:",
+  "bio_nudge:",
   "nurture_",
 ];
 

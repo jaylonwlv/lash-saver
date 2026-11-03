@@ -7,6 +7,8 @@ import {
   FOUNDER_CHECKIN_AFTER_DAYS,
   FOUNDER_CHECKIN_STOP_AFTER_DAYS,
   REMINDER_OFFSETS_HOURS,
+  BIO_NUDGE_AFTER_HOURS,
+  BIO_NUDGE_STOP_AFTER_DAYS,
   SETUP_NUDGE_FIRST_AFTER_HOURS,
   SETUP_NUDGE_NEXT_AFTER_HOURS,
   SETUP_NUDGE_STOP_AFTER_DAYS,
@@ -14,6 +16,7 @@ import {
   TRIAL_ENDING_NOTICE_DAYS,
 } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
+import { menuPageUrl } from "@/lib/slugs";
 import { formatCents } from "@/lib/money";
 import { serverEnv } from "@/lib/env";
 import {
@@ -61,6 +64,10 @@ export async function GET(request: NextRequest) {
   const setupNudges = await sendSetupNudges(now);
   const founderCheckins = await sendFounderCheckins(now);
   const firstLinkFollowups = await sendFirstLinkFollowups(now);
+  const bioNudges = await sendBioNudges(now).catch((err: unknown) => {
+    console.error("Bio reminders failed", err);
+    return -1;
+  });
   // Never let catering stop the appointment reminders above.
   const nurture = await sendNurtureDrip(now).catch((err: unknown) => {
     console.error("Nurture drip failed", err);
@@ -78,6 +85,7 @@ export async function GET(request: NextRequest) {
     setupNudges,
     founderCheckins,
     firstLinkFollowups,
+    bioNudges,
     catering,
     nurture,
   });
@@ -605,6 +613,55 @@ async function sendSetupNudges(now: Date): Promise<number> {
       if (ok) sent++;
     } catch (err) {
       console.error(`Setup reminder for ${tech.id} failed`, err);
+    }
+  }
+  return sent;
+}
+
+/**
+ * "Is your page in your bio yet?" once, about two days after sign-up, to pros whose
+ * page hasn't been opened from Instagram (profiles.instagram_visit_at). Marketing email:
+ * skips anyone who unsubscribed. Caterers are left out (their page is the quote page).
+ */
+async function sendBioNudges(now: Date): Promise<number> {
+  const admin = createAdminClient();
+  const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000).toISOString();
+  const { data: techs, error } = await admin
+    .from("profiles")
+    .select("id, email, slug, trade")
+    .not("slug", "is", null)
+    .is("instagram_visit_at", null)
+    .lte("created_at", hoursAgo(BIO_NUDGE_AFTER_HOURS))
+    .gt("created_at", hoursAgo(BIO_NUDGE_STOP_AFTER_DAYS * 24));
+  if (error) throw new Error(`Loading pros for bio reminders failed: ${error.message}`);
+
+  const appUrl = publicEnv().NEXT_PUBLIC_APP_URL;
+  let sent = 0;
+  for (const tech of techs) {
+    if (!tech.slug || tech.trade === "catering") continue;
+    // One bad profile must not stop the rest.
+    try {
+      const logKey = `bio_nudge:${tech.id}`;
+      if (await alreadyLogged(logKey)) continue;
+      const { count, error: servicesError } = await admin
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("tech_id", tech.id)
+        .eq("is_active", true)
+        .eq("is_starter", false);
+      if (servicesError) throw new Error(servicesError.message);
+      const ok = await notifyMarketingOnce(logKey, tech.id, {
+        to: { email: tech.email },
+        template: "bio_nudge",
+        data: {
+          pageUrl: menuPageUrl(appUrl, tech.slug),
+          pricesUrl: (count ?? 0) > 0 ? null : `${appUrl}/dashboard/services/confirm`,
+          dashboardUrl: `${appUrl}/dashboard#bio`,
+        },
+      });
+      if (ok) sent++;
+    } catch (err) {
+      console.error(`Bio reminder for ${tech.id} failed`, err);
     }
   }
   return sent;

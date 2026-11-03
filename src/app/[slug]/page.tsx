@@ -5,6 +5,7 @@ import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
 import { inviteUrl } from "@/lib/referral";
 import { SLUG_PATTERN } from "@/lib/slugs";
+import { InstagramVisit } from "./instagram-visit";
 import { loadMenu } from "./menu";
 
 /*
@@ -33,16 +34,19 @@ export default async function MenuPage({ params }: PageProps<"/[slug]">) {
   if (!menu) notFound();
   const { tech, services, name, slug, photos } = menu;
   return (
-    <ProPage
-      name={name}
-      handle={tech.instagram_handle}
-      services={services}
-      cancellationHours={tech.cancellation_window_hours ?? 0}
-      policyText={tech.policy_text}
-      accent={tech.accent_color}
-      style={tech.page_style}
-      inviteHref={inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, slug, "menu")}
-      photos={photos}
-    />
+    <>
+      <InstagramVisit slug={slug} />
+      <ProPage
+        name={name}
+        handle={tech.instagram_handle}
+        services={services}
+        cancellationHours={tech.cancellation_window_hours ?? 0}
+        policyText={tech.policy_text}
+        accent={tech.accent_color}
+        style={tech.page_style}
+        inviteHref={inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, slug, "menu")}
+        photos={photos}
+      />
+    </>
   );
 }

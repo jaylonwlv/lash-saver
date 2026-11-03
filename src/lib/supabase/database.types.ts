@@ -58,6 +58,8 @@ type ProfileRow = Timestamps & {
   tour_seen_at: string | null;
   accent_color: string;
   page_style: string;
+  /** First time their page was opened from Instagram (20261025000000). Server-written. */
+  instagram_visit_at: string | null;
 };
 
 type ServiceRow = Timestamps & {

@@ -44,6 +44,12 @@ export const TRIAL_ENDING_NOTICE_DAYS = 3;
 export const SETUP_NUDGE_FIRST_AFTER_HOURS = 20;
 export const SETUP_NUDGE_NEXT_AFTER_HOURS = 68;
 export const SETUP_NUDGE_STOP_AFTER_DAYS = 7;
+/**
+ * "Is your page in your bio yet?": one email about two days after sign-up, until a
+ * week and a half, if their page hasn't had a visit from Instagram.
+ */
+export const BIO_NUDGE_AFTER_HOURS = 44;
+export const BIO_NUDGE_STOP_AFTER_DAYS = 10;
 /** The founder's one personal check-in, about a week after sign-up, if no pay link yet. */
 export const FOUNDER_CHECKIN_AFTER_DAYS = 7;
 export const FOUNDER_CHECKIN_STOP_AFTER_DAYS = 10;

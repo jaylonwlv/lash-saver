@@ -1,8 +1,6 @@
-import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
-import { CopyLink } from "@/components/ui/copy-link";
 import { APP_NAME, depositAnnouncement, SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
 import { menuPageUrl, pageSlugFor } from "@/lib/slugs";
@@ -20,6 +18,7 @@ import { TradePicker } from "./onboarding/trade-picker";
 import { InstallBanner } from "../install-banner";
 import { AlertsEmail } from "./confirm-email/confirm-email";
 import { AnnouncementCard } from "./announcement-card";
+import { BioCard } from "./bio-card";
 import { SavedReplyCard } from "./saved-reply-card";
 import { startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
@@ -59,7 +58,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     supabase
       .from("profiles")
       .select(
-        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade, email, email_confirmed, cancellation_window_hours, tour_seen_at, accent_color, page_style",
+        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade, email, email_confirmed, cancellation_window_hours, tour_seen_at, accent_color, page_style, instagram_visit_at",
       )
       .eq("id", user!.id)
       .single(),
@@ -130,6 +129,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const allDone = setup.ready;
   const subscribed = canSendPayLinks(profile.subscription_status);
   const firstLinkSent = (payLinks ?? 0) > 0;
+  const inBio = Boolean(profile.instagram_visit_at);
   const stepsDone = [profileDone, stripeStatus === "done", servicesDone, firstLinkSent].filter(
     Boolean,
   ).length;
@@ -199,9 +199,20 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       detail: starterServices
         ? "Swap the example prices for what you charge"
         : "What you offer, the price and the deposit",
-      href: "/dashboard/services",
+      href: starterServices ? "/dashboard/services/confirm" : "/dashboard/services",
       done: servicesDone && !starterServices,
     },
+    // The bio card needs a page address (pros who skipped /start set one on Profile).
+    ...(menuUrl
+      ? [
+          {
+            title: "Put your page in your bio",
+            detail: "One link with your services, prices and policy",
+            href: "/dashboard#bio",
+            done: inBio,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -353,90 +364,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             />
           </div>
           <SavedReplyCard />
-          <section className="card flex flex-col gap-3 p-5">
-            <div className="flex items-center gap-3">
-              <span
-                aria-hidden
-                className="bg-brand-soft flex size-11 shrink-0 items-center justify-center rounded-[14px] text-xl"
-              >
-                🔗
-              </span>
-              <div className="flex flex-col">
-                <h2 className="font-display text-xl leading-tight font-extrabold tracking-tight">
-                  Put your page in your bio
-                </h2>
-                <p className="text-muted text-sm">Your services, prices and policy, one link</p>
-              </div>
-            </div>
-            <ul className="flex flex-col gap-2 text-sm">
-              <BioPerk>
-                <strong>New clients find you easier.</strong> Anyone who taps your bio sees what you
-                offer and what it costs, so they message you ready to book.
-              </BioPerk>
-              <BioPerk>
-                <strong>Fewer &ldquo;how much?&rdquo; DMs.</strong> Prices and deposits are right
-                there, so you skip the back-and-forth.
-              </BioPerk>
-              <BioPerk>
-                <strong>Your rules, up front.</strong> Clients see your deposit and cancellation
-                policy before they ever message, so the deposit is never a surprise.
-              </BioPerk>
-              <BioPerk>
-                <strong>Easy to pass along.</strong> Regulars can send one link to a friend, and it
-                shows your name and prices in the preview.
-              </BioPerk>
-            </ul>
-            <CopyLink
-              url={menuUrl}
-              display={menuUrl.replace(/^https?:\/\//, "")}
-              label="Copy menu page link"
-              tinted
-            />
-            {(starterServices ?? 0) > 0 && (
-              <p className="bg-brand-soft/60 rounded-2xl px-4 py-3 text-sm">
-                Your page only shows prices you&apos;ve saved, so example prices stay hidden.{" "}
-                <Link href="/dashboard/services" className="text-brand font-semibold underline">
-                  Set your prices
-                </Link>{" "}
-                before you add it to your bio.
-              </p>
-            )}
-            <Link
-              href="/dashboard/gallery"
-              className="press bg-brand-soft/60 flex min-h-12 items-center justify-between gap-3 rounded-2xl px-4 py-3"
-            >
-              <span className="flex flex-col">
-                <span className="font-bold">
-                  {(gallery ?? []).length ? "Your work photos" : "Add photos of your work"}
-                </span>
-                <span className="text-muted text-sm">
-                  {(gallery ?? []).length
-                    ? `${(gallery ?? []).length} on your page`
-                    : "Optional: they glide across your page"}
-                </span>
-              </span>
-              <span aria-hidden className="text-brand text-xl">
-                →
-              </span>
-            </Link>
-            <p className="text-muted text-sm">
-              <strong className="text-foreground">To add it:</strong> on Instagram, tap Edit profile
-              → Links → Add external link, and paste it.
-            </p>
-            <p className="text-muted text-sm">
-              <strong className="text-foreground">This isn&apos;t a pay link.</strong> It
-              doesn&apos;t book anyone or take a deposit. To lock in a client, tap{" "}
-              <strong className="text-foreground">New appointment</strong> and send them the pay
-              link it makes.
-            </p>
-            <Link
-              href={menuUrl}
-              target="_blank"
-              className="text-brand inline-flex min-h-12 items-center justify-center text-sm font-semibold underline"
-            >
-              See what people see
-            </Link>
-          </section>
         </>
       ) : (
         <p className="text-muted px-1 text-sm">Finish these steps to start taking deposits.</p>
@@ -538,7 +465,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             i={8}
           >
             <ButtonLink
-              href={servicesDone ? "/dashboard/services" : "/dashboard/services/new"}
+              href={
+                starterServices
+                  ? "/dashboard/services/confirm"
+                  : servicesDone
+                    ? "/dashboard/services"
+                    : "/dashboard/services/new"
+              }
               variant={servicesDone && !starterServices ? "secondary" : "primary"}
             >
               {starterServices
@@ -567,25 +500,36 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               <ButtonLink href="/dashboard/appointments/new">New appointment</ButtonLink>
             )}
           </Step>
+
+          {menuUrl && (
+            <Step
+              number={5}
+              title="Put your page in your bio"
+              status={inBio ? "done" : "todo"}
+              current={false}
+              description="Your services, prices and policy in one link, so new clients message you ready to book. Free, and no deposits needed for it."
+              edit={{ href: "#bio", label: "Opened from Instagram" }}
+              i={10}
+            >
+              <ButtonLink href="#bio" variant="secondary">
+                Show me how
+              </ButtonLink>
+            </Step>
+          )}
         </ol>
       )}
       {!(allDone && menuUrl) && !firstLinkSent && (
         <AnnouncementCard message={depositAnnouncement(profile.cancellation_window_hours)} />
       )}
 
-      {profileDone && !allDone && menuUrl && (
-        <p className="text-muted px-1 text-sm">
-          Your menu page goes live at{" "}
-          <Link href={menuUrl} className="text-brand underline">
-            {menuUrl.replace(/^https?:\/\//, "")}
-          </Link>{" "}
-          once{" "}
-          {stripeStatus === "done"
-            ? "you add a service."
-            : servicesDone
-              ? "deposits are set up."
-              : "deposits are set up and you add a service."}
-        </p>
+      {menuUrl && (
+        <BioCard
+          menuUrl={menuUrl}
+          starterServices={starterServices ?? 0}
+          savedServices={(activeServices ?? 0) - (starterServices ?? 0)}
+          photos={(gallery ?? []).length}
+          inBio={inBio}
+        />
       )}
       <TourLauncher />
     </div>
@@ -595,16 +539,4 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 /** "$150" for whole dollars, "$12.50" otherwise. */
 function dollars(cents: number): string {
   return formatCents(cents).replace(/\.00$/, "");
-}
-
-/** One reason to put the menu page in their bio. */
-function BioPerk({ children }: { children: ReactNode }) {
-  return (
-    <li className="text-muted flex gap-2">
-      <span aria-hidden className="text-brand font-bold">
-        ✓
-      </span>
-      <span className="[&_strong]:text-foreground">{children}</span>
-    </li>
-  );
 }

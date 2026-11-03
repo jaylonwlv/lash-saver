@@ -97,6 +97,8 @@ export type TemplateData = {
    */
   setup_nudge_first: { nextStep: string; freeUntil: string | null; dashboardUrl: string };
   setup_nudge_next_booking: { nextStep: string; freeUntil: string | null; dashboardUrl: string };
+  /** Their page hasn't been opened from Instagram yet. pricesUrl: set when it shows no prices yet. */
+  bio_nudge: { pageUrl: string; pricesUrl: string | null; dashboardUrl: string };
   /**
    * Plain notes from the founder to a new pro: right after sign-up, and a week later
    * if they haven't sent a pay link. They answer the usual questions themselves and
@@ -298,6 +300,14 @@ const renderers: { [T in TemplateId]: Renderer<T> } = {
   setup_nudge_next_booking: (d) => ({
     subject: `Before your next booking, send a ${APP_NAME} pay link`,
     text: `Next time a client asks for a time in your DMs, send a pay link instead of your Cash App. They agree to your policy, get reminders, and you keep the deposit if they don't show. ${d.nextStep} ${trialLine(d.freeUntil)}This is our last setup reminder. ${d.dashboardUrl}`,
+  }),
+  bio_nudge: (d) => ({
+    subject: "Is your page in your Instagram bio yet?",
+    text: `Your page is live: ${d.pageUrl}
+${d.pricesUrl ? `\nFirst, confirm your prices so they show on it (one screen): ${d.pricesUrl}\n` : ""}
+Put it in your Instagram bio: Edit profile, Links, Add external link, paste. New clients see your services, prices and deposit policy before they message you, so they show up ready to book, and you answer fewer "how much?" DMs.
+
+Then tap the link once on your profile. Your dashboard ticks it off: ${d.dashboardUrl}`,
   }),
   founder_welcome: (d) => ({
     subject: `You're set up on ${APP_NAME}`,
