@@ -293,7 +293,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 
 **Notifications**
 
-- App code sends messages only through `notify({ to, template, data })` from `@/lib/notifications`. Never import Resend (or a future SMS SDK) anywhere else.
+- App code sends messages only through `notify({ to, template, data })` from `@/lib/notifications`. Messages to a client pass `replyTo: <the pro's email>` (booking confirmed, reminders, cancellation, refund, no-show, deposit not received), so a client's reply ("running late") reaches their pro; everything else replies to the template's address or `EMAIL_REPLY_TO`. Never import Resend (or a future SMS SDK) anywhere else.
 - Add a message type by adding it to `TemplateData` and `renderers` in `templates.ts`. Keep `text` short, because it doubles as the SMS body.
 - Add a texting provider by implementing `Notifier` (`channel: "sms"`) in a new file, adding its name to `SMS_PROVIDER` in `env.ts`, and adding a case to `createSmsNotifier()`.
 - Scheduled messages write a row to `notification_log` so retries don't send twice.

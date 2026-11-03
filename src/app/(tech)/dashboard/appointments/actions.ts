@@ -196,6 +196,8 @@ export async function markNoShow(appointmentId: string): Promise<FormState> {
       appointmentId,
       to: { email: ctx.appointment.client_email, phone: ctx.appointment.client_phone },
       template: "no_show_recorded",
+      // A client replying ("running 10 min late") reaches their pro.
+      replyTo: ctx.tech.email,
       data: {
         businessName: ctx.tech.business_name ?? "Your provider",
         when: formatWhen(ctx.appointment.starts_at, ctx.tech.timezone),
@@ -240,6 +242,8 @@ export async function cancelAppointment(appointmentId: string): Promise<FormStat
         appointmentId,
         to: { email: ctx.appointment.client_email, phone: ctx.appointment.client_phone },
         template: "deposit_refunded",
+        // A client replying ("running 10 min late") reaches their pro.
+        replyTo: ctx.tech.email,
         data: {
           businessName: ctx.tech.business_name ?? "Your provider",
           amount: formatCents(refunded.amountCents),
@@ -305,6 +309,8 @@ export async function confirmManualDeposit(appointmentId: string): Promise<FormS
         phone: ctx.appointment.client_phone,
       },
       template: "booking_confirmed",
+      // A client replying ("running 10 min late") reaches their pro.
+      replyTo: ctx.tech.email,
       data: {
         businessName: ctx.tech.business_name ?? "your provider",
         serviceName: ctx.serviceName,
@@ -344,6 +350,8 @@ export async function rejectManualDeposit(appointmentId: string): Promise<FormSt
       appointmentId,
       to: { email: ctx.appointment.client_email, phone: ctx.appointment.client_phone },
       template: "manual_deposit_not_received",
+      // A client replying ("running 10 min late") reaches their pro.
+      replyTo: ctx.tech.email,
       data: {
         businessName: ctx.tech.business_name ?? "Your provider",
         amount: formatCents(appointment.deposit_cents ?? 0),

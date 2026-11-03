@@ -18,8 +18,15 @@ export async function notifyForAppointment<T extends TemplateId>(args: {
   data: TemplateData[T];
   /** Name recorded in notification_log, when one template is sent at several times. */
   logAs?: string;
+  /** Where replies go: for messages to a client, their pro (see notify). */
+  replyTo?: string | null;
 }): Promise<void> {
-  const results = await notify({ to: args.to, template: args.template, data: args.data });
+  const results = await notify({
+    to: args.to,
+    template: args.template,
+    data: args.data,
+    replyTo: args.replyTo,
+  });
   if (results.length === 0) return;
 
   const { error } = await createAdminClient()

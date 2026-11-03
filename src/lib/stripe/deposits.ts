@@ -247,6 +247,8 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
     appointmentId,
     to: { name: a.client_name, email: a.client_email, phone: a.client_phone },
     template: "booking_confirmed",
+    // A client replying reaches their pro, not Dibs.
+    replyTo: tech.email,
     data: {
       businessName: tech.business_name ?? "your provider",
       serviceName,

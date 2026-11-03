@@ -44,9 +44,12 @@ export async function notify<T extends TemplateId>(args: {
    * Callers check the opt-out first (notifications/log.ts notifyMarketingOnce).
    */
   marketing?: { page: string; oneClick: string; postalAddress: string | null };
+  /** Where replies go instead of the template's or EMAIL_REPLY_TO (a client's reply → their pro). */
+  replyTo?: string | null;
 }): Promise<SendResult[]> {
   const rendered = render(args.template, args.data);
-  const message = args.marketing ? withMarketingFooter(rendered, args.marketing) : rendered;
+  const withFooter = args.marketing ? withMarketingFooter(rendered, args.marketing) : rendered;
+  const message = args.replyTo ? { ...withFooter, replyTo: args.replyTo } : withFooter;
   const targets = notifiers().filter(
     (n) => (!args.channels || args.channels.includes(n.channel)) && n.canReach(args.to),
   );

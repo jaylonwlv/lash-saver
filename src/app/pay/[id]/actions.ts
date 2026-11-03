@@ -169,6 +169,7 @@ export async function cancelByClient(
     appointmentId: a.id,
     to: { name: a.client_name, email: a.client_email, phone: a.client_phone },
     template: "cancellation_confirmed",
+    replyTo: tech.email,
     data: {
       businessName,
       serviceName,

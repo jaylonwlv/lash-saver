@@ -436,6 +436,7 @@ async function sendReminders(now: Date) {
           phone: ctx.appointment.client_phone,
         },
         template: "appointment_reminder",
+        replyTo: ctx.tech.email,
         logAs: logKey,
         data: {
           businessName: ctx.tech.business_name ?? "Your provider",
