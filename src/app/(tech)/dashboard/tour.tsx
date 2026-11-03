@@ -124,9 +124,9 @@ export function Tour({
         close();
       }}
       aria-labelledby="tour-title"
-      className="backdrop:bg-ink/70 inset-x-0 top-auto bottom-0 m-0 h-auto max-h-[92dvh] w-full max-w-none bg-transparent p-0 backdrop:backdrop-blur-sm sm:inset-0 sm:m-auto sm:max-w-md"
+      className="backdrop:bg-ink/70 inset-0 m-0 h-dvh max-h-none w-full max-w-none bg-transparent p-0 backdrop:backdrop-blur-sm sm:m-auto sm:h-auto sm:max-h-[92dvh] sm:max-w-md"
     >
-      <div className="bg-background flex max-h-[92dvh] flex-col overflow-hidden rounded-t-[32px] pb-[env(safe-area-inset-bottom)] sm:rounded-[32px]">
+      <div className="bg-background flex h-full flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:h-auto sm:max-h-[92dvh] sm:rounded-[32px]">
         {/* Progress + skip */}
         <div className="flex items-center gap-3 px-5 pt-5">
           <div className="flex flex-1 gap-1.5" aria-hidden>
@@ -151,23 +151,24 @@ export function Tour({
           key={slide}
           tabIndex={-1}
           autoFocus
-          className="rise flex min-h-0 flex-col gap-5 overflow-y-auto px-6 pt-4 pb-2 outline-none [&>*]:shrink-0"
+          className={`rise flex min-h-0 flex-1 flex-col justify-center-safe overflow-y-auto px-6 pt-4 pb-2 outline-none [&>*]:shrink-0 ${slides[slide].textFirst ? "gap-4" : "gap-6"}`}
         >
-          {slides[slide].visual}
+          {!slides[slide].textFirst && slides[slide].visual}
           <div className="flex flex-col gap-2">
             <p className="text-brand text-xs font-bold tracking-[0.12em] uppercase">
               {slides[slide].eyebrow}
             </p>
             <h2
               id="tour-title"
-              className="font-display text-[28px] leading-[1.05] font-extrabold tracking-tight"
+              className="font-display text-[32px] leading-[1.04] font-extrabold tracking-tight"
             >
               {slides[slide].title}
             </h2>
-            <div className="text-muted flex flex-col gap-2 text-[15px] leading-relaxed">
+            <div className="text-muted flex flex-col gap-2 text-[17px] leading-relaxed">
               {slides[slide].body}
             </div>
           </div>
+          {slides[slide].textFirst && slides[slide].visual}
         </div>
 
         <div className="flex gap-2 px-5 pt-3 pb-5">
@@ -213,7 +214,14 @@ export function Tour({
   );
 }
 
-type Slide = { eyebrow: string; title: string; body: ReactNode; visual: ReactNode };
+type Slide = {
+  eyebrow: string;
+  title: string;
+  body: ReactNode;
+  visual: ReactNode;
+  /** Heading above the visual (the live page preview, which needs the height). */
+  textFirst?: boolean;
+};
 
 function SLIDES(
   steps: TourStep[],
@@ -342,15 +350,9 @@ function SLIDES(
     },
     {
       eyebrow: "Your own page",
-      title: "Your own page. Make it yours.",
-      body: (
-        <p>
-          This is your page at{" "}
-          <strong className="text-foreground">{look.address ?? "your own link"}</strong>, made for
-          your Instagram bio: your services, prices and policy, so new clients message you ready to
-          book. Tap a style and a color to make it yours.
-        </p>
-      ),
+      title: "Make your page yours",
+      textFirst: true,
+      body: <p>Scroll it, then pick a look.</p>,
       visual: (
         <LookPicker
           mode="instant"
@@ -359,6 +361,7 @@ function SLIDES(
           address={look.address}
           examplePrices={look.examplePrices}
           trade={look.trade}
+          compact
         />
       ),
     },
@@ -408,19 +411,18 @@ function SLIDES(
       title: "Their no-show, not your loss",
       body: example ? (
         <p>
-          A no-show on your {example.service} used to cost you the whole {example.price}. Now they
-          lose their {example.deposit} deposit, and you keep it. You keep your Cash App, Zelle or
-          Venmo; {APP_NAME} adds what it can&apos;t do.
+          A no-show on your {example.service} used to cost you {example.price}. Now they lose their{" "}
+          {example.deposit} deposit, and you keep it.
         </p>
       ) : (
         <p>
           A no-show used to cost you the whole appointment. Now they lose their deposit, and you
-          keep it. You keep your Cash App, Zelle or Venmo; {APP_NAME} adds what it can&apos;t do.
+          keep it.
         </p>
       ),
       visual: (
         <div className="bg-surface overflow-hidden rounded-[22px] shadow-[0_0_0_1px_var(--line)]">
-          <div className="text-muted grid grid-cols-[1fr_1fr] text-[10px] font-bold tracking-widest uppercase">
+          <div className="text-muted grid grid-cols-[1fr_1fr] text-[11px] font-bold tracking-widest uppercase">
             <span className="px-3 pt-3 pb-2">A Cash App deposit</span>
             <span className="bg-ink text-pink px-3 pt-3 pb-2">With {APP_NAME}</span>
           </div>
@@ -440,10 +442,10 @@ function SLIDES(
           ].map(([without, withDibs]) => (
             <div
               key={without}
-              className="border-line grid grid-cols-[1fr_1fr] border-t text-xs leading-snug"
+              className="border-line grid grid-cols-[1fr_1fr] border-t text-sm leading-snug"
             >
-              <span className="text-muted px-3 py-2.5">{without}</span>
-              <span className="bg-ink px-3 py-2.5 font-semibold text-white">{withDibs}</span>
+              <span className="text-muted px-3 py-2">{without}</span>
+              <span className="bg-ink px-3 py-2 font-semibold text-white">{withDibs}</span>
             </div>
           ))}
         </div>
