@@ -70,7 +70,7 @@ export default async function DomainPage({ searchParams }: PageProps<"/dashboard
           </ButtonLink>
           <TransferCode />
         </section>
-      ) : row?.status === "registering" || checkout === "done" ? (
+      ) : row?.status === "registering" || (checkout === "done" && row?.status === "pending") ? (
         <section className="card flex flex-col gap-2 p-5">
           <p className="font-bold">Setting up {row?.domain ?? "your website"}…</p>
           <p className="text-muted text-sm">

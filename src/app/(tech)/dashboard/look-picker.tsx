@@ -76,6 +76,7 @@ export function LookPicker({
     return () => observer.disconnect();
   }, []);
   const raf = useRef(0);
+  const visible = useRef<IntersectionObserver | null>(null);
 
   // Tour: save once they stop tapping, so quick taps can't land out of order. A look
   // still waiting when the card closes (Next, Skip) is saved right away.
@@ -95,6 +96,7 @@ export function LookPicker({
   useEffect(
     () => () => {
       cancelAnimationFrame(raf.current);
+      visible.current?.disconnect();
       clearTimeout(saveTimer.current);
       // Unmounting: send what's waiting without touching state.
       if (pendingLook.current) void savePageLook(pendingLook.current);
@@ -145,21 +147,40 @@ export function LookPicker({
     for (const type of ["wheel", "touchstart", "pointerdown", "keydown"]) {
       doc.addEventListener(type, stop, { passive: true, once: true });
     }
-    const begin = performance.now() + 1600;
-    let y = 0;
-    let last = 0;
-    const step = (now: number) => {
-      if (stopped) return;
-      if (now >= begin) {
-        y += ((last ? now - last : 16) * 150) / 1000; // 150px a second
-        last = now;
-        const end = doc.documentElement.scrollHeight - win.innerHeight;
-        win.scrollTo(0, Math.min(y, end));
-        if (y >= end) return;
-      }
+    const glide = () => {
+      const begin = performance.now() + 1600;
+      let y = 0;
+      let last = 0;
+      const step = (now: number) => {
+        if (stopped) return;
+        if (now >= begin) {
+          y += ((last ? now - last : 16) * 150) / 1000; // 150px a second
+          last = now;
+          const end = doc.documentElement.scrollHeight - win.innerHeight;
+          win.scrollTo(0, Math.min(y, end));
+          if (y >= end) return;
+        }
+        raf.current = requestAnimationFrame(step);
+      };
       raf.current = requestAnimationFrame(step);
     };
-    raf.current = requestAnimationFrame(step);
+    // On the homepage the phone may load before anyone scrolls to it: wait until it's
+    // mostly on screen, so visitors see the whole show from the top.
+    visible.current?.disconnect();
+    if (mode === "demo" && screen.current && "IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          observer.disconnect();
+          glide();
+        },
+        { threshold: 0.6 },
+      );
+      visible.current = observer;
+      observer.observe(screen.current);
+    } else {
+      glide();
+    }
   }
 
   const src = `${previewPath}?style=${style}&accent=${accent}`;
@@ -205,6 +226,8 @@ export function LookPicker({
                 ref={frame}
                 src={src}
                 onLoad={onLoad}
+                // The homepage loads it as it nears the screen, not with the hero.
+                loading={mode === "demo" ? "lazy" : undefined}
                 title="Your page, live"
                 className="absolute top-0 left-0 block origin-top-left border-0"
                 style={{

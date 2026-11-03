@@ -13,6 +13,7 @@ import {
 import { publicEnv } from "@/lib/env.public";
 import { formatCents } from "@/lib/money";
 import { notify } from "@/lib/notifications";
+import { notifyOnce } from "@/lib/notifications/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, Tables } from "@/lib/supabase/database.types";
 import {
@@ -23,6 +24,7 @@ import {
   quoteDomain,
   type Registrant,
   RegistrarError,
+  renewalPriceCents,
   renewDomain,
 } from "@/lib/vercel/registrar";
 import { stripeCustomerFor } from "./billing";
@@ -55,7 +57,7 @@ const dashboardUrl = () => `${publicEnv().NEXT_PUBLIC_APP_URL}/dashboard/domain`
 
 /**
  * Re-checks the name and price on the server, records what they agreed to, and opens
- * Stripe Checkout. Yearly: $99 now. Monthly: $10 + $15 setup now.
+ * Stripe Checkout. Yearly: $99 now. Monthly: $15 + $25 setup now.
  */
 export async function startDomainCheckout(
   techId: string,
@@ -100,8 +102,16 @@ export async function startDomainCheckout(
     renewal_cents: quote.renewalCents,
     registrant: input.registrant as unknown as Json,
     terms_agreed_at: new Date().toISOString(),
+    // A new attempt starts clean: nothing from an earlier, ended domain may carry over
+    // (an old order id would make the webhook "finish" a purchase that never happened).
     stripe_checkout_session_id: null,
     stripe_subscription_id: null,
+    current_period_end: null,
+    cancel_at_period_end: false,
+    registrar_order_id: null,
+    renewal_order_id: null,
+    registered_at: null,
+    expires_at: null,
     error: null,
   };
   const { data: row, error } = await admin
@@ -174,7 +184,17 @@ export async function handleDomainCheckoutCompleted(
     .eq("stripe_checkout_session_id", session.id)
     .eq("status", "pending")
     .select("*");
-  if (claimed?.length) return registerDomain(claimed[0]);
+  if (claimed?.length) {
+    // Subscription events can arrive before this one and are ignored until the row
+    // knows its subscription, so copy the period now.
+    if (subscriptionId) {
+      await getStripe()
+        .subscriptions.retrieve(subscriptionId)
+        .then(syncDomainSubscription)
+        .catch((err: unknown) => console.error(`Syncing domain subscription failed`, err));
+    }
+    return registerDomain(claimed[0]);
+  }
 
   // Not this row's current checkout: an older tab they paid after starting a new one.
   // Nothing will be registered for it, so give the money back and end that plan.
@@ -332,12 +352,13 @@ export async function syncDomainSubscription(sub: Stripe.Subscription): Promise<
   const { data: row } = await (
     domainId ? query.eq("id", domainId) : query.eq("stripe_subscription_id", sub.id)
   ).maybeSingle();
-  if (!row) return;
+  // Only the row's own subscription (set when its checkout is paid) may change it: a
+  // stale checkout's subscription, cancelled by us, must never take a live site down.
+  if (!row || row.stripe_subscription_id !== sub.id) return;
   const periodEnd = sub.items.data[0]?.current_period_end;
   await admin
     .from("custom_domains")
     .update({
-      stripe_subscription_id: sub.id,
       current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
       cancel_at_period_end: sub.cancel_at_period_end,
     })
@@ -356,7 +377,7 @@ export async function syncDomainSubscription(sub: Stripe.Subscription): Promise<
 }
 
 /**
- * Daily: finish registrations still pending at the registrar, retry ones the webhook
+ * Hourly: finish registrations still pending at the registrar, retry ones the webhook
  * never got to, and renew domains whose add-on is still paid.
  */
 export async function runDomainJobs(now: Date): Promise<Record<string, number>> {
@@ -403,21 +424,34 @@ export async function runDomainJobs(now: Date): Promise<Record<string, number>> 
           continue;
         }
         await admin.from("custom_domains").update({ renewal_order_id: null }).eq("id", row.id);
-        await notify({
+        await notifyOnce(`domain_renew_failed:${row.id}:${row.expires_at}`, {
           to: { email: OWNER_ALERT_EMAIL },
           template: "domain_alert",
           data: {
-            summary: `Renewing ${row.domain} failed (${order.status}${order.error ? `: ${order.error}` : ""}). It expires ${row.expires_at}. The cron will try again tomorrow.`,
+            summary: `Renewing ${row.domain} failed (${order.status}${order.error ? `: ${order.error}` : ""}). It expires ${row.expires_at}; the cron keeps retrying every hour.`,
           },
         });
         continue;
       }
       // Only while the add-on is paid up (Stripe is retrying a failed charge: wait).
       if (!row.current_period_end || new Date(row.current_period_end) < now) continue;
-      const quote = await quoteDomain(row.domain).catch(() => null);
-      const price = quote?.renewalCents ?? row.renewal_cents;
+      // Our own domain shows as "taken", so ask for its price directly.
+      const price = (await renewalPriceCents(row.domain).catch(() => null)) ?? row.renewal_cents;
       if (price === null) continue;
-      const orderId = await renewDomain(row.domain, price);
+      let orderId: string;
+      try {
+        orderId = await renewDomain(row.domain, price);
+      } catch (err) {
+        // A price change or a registrar error: tell the owner once per expiry, retry hourly.
+        await notifyOnce(`domain_renew_failed:${row.id}:${row.expires_at}`, {
+          to: { email: OWNER_ALERT_EMAIL },
+          template: "domain_alert",
+          data: {
+            summary: `Renewing ${row.domain} failed (${err instanceof Error ? err.message : String(err)}). It expires ${row.expires_at}; the cron keeps retrying every hour.`,
+          },
+        });
+        continue;
+      }
       await admin
         .from("custom_domains")
         .update({ renewal_order_id: orderId, renewal_cents: price })

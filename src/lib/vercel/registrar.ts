@@ -85,6 +85,15 @@ export async function quoteDomain(domain: string): Promise<DomainQuote> {
   };
 }
 
+/** The renewal price of a name, owned or not, in cents (null if the registrar didn't say). */
+export async function renewalPriceCents(domain: string): Promise<number | null> {
+  const price = await call<{ renewalPrice: number | string }>(
+    "GET",
+    `/v1/registrar/domains/${enc(domain)}/price?years=1`,
+  );
+  return registrarPriceCents(price.renewalPrice);
+}
+
 /** Registrant details, in the registrar's shape (phone E.164, country ISO alpha-2). */
 export type Registrant = {
   firstName: string;
