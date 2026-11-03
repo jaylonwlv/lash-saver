@@ -116,7 +116,7 @@ export function GalleryManager({
                     key={`${photo.id}-${i}`}
                     src={galleryPhotoUrl(supabaseUrl, photo.path)}
                     alt=""
-                    className={`aspect-[4/5] h-40 w-auto rounded-2xl object-cover ${
+                    className={`aspect-square h-40 w-auto rounded-2xl object-cover ${
                       i >= all.length / 2 ? "motion-reduce:hidden" : ""
                     }`}
                   />
@@ -125,7 +125,7 @@ export function GalleryManager({
                   <span
                     key={i}
                     aria-hidden
-                    className={`from-brand-soft to-brand/35 text-brand flex aspect-[4/5] h-40 flex-col items-center justify-center gap-1 rounded-2xl border border-white/60 bg-gradient-to-br text-xs font-bold ${
+                    className={`from-brand-soft to-brand/35 text-brand flex aspect-square h-40 flex-col items-center justify-center gap-1 rounded-2xl border border-white/60 bg-gradient-to-br text-xs font-bold ${
                       i >= 5 ? "motion-reduce:hidden" : ""
                     }`}
                   >
@@ -180,7 +180,7 @@ export function GalleryManager({
           {photos.map((photo) => (
             <li
               key={photo.id}
-              className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-black/5"
+              className="relative aspect-square overflow-hidden rounded-2xl bg-black/5"
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- already sized on upload */}
               <img

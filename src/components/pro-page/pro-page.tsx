@@ -462,7 +462,7 @@ function PhotoRow({
             height={photo.height}
             loading={i < 4 ? "eager" : "lazy"}
             decoding="async"
-            className={`aspect-[4/5] h-80 w-auto rounded-[22px] object-cover shadow-[0_10px_30px_-18px_rgb(0_0_0/0.45)] sm:h-96 ${
+            className={`aspect-square h-80 w-auto rounded-[22px] object-cover shadow-[0_10px_30px_-18px_rgb(0_0_0/0.45)] sm:h-96 ${
               i >= base.length ? "motion-reduce:hidden" : ""
             }`}
           />
