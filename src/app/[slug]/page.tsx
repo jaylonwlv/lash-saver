@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import { PolicyCard } from "@/app/pay/[id]/ui";
 import { LegalLinks } from "@/components/ui/legal-links";
 import { ProInvite } from "@/components/ui/pro-invite";
+import { accentStyle } from "@/lib/accents";
 import { policySummary } from "@/lib/appointments";
 import { publicEnv } from "@/lib/env.public";
 import { formatDuration } from "@/lib/format";
@@ -37,7 +38,11 @@ export default async function MenuPage({ params }: PageProps<"/[slug]">) {
   const hours = tech.cancellation_window_hours ?? 0;
 
   return (
-    <div className="flex flex-1 flex-col pb-[calc(6rem+env(safe-area-inset-bottom))]">
+    <div
+      // Room for the sticky "Message to book" bar, when there is one.
+      className={`flex flex-1 flex-col ${dm ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : "pb-8"}`}
+      style={accentStyle(tech.accent_color)}
+    >
       {/* The pro's name, big: this is their page. */}
       <header className="bg-ink relative overflow-hidden px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-8 text-white">
         <div

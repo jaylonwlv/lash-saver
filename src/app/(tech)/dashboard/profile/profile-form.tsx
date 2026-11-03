@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
 import { OTHER_TRADE, TRADES } from "@/lib/trades";
+import { AccentPicker } from "./accent-picker";
 import { saveProfile } from "./actions";
 import { slugFromName } from "./schema";
 
@@ -17,6 +18,7 @@ export type ProfileValues = {
   cancellation_window_hours: string;
   policy_text: string;
   trade: string;
+  accent_color: string;
 };
 
 const COMMON_TIME_ZONES = [
@@ -61,6 +63,7 @@ export function ProfileForm({
   // The link already live; changing it breaks the one in their bio, so say so.
   const [savedSlug] = useState(initial.slug);
   const [slugChanged, setSlugChanged] = useState(false);
+  const [businessName, setBusinessName] = useState(v.business_name);
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -71,6 +74,7 @@ export function ProfileForm({
         error={e.business_name}
         autoComplete="organization"
         onChange={(event) => {
+          setBusinessName(event.target.value);
           if (!slugEdited.current && slugInput.current) {
             slugInput.current.value = slugFromName(event.target.value);
           }
@@ -107,6 +111,12 @@ export function ProfileForm({
         spellCheck={false}
         placeholder="your-business"
         required
+      />
+      <AccentPicker
+        key={v.accent_color}
+        defaultValue={v.accent_color}
+        error={e.accent_color}
+        businessName={businessName}
       />
       <Input
         id="instagram_handle"

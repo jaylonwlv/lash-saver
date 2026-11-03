@@ -113,6 +113,10 @@ src/
                                   test). b/[slug] permanently redirects here. Sold as "your own page" on /start (live
                                   address preview), the landing page, the dashboard and the founder welcome email; the
                                   profile form warns that changing the link breaks the old one.
+                                  The pro's color (profiles.accent_color, 20261020000000) recolors it, the pay link
+                                  and the link preview: fixed presets in lib/accents.ts (contrast-tested; must match the
+                                  check), applied by accentStyle() overriding --brand / --brand-soft / --pink on the
+                                  page wrapper. Picked on Profile (accent-picker.tsx, with a preview).
                                   Ends with a small "Try Dibs free" invite (components/ui/pro-invite.tsx).
     pay/[id]/calendar/route.ts    The booked appointment as an .ics (Add to my calendar on the pay page; also attached
                                   to the booking_confirmed email, so Apple Mail offers to add it). 2-hour phone alert.

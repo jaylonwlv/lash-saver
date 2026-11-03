@@ -15,7 +15,9 @@ export const loadMenu = cache(async (rawSlug: string) => {
   const supabase = await createClient();
   const { data: tech, error: techError } = await supabase
     .from("public_profiles")
-    .select("id, business_name, policy_text, instagram_handle, cancellation_window_hours")
+    .select(
+      "id, business_name, policy_text, instagram_handle, cancellation_window_hours, accent_color",
+    )
     .eq("slug", slug)
     .maybeSingle();
   // A query error (bad key, missing table) must surface, not look like "no such pro".

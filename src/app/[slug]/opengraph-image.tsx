@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { accentFor } from "@/lib/accents";
 import { APP_NAME } from "@/lib/config";
 import { formatCents } from "@/lib/money";
 import { loadMenu } from "./menu";
@@ -13,7 +14,6 @@ export const contentType = "image/png";
 export const alt = "Services and prices";
 
 const INK = "#0d0b0c";
-const PINK = "#ff5c9d";
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const menu = await loadMenu((await params).slug);
@@ -22,6 +22,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
     ? `From ${formatCents(menu.services[0].price_cents).replace(/\.00$/, "")}`
     : "Services & prices";
   const count = menu?.services.length ?? 0;
+  const accent = accentFor(menu?.tech.accent_color).bright;
 
   return new ImageResponse(
     <div
@@ -42,7 +43,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           width: 120,
           height: 120,
           borderRadius: 36,
-          background: PINK,
+          background: accent,
           color: INK,
           display: "flex",
           alignItems: "center",
@@ -68,7 +69,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           <div
             style={{
               display: "flex",
-              background: PINK,
+              background: accent,
               color: INK,
               padding: "10px 24px",
               borderRadius: 999,
@@ -94,7 +95,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
         }}
       >
         {APP_NAME.toLowerCase()}
-        <span style={{ color: PINK }}>.</span>
+        <span style={{ color: accent }}>.</span>
       </div>
     </div>,
     size,

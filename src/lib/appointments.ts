@@ -41,6 +41,7 @@ export type AppointmentContext = {
     | "cashapp_tag"
     | "zelle_contact"
     | "venmo_handle"
+    | "accent_color"
     | "slug"
     | "subscription_status"
   >;
@@ -67,7 +68,7 @@ export async function loadAppointmentContext(
     admin
       .from("profiles")
       .select(
-        "id, email, business_name, slug, subscription_status, instagram_handle, timezone, cancellation_window_hours, policy_text, stripe_account_id, stripe_charges_enabled, deposit_method, cashapp_tag, zelle_contact, venmo_handle",
+        "id, email, business_name, slug, subscription_status, instagram_handle, timezone, cancellation_window_hours, policy_text, stripe_account_id, stripe_charges_enabled, deposit_method, cashapp_tag, zelle_contact, venmo_handle, accent_color",
       )
       .eq("id", appointment.tech_id)
       .single(),

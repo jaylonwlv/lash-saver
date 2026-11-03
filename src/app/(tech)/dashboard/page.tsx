@@ -374,6 +374,15 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               label="Copy menu page link"
               tinted
             />
+            {(starterServices ?? 0) > 0 && (
+              <p className="bg-brand-soft/60 rounded-2xl px-4 py-3 text-sm">
+                Your page only shows prices you&apos;ve saved, so example prices stay hidden.{" "}
+                <Link href="/dashboard/services" className="text-brand font-semibold underline">
+                  Set your prices
+                </Link>{" "}
+                before you add it to your bio.
+              </p>
+            )}
             <p className="text-muted text-sm">
               <strong className="text-foreground">To add it:</strong> on Instagram, tap Edit profile
               → Links → Add external link, and paste it.

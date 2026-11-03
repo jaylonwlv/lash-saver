@@ -56,6 +56,7 @@ type ProfileRow = Timestamps & {
   marketing_opt_out_at: string | null;
   /** Closed the dashboard's first-run tour; set by the pro (dashboard/tour-actions.ts). */
   tour_seen_at: string | null;
+  accent_color: string;
 };
 
 type ServiceRow = Timestamps & {
@@ -376,6 +377,7 @@ export type Database = {
           | "timezone"
           | "cancellation_window_hours"
           | "policy_text"
+          | "accent_color"
         >;
         Relationships: [];
       };

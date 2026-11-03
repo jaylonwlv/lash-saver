@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ACCENT_IDS } from "@/lib/accents";
 import { instagramHandle, optionalText } from "@/lib/forms";
 import { isReservedSlug, SLUG_PATTERN } from "@/lib/slugs";
 import { TRADE_IDS } from "@/lib/trades";
@@ -29,5 +30,6 @@ export const profileSchema = z.object({
     .refine((tz) => Intl.supportedValuesOf("timeZone").includes(tz), "Pick a time zone."),
   cancellation_window_hours: z.coerce.number().int().min(0).max(720),
   policy_text: optionalText(1000),
+  accent_color: z.enum(ACCENT_IDS, "Pick a color."),
   trade: z.preprocess((v) => (v === "" || v == null ? null : v), z.enum(TRADE_IDS).nullable()),
 });

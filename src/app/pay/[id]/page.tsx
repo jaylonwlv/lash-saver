@@ -5,6 +5,7 @@ import { publicEnv } from "@/lib/env.public";
 import { inviteUrl } from "@/lib/referral";
 import { notFound } from "next/navigation";
 import { z } from "zod";
+import { accentStyle } from "@/lib/accents";
 import {
   cancellationTerms,
   loadAppointmentContext,
@@ -90,7 +91,8 @@ export default async function PayPage({ params, searchParams }: PageProps<"/pay/
         : ({ label: "Closed", tone: "muted" } as const);
 
   return (
-    <div className="flex flex-1 flex-col">
+    // The pro's own color: buttons, highlights and their initial follow it.
+    <div className="flex flex-1 flex-col" style={accentStyle(tech.accent_color)}>
       <PayHeader business={business} />
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-5 pt-7 pb-[max(2rem,env(safe-area-inset-bottom))]">
         <PayTitle

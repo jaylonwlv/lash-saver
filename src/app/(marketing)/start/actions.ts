@@ -158,7 +158,11 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
       template: "founder_welcome",
       data: {
         appUrl,
-        pageUrl: saved?.slug ? menuPageUrl(appUrl, saved.slug) : undefined,
+        // The page is live once they can take deposits: a payment handle now (Stripe comes later).
+        pageUrl:
+          saved?.slug && data.method !== "stripe" && data.handles
+            ? menuPageUrl(appUrl, saved.slug)
+            : undefined,
         needsHandle: data.method !== "stripe" && !data.handles,
         signInUrl,
         nextLink: await freeUntil(techId).then(
