@@ -164,7 +164,7 @@ export function ProPage({
       {/* Service names gliding by, in the pro's color. */}
       {sorted.length > 0 && <Marquee items={sorted.map((s) => s.name)} look={look} />}
 
-      {/* Their work, gliding by: two rows in opposite directions once there are enough. */}
+      {/* Their work, gliding by in one row. */}
       {photos.length > 0 && (
         <section aria-label="Photos of the work" className="pt-14">
           <div className="mx-auto w-full max-w-xl px-6">
@@ -173,11 +173,8 @@ export function ProPage({
               See it <span className={look.em}>for yourself.</span>
             </h2>
           </div>
-          <div data-reveal className="mt-8 flex flex-col gap-3" style={delay(120)}>
-            <PhotoRow photos={photos.length >= 4 ? photos.filter((_, i) => i % 2 === 0) : photos} />
-            {photos.length >= 4 && (
-              <PhotoRow photos={photos.filter((_, i) => i % 2 === 1)} reverse />
-            )}
+          <div data-reveal className="mt-8" style={delay(120)}>
+            <PhotoRow photos={photos} />
           </div>
         </section>
       )}
@@ -441,10 +438,8 @@ function Marquee({ items, look }: { items: string[]; look: Look }) {
  */
 function PhotoRow({
   photos,
-  reverse = false,
 }: {
   photos: { id: string; url: string; width: number; height: number }[];
-  reverse?: boolean;
 }) {
   const base = Array.from(
     { length: Math.max(1, Math.ceil(6 / photos.length)) },
@@ -453,9 +448,7 @@ function PhotoRow({
   return (
     <div className="group overflow-hidden motion-reduce:overflow-x-auto">
       <div
-        className={`marquee flex w-max gap-3 group-hover:[animation-play-state:paused] group-active:[animation-play-state:paused] ${
-          reverse ? "[animation-direction:reverse]" : ""
-        }`}
+        className="marquee flex w-max gap-3 group-hover:[animation-play-state:paused] group-active:[animation-play-state:paused]"
         style={{ "--marquee": `${Math.max(30, base.length * 7)}s` } as CSSProperties}
       >
         {[...base, ...base].map((photo, i) => (
@@ -469,7 +462,7 @@ function PhotoRow({
             height={photo.height}
             loading={i < 4 ? "eager" : "lazy"}
             decoding="async"
-            className={`aspect-[4/5] h-64 w-auto rounded-[22px] object-cover shadow-[0_10px_30px_-18px_rgb(0_0_0/0.45)] sm:h-80 ${
+            className={`aspect-[4/5] h-80 w-auto rounded-[22px] object-cover shadow-[0_10px_30px_-18px_rgb(0_0_0/0.45)] sm:h-96 ${
               i >= base.length ? "motion-reduce:hidden" : ""
             }`}
           />

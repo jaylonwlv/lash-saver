@@ -104,7 +104,7 @@ src/
                                   shrinks each photo on the phone (longest side 1600px, JPEG, no EXIF/location), uploads it
                                   straight to the public "gallery" bucket under <tech id>/ (storage policies: own folder
                                   only), then addGalleryPhoto lists it in gallery_photos (12 max, also a DB trigger).
-                                  On ProPage they glide in two rows under the hero ("The work"), hidden with none. A
+                                  On ProPage they glide in one big row under the hero ("The work"), hidden with none. A
                                   tour card ("Show off your work", after the page card) glides blank "Your work here" frames in the pro's
                                   color until they add photos, then their photos, plus "See them on your page →" (jumps back
                                   to the page card with the preview scrolled to "The work": LookPicker startAtWork);
