@@ -249,6 +249,8 @@ src/
                                   bookings.ts (states, labels), setup.ts (publishProblems), starter.ts (setUpCatering:
                                   default settings + example packages), server.ts (startDepositCheckout, balance and
                                   resume checkouts, webhook handlers, emails, .ics)
+    short-links.ts                Short sign-up links for DMs and comments: getdibs.pro/nails → /start?trade=nails (next.config.ts
+                                  redirects; every word must be in RESERVED_SLUGS, tested). /detailers stays its landing page.
     referral.ts                   "Powered by Dibs": inviteUrl (/?ref=<slug>, on the pay page after payment, the menu
                                   page and the client's booking_confirmed email) and readRef. remember-trade.tsx keeps ?ref
                                   on the phone for 7 days; /start saves the referring pro in profiles.referred_by. No rewards.
