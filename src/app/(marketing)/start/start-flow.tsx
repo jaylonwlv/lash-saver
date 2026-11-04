@@ -246,6 +246,15 @@ export function StartFlow({
     // The same steps as Clarity events, for its funnels and recording filters.
     window.clarity?.("event", event);
   };
+  // A submit that didn't end in a new account: say why, so the ads funnel shows where
+  // StartSubmit → CompleteRegistration loses people (each result object is new).
+  useEffect(() => {
+    if (!state.outcome) return;
+    const fields = Object.keys(state.errors ?? {}).join(",");
+    funnel("StartSubmitFailed", { reason: state.outcome, ...(fields ? { fields } : {}) });
+    window.clarity?.("set", "start_failed", state.outcome);
+  }, [state]);
+
   // /start is one address for every step, so tag the session with the furthest screen
   // reached (and the trade): Clarity can then filter heatmaps and recordings by step.
   useEffect(() => {

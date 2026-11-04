@@ -24,7 +24,14 @@ import { setUpCatering } from "@/lib/catering/starter";
 import { startSchema } from "./schema";
 
 /** `existing`: that email already has an account, so we sent a sign-in code instead. */
-export type StartState = FormState & { existing?: string };
+/**
+ * `outcome` says why a submit didn't end in a new account (sent to Meta and Clarity as
+ * StartSubmitFailed): fields (a field the server rejected), bot (Turnstile), existing
+ * (that email already has an account: a sign-in code was sent), code (the account was
+ * made but signing in failed, so a code was sent), error (creating it failed).
+ */
+export type StartOutcome = "fields" | "bot" | "existing" | "code" | "error";
+export type StartState = FormState & { existing?: string; outcome?: StartOutcome };
 
 type StartData = Extract<ReturnType<typeof startSchema.safeParse>, { success: true }>["data"];
 
@@ -44,12 +51,13 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
   const parsed = startSchema.safeParse(values);
   if (!parsed.success) {
     const errors = fieldErrors(parsed.error);
-    if (errors.website) return { message: "Something went wrong. Try again.", values };
-    return { errors, values };
+    if (errors.website)
+      return { message: "Something went wrong. Try again.", values, outcome: "bot" };
+    return { errors, values, outcome: "fields" };
   }
   const data = parsed.data;
   if (!(await passesBotCheck(values["cf-turnstile-response"] ?? ""))) {
-    return { message: "We couldn't check you're a person. Try again.", values };
+    return { message: "We couldn't check you're a person. Try again.", values, outcome: "bot" };
   }
 
   const admin = createAdminClient();
@@ -62,10 +70,14 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
       createError?.code === "email_exists" ||
       /already been registered/i.test(createError?.message ?? "")
     ) {
-      return sendCode(data.email, values);
+      return { ...(await sendCode(data.email, values)), outcome: "existing" };
     }
     console.error("Instant sign-up: creating the user failed", createError);
-    return { message: "We couldn't create your account. Try again in a minute.", values };
+    return {
+      message: "We couldn't create your account. Try again in a minute.",
+      values,
+      outcome: "error",
+    };
   }
 
   // Not proven yet: set before signing in, so a later code sign-in by the real owner
@@ -76,7 +88,7 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     .eq("id", created.user.id);
   if (flagError) {
     console.error(`Instant sign-up: flagging ${created.user.id} unconfirmed failed`, flagError);
-    return sendCode(data.email, values, READY_MESSAGE);
+    return { ...(await sendCode(data.email, values, READY_MESSAGE)), outcome: "code" };
   }
 
   // A failure here leaves the dashboard checklist to finish setup; the account is still good.
@@ -119,7 +131,7 @@ export async function createAccount(_prev: StartState, formData: FormData): Prom
     : null;
   if (!session || session.error || !session.data.user) {
     console.error("Instant sign-up: signing in failed", linkError ?? session?.error);
-    return sendCode(data.email, values, READY_MESSAGE);
+    return { ...(await sendCode(data.email, values, READY_MESSAGE)), outcome: "code" };
   }
   await trackSignUp(session.data.user, "/start");
   // A plain note from the founder, sent after the response so sign-up never waits on email.
