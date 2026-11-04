@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { ProPage } from "@/components/pro-page/pro-page";
-import { ACCENTS } from "@/lib/accents";
-import { PAGE_STYLES } from "@/lib/page-styles";
+import { SamplePro } from "./sample-pro";
 
 /*
  * A sample pro page (the neutral "Studio Nova"), for the homepage's live phone.
@@ -37,23 +35,16 @@ const SERVICES = [
 ];
 
 export default async function SamplePage({ searchParams }: PageProps<"/demo/sample">) {
-  const { style, accent } = await searchParams;
-  const pick = (value: unknown, allowed: object, fallback: string) =>
-    typeof value === "string" && Object.hasOwn(allowed, value) ? value : fallback;
   return (
-    <ProPage
-      preview={false}
+    <SamplePro
+      look={await searchParams}
       name="Studio Nova"
-      handle={null}
-      messageHref="#"
       services={SERVICES}
       cancellationHours={48}
       policyText={
         "Cancel or reschedule at least 48 hours before your appointment to get your deposit back. Later cancellations and no-shows lose the deposit.\n\nRunning late? Message me. More than 15 minutes late may need to be rescheduled."
       }
-      accent={pick(accent, ACCENTS, "pink")}
-      style={pick(style, PAGE_STYLES, "editorial")}
-      inviteHref={null}
+      fallbackStyle="editorial"
     />
   );
 }

@@ -17,17 +17,26 @@ const ALL_STYLES = [
  * The homepage's hook: a sample pro page live in a phone. It glides down on its own
  * (so the reveals play), visitors can scroll it, and every style and color is one tap.
  */
-export function PageShowcase({ address }: { address: string }) {
+export function PageShowcase({
+  address,
+  previewPath = "/demo/sample",
+  styles = ALL_STYLES,
+}: {
+  address: string;
+  /** A trade's sample page (app/demo/sample/…); its first look starts selected. */
+  previewPath?: string;
+  styles?: PageStyleId[];
+}) {
   return (
     <LookPicker
-      initialStyle="editorial"
+      initialStyle={styles[0] ?? "editorial"}
       initialAccent="pink"
       address={address}
       examplePrices={false}
       mode="demo"
       trade={null}
-      previewPath="/demo/sample"
-      styleIds={ALL_STYLES}
+      previewPath={previewPath}
+      styleIds={styles}
       swipe
     />
   );

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { landingForAdSet } from "@/lib/ad-sets";
 import { bareHost, isAppHost, servedOnCustomHost, slugForHost } from "@/lib/custom-host";
 import { updateSession } from "@/lib/supabase/proxy";
 
@@ -26,6 +27,15 @@ export async function proxy(request: NextRequest) {
       }
       if (servedOnCustomHost(pathname)) return NextResponse.next();
       return NextResponse.redirect(new URL(`${pathname}${search}`, appUrl));
+    }
+  }
+  // An ad set with its own landing page (lib/ad-sets.ts): same "/" address, its version.
+  if (request.nextUrl.pathname === "/") {
+    const landing = landingForAdSet(request.nextUrl.searchParams.get("utm_term"));
+    if (landing) {
+      const page = request.nextUrl.clone();
+      page.pathname = landing;
+      return NextResponse.rewrite(page);
     }
   }
   return updateSession(request);

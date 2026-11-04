@@ -45,6 +45,11 @@ src/
                                   sticky phone CTA. The price shows under the hero button and in the sticky bar.
                                   Every "Start free" links to /start. Pulls price, trial and fee from
                                   config.ts; keep claims true to the product.
+    (marketing)/landing.tsx       The homepage as a component (page.tsx renders it); a LandingNiche swaps in one trade's
+                                  wording, sample page, calculator price and FAQ, and points Start free at /start?trade=…
+    (marketing)/detailers/        Mobile detailers' homepage (names a trade on purpose, like catering). proxy.ts shows it at
+                                  "/" when utm_term is the Detailers ad set's ID (lib/ad-sets.ts), so ads never need editing;
+                                  Clarity tag landing=detailing. Sample page: demo/sample/detailing.
     (marketing)/demo/             Demo pay link anyone can try (no sign-up): reuses the pay page's forms
                                   with local actions, so nothing is charged or saved. Card or manual toggle.
     (marketing)/catering/         Food truck / caterer landing page for ads (the one marketing page that names a trade, on

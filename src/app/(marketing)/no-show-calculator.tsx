@@ -4,8 +4,17 @@ import { useState } from "react";
 import { formatCents } from "@/lib/money";
 
 /** "What do no-shows cost you?" Two inputs, one big number, compared with the plan price. */
-export function NoShowCalculator({ priceCents, appName }: { priceCents: number; appName: string }) {
-  const [price, setPrice] = useState(100);
+export function NoShowCalculator({
+  priceCents,
+  appName,
+  initialPrice = 100,
+}: {
+  priceCents: number;
+  appName: string;
+  /** Starting appointment price in dollars (a trade's landing page starts at its own). */
+  initialPrice?: number;
+}) {
+  const [price, setPrice] = useState(initialPrice);
   const [perMonth, setPerMonth] = useState(2);
   const yearly = price * perMonth * 12;
   const planYearly = (priceCents / 100) * 12;
