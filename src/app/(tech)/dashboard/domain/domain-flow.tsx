@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
@@ -13,8 +13,11 @@ export function DomainFlow({
   suggestion,
   email,
   prices,
+  autoSearch = false,
 }: {
   suggestion: string;
+  /** From the dashboard's "Check if … is free": search the suggestion straight away. */
+  autoSearch?: boolean;
   email: string;
   prices: Prices;
 }) {
@@ -42,6 +45,22 @@ export function DomainFlow({
       }
     });
   }
+
+  // Once, on arrival from the dashboard card (the button promised a check, not a form).
+  const searched = useRef(false);
+  useEffect(() => {
+    if (!autoSearch || searched.current || !suggestion.trim()) return;
+    searched.current = true;
+    startSearch(async () => {
+      const result = await searchDomains(suggestion);
+      if ("error" in result) {
+        setSearchError(result.error);
+      } else {
+        setOptions(result.options);
+        setPicked(result.options.find((o) => o.offered)?.domain ?? null);
+      }
+    });
+  }, [autoSearch, suggestion]);
 
   const firstCharge =
     plan === "yearly"

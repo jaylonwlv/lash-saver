@@ -21,6 +21,7 @@ import { InstallBanner } from "../install-banner";
 import { AlertsEmail } from "./confirm-email/confirm-email";
 import { AnnouncementCard } from "./announcement-card";
 import { BioCard } from "./bio-card";
+import { WebsiteCard } from "./website-card";
 import { InstagramCard } from "./instagram-card";
 import { SavedReplyCard } from "./saved-reply-card";
 import { startStripeOnboarding } from "./stripe/actions";
@@ -562,9 +563,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           savedServices={(activeServices ?? 0) - (starterServices ?? 0)}
           photos={(gallery ?? []).length}
           inBio={inBio}
-          domainOffer={domainOffer}
           hasInstagram={Boolean(profile.instagram_handle)}
         />
+      )}
+      {menuUrl && domainOffer && (
+        <WebsiteCard domain={domainOffer} currentAddress={menuUrl.replace(/^https?:\/\//, "")} />
       )}
       <TourLauncher />
     </div>

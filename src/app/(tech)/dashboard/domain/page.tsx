@@ -20,7 +20,7 @@ export const metadata: Metadata = { title: "Your own website" };
 const price = (cents: number) => formatCents(cents).replace(/\.00$/, "");
 
 export default async function DomainPage({ searchParams }: PageProps<"/dashboard/domain">) {
-  const { checkout } = await searchParams;
+  const { checkout, check } = await searchParams;
   const user = await getUser();
   const supabase = await createClient();
   const [{ data: profile }, { data: row }] = await Promise.all([
@@ -108,6 +108,7 @@ export default async function DomainPage({ searchParams }: PageProps<"/dashboard
           )}
           <DomainFlow
             suggestion={profile?.business_name ?? ""}
+            autoSearch={check === "1"}
             email={profile?.email ?? ""}
             prices={{
               yearly: price(DOMAIN_YEARLY_CENTS),
