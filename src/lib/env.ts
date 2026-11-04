@@ -46,6 +46,12 @@ const serverSchema = z.object({
   /** The team's id (team_…), if the project belongs to a team. */
   VERCEL_TEAM_ID: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(1).optional()),
 
+  /**
+   * The help chat ("Ask Dib", components/assistant): answers come from Claude.
+   * Optional: unset hides the chat everywhere. console.anthropic.com → API keys.
+   */
+  ANTHROPIC_API_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(20).optional()),
+
   /** Texting provider. "none" disables SMS; "log" prints messages (dev). */
   SMS_PROVIDER: z.enum(["none", "log"]).default("none"),
 });

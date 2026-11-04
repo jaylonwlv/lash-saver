@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { APP_NAME, LEGAL_CONTACT_EMAIL } from "@/lib/config";
+import { APP_NAME, ASSISTANT_NAME, LEGAL_CONTACT_EMAIL } from "@/lib/config";
 import { LegalPage, Section } from "../legal-page";
 
 export const metadata: Metadata = { title: "Privacy Policy" };
@@ -112,6 +112,18 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
+      <Section title="Help chat">
+        <p>
+          Our marketing pages and the pro app have a help chat, {ASSISTANT_NAME}, that answers
+          questions about {APP_NAME}. What you type there is sent to Anthropic, the company whose AI
+          writes the answers, which processes it under its own commercial terms. We keep the
+          questions asked, and whether an answer was marked helpful, in our logs without a name,
+          email address or IP address, so we can improve the answers. The chat isn&apos;t given your
+          account or booking details. Please don&apos;t type card numbers, passwords or other
+          sensitive information into it. Clients don&apos;t see the chat on pay links or menu pages.
+        </p>
+      </Section>
+
       <Section title="How we use it">
         <ul>
           <li>To run {APP_NAME}: pay links, menu pages, deposits, cancellations and refunds.</li>
@@ -148,9 +160,10 @@ export default function PrivacyPage() {
             <strong>Service providers</strong> who run parts of {APP_NAME} for us, under their own
             privacy and security commitments: Supabase (database and sign-in), Vercel (hosting),
             Stripe (payments and billing), Vercel and its registrar partner name.com (registering
-            web addresses pros buy), Resend (email), Cloudflare (a check on the sign-up page that
-            you&apos;re a person, not a bot), Meta (ad measurement for our own marketing, described
-            above) and Microsoft Clarity (how people use our marketing pages, described above).
+            web addresses pros buy), Resend (email), Anthropic (answers in the help chat, described
+            above), Cloudflare (a check on the sign-up page that you&apos;re a person, not a bot),
+            Meta (ad measurement for our own marketing, described above) and Microsoft Clarity (how
+            people use our marketing pages, described above).
           </li>
           <li>
             <strong>Apple and Google sign-in:</strong> if a pro chooses &ldquo;Continue with

@@ -196,6 +196,15 @@ src/
     api/stripe/webhook/           Platform events (checkout, refunds): source of truth for deposits
     api/cron/reminders/           Vercel Cron: expire unpaid pay links, send reminders (reminders.ts: due rule)
   components/ui/                  Small shared building blocks (Button, Input, Textarea, Select, BackLink)
+  components/assistant/           "Ask Dib", the help chat (ASSISTANT_NAME; Dib is the pink fox mascot): a floating button on
+                                  /, /detailers, /demo and /catering (never mid-sign-up, never on pay links or menu pages) and
+                                  a Help button in the app header, one panel (dark on the site, the app's theme in the app;
+                                  data-clarity-mask). Answers from api/assistant (claude-opus-5-5, low effort, server-side
+                                  fallback; system prompt = facts.ts built from config so prices can't drift; 20 questions
+                                  per 10 min per IP; same-origin only). format.ts renders light markdown and links only to
+                                  the per-surface allow-list in links.ts or the support email (tested). Questions and
+                                  "Helpful?" go to the logs (assistant_question / assistant_feedback, no name/email/IP).
+                                  Off unless ANTHROPIC_API_KEY is set (enabled.ts). In the Privacy Policy.
   components/meta-pixel.tsx       Meta Pixel; rendered by (marketing)/layout.tsx and the login page only
   components/clarity.tsx          Microsoft Clarity (heatmaps, recordings) via NEXT_PUBLIC_CLARITY_ID; (marketing)/layout.tsx
                                   only. clarity-scope.tsx stops it when the visitor leaves those pages without a reload

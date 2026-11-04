@@ -8,6 +8,8 @@ import { THEME_COLOR, THEME_COOKIE, parseTheme } from "@/lib/theme";
 import { InstallBanner } from "./install-banner";
 import { TechNav } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
+import { AssistantHelpButton } from "@/components/assistant/assistant";
+import { assistantEnabled } from "@/components/assistant/enabled";
 
 // The phone's status bar matches the header: pink, or near-black in dark mode.
 export async function generateViewport(): Promise<Viewport> {
@@ -45,7 +47,10 @@ export default async function TechLayout({ children }: LayoutProps<"/">) {
             {APP_NAME.toLowerCase()}
             <span className="dark:text-pink text-white">.</span>
           </Link>
-          <ThemeToggle initial={theme} />
+          <div className="flex items-center gap-2">
+            {assistantEnabled() && <AssistantHelpButton />}
+            <ThemeToggle initial={theme} />
+          </div>
         </div>
       </header>
       {/* Bottom padding clears the fixed tab bar and its raised New button. Page titles use the display face. */}

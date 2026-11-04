@@ -1,3 +1,5 @@
+import { AssistantLauncher } from "@/components/assistant/assistant";
+import { assistantEnabled } from "@/components/assistant/enabled";
 import { Clarity } from "@/components/clarity";
 import { MetaPixel } from "@/components/meta-pixel";
 import { RememberTrade } from "./remember-trade";
@@ -14,6 +16,7 @@ export default function MarketingLayout({ children }: LayoutProps<"/">) {
       />
       <RememberTrade />
       {children}
+      {assistantEnabled() && <AssistantLauncher />}
     </>
   );
 }

@@ -73,6 +73,9 @@ export const OWNER_ALERT_EMAIL = LEGAL_CONTACT_EMAIL;
 export const FOUNDER_NAME = "Jaylon";
 export const FOUNDER_EMAIL = LEGAL_CONTACT_EMAIL;
 
+/** The mascot who answers questions in the help chat (components/assistant). */
+export const ASSISTANT_NAME = "Dib";
+
 /** A ready-made message for pros to send their regulars when they start taking deposits. */
 /** The "your first pay link is out; the next needs your card" email: this long after it, and not after a week. */
 export const FIRST_LINK_FOLLOWUP_AFTER_HOURS = 20;
@@ -87,7 +90,7 @@ export function depositAnnouncement(windowHours: number): string {
 
 When we pick a time, I'll send you a link to lock in your spot. Thank you!`;
 }
-export const LEGAL_UPDATED = "November 3, 2026";
+export const LEGAL_UPDATED = "November 4, 2026";
 
 /** Graph API version for the Meta Conversions API. Meta supports each for about two years. */
 export const META_GRAPH_API_VERSION = "v23.0";
