@@ -87,6 +87,10 @@ src/
                                   it lands on auth/handoff, which signs in without marking the email confirmed), then
                                   "Add to Home Screen" (dismissible); hidden once running from the Home Screen.
                                   manifest.ts + public/icon-*.png
+    (tech)/dashboard/instagram-card.tsx  "Add your Instagram" (#instagram), near the top for pros with no
+                                  instagram_handle (after the trade picker): without it their page has no "Message to
+                                  book" button and pay links can't link back. One field, saveInstagram; the bio card
+                                  points here too.
     (tech)/dashboard/saved-reply-card.tsx  "Add Dibs to your DMs": a ready-made Instagram saved reply (shortcut "dibs")
                                   so the booking DM itself prompts a pay link; dismissed per phone.
     (tech)/dashboard/bio-card.tsx  "Put your page in your bio" (#bio): perks, Copy link, Open Instagram, three steps; step 5

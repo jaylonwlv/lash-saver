@@ -21,6 +21,7 @@ import { InstallBanner } from "../install-banner";
 import { AlertsEmail } from "./confirm-email/confirm-email";
 import { AnnouncementCard } from "./announcement-card";
 import { BioCard } from "./bio-card";
+import { InstagramCard } from "./instagram-card";
 import { SavedReplyCard } from "./saved-reply-card";
 import { startStripeOnboarding } from "./stripe/actions";
 import { StripeButton } from "./stripe/stripe-button";
@@ -61,7 +62,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     supabase
       .from("profiles")
       .select(
-        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade, email, email_confirmed, cancellation_window_hours, tour_seen_at, accent_color, page_style, instagram_visit_at",
+        "business_name, slug, timezone, stripe_account_id, stripe_details_submitted, stripe_charges_enabled, subscription_status, trial_ends_at, cancel_at_period_end, deposit_method, cashapp_tag, zelle_contact, venmo_handle, trade, email, email_confirmed, cancellation_window_hours, tour_seen_at, accent_color, page_style, instagram_visit_at, instagram_handle",
       )
       .eq("id", user!.id)
       .single(),
@@ -311,6 +312,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       {!profile.email_confirmed && <AlertsEmail email={profile.email} />}
       <InstallBanner placement="page" payLinkSent={firstLinkSent} />
 
+      {/* Without a handle, their page and pay links can't send clients to their DMs. */}
+      {!profile.instagram_handle && profile.trade !== null && <InstagramCard />}
+
       {profile.subscription_status === "past_due" && (
         <Link
           href="/dashboard/billing"
@@ -552,6 +556,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           photos={(gallery ?? []).length}
           inBio={inBio}
           domainOffer={domainOffer}
+          hasInstagram={Boolean(profile.instagram_handle)}
         />
       )}
       <TourLauncher />

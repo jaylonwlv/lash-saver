@@ -16,6 +16,7 @@ export function BioCard({
   photos,
   inBio,
   domainOffer,
+  hasInstagram = true,
 }: {
   menuUrl: string;
   starterServices: number;
@@ -24,6 +25,8 @@ export function BioCard({
   inBio: boolean;
   /** "studionova.com" to offer the website add-on, or null (has one, or it's off). */
   domainOffer?: string | null;
+  /** No handle: their page has no "Message to book" button yet, so say so first. */
+  hasInstagram?: boolean;
 }) {
   const address = menuUrl.replace(/^https?:\/\//, "");
   const pricesFirst = starterServices > 0 && savedServices === 0;
@@ -71,6 +74,15 @@ export function BioCard({
         </ul>
       )}
 
+      {!hasInstagram && (
+        <p className="bg-brand-soft/60 rounded-2xl px-4 py-3 text-sm">
+          Your page can&apos;t take messages yet.{" "}
+          <a href="#instagram" className="text-brand font-semibold underline">
+            Add your Instagram
+          </a>{" "}
+          so the &ldquo;Message to book&rdquo; button shows up.
+        </p>
+      )}
       {pricesFirst ? (
         <>
           <p className="bg-brand-soft/60 rounded-2xl px-4 py-3 text-sm">
