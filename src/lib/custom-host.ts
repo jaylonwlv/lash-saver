@@ -56,7 +56,9 @@ export async function slugForHost(host: string): Promise<string | null> {
   try {
     const res = await fetch(
       `${url}/rest/v1/public_custom_domains?select=slug&domain=eq.${encodeURIComponent(host)}&limit=1`,
-      { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" },
+      // apikey alone: new "sb_publishable_" keys aren't JWTs, so sending one as a Bearer
+      // token can be refused; without Authorization, Supabase uses the anon role.
+      { headers: { apikey: key }, cache: "no-store" },
     );
     if (!res.ok) throw new Error(`status ${res.status}`);
     const rows = (await res.json()) as { slug: string }[];
