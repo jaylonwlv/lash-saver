@@ -62,3 +62,28 @@ test("US phone numbers become E.164", async () => {
   assert.equal(usPhoneE164("555-0134"), null);
   assert.equal(usPhoneE164("+44 20 7946 0958"), null);
 });
+
+test("registrar orders count as failed or done only on a final answer", async () => {
+  const { readOrderStatus } = await import("./domains");
+  assert.equal(readOrderStatus({ status: "purchasing" }), "pending");
+  assert.equal(readOrderStatus({ status: "draft" }), "pending");
+  assert.equal(
+    readOrderStatus({ status: "purchasing", domains: [{ status: "pending" }] }),
+    "pending",
+  );
+  assert.equal(readOrderStatus({ status: "something-new" }), "pending");
+  assert.equal(
+    readOrderStatus({ status: "completed", domains: [{ status: "completed" }] }),
+    "completed",
+  );
+  assert.equal(readOrderStatus({ status: "completed" }), "completed");
+  assert.equal(
+    readOrderStatus({ status: "completed", domains: [{ status: "pending" }] }),
+    "pending",
+  );
+  assert.equal(readOrderStatus({ status: "failed" }), "failed");
+  assert.equal(
+    readOrderStatus({ status: "purchasing", domains: [{ status: "refunded" }] }),
+    "failed",
+  );
+});

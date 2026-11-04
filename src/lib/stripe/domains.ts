@@ -276,9 +276,21 @@ async function registerDomain(row: DomainRow): Promise<void> {
 async function pollRegistration(row: DomainRow): Promise<void> {
   if (!row.registrar_order_id) return;
   const order = await orderStatus(row.registrar_order_id);
-  if (order.status === "pending") return;
-  if (order.status !== "completed") {
-    return failRegistration(row, `order ${order.status}${order.error ? `: ${order.error}` : ""}`);
+  if (order.status === "pending") {
+    // Still buying. The hourly cron checks again; tell the owner if it's taking far too long.
+    if (Date.now() - new Date(row.updated_at).getTime() > 6 * 3_600_000) {
+      await notifyOnce(`domain_slow:${row.id}`, {
+        to: { email: OWNER_ALERT_EMAIL },
+        template: "domain_alert",
+        data: {
+          summary: `Registering ${row.domain} has been in progress for over 6 hours (order ${row.registrar_order_id}, ${order.raw}). Check Vercel → Domains.`,
+        },
+      });
+    }
+    return;
+  }
+  if (order.status === "failed") {
+    return failRegistration(row, `order ${order.raw}${order.error ? `: ${order.error}` : ""}`);
   }
   await attachToProject(row.domain);
   const now = new Date();
@@ -428,7 +440,7 @@ export async function runDomainJobs(now: Date): Promise<Record<string, number>> 
           to: { email: OWNER_ALERT_EMAIL },
           template: "domain_alert",
           data: {
-            summary: `Renewing ${row.domain} failed (${order.status}${order.error ? `: ${order.error}` : ""}). It expires ${row.expires_at}; the cron keeps retrying every hour.`,
+            summary: `Renewing ${row.domain} failed (${order.raw}${order.error ? `: ${order.error}` : ""}). It expires ${row.expires_at}; the cron keeps retrying every hour.`,
           },
         });
         continue;

@@ -88,3 +88,23 @@ export function usPhoneE164(input: string): string | null {
   if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
   return null;
 }
+
+/** Our view of an order: still going, done, or failed for good. */
+export type OrderStatus = "pending" | "completed" | "failed";
+
+/**
+ * Vercel's order is "draft" / "purchasing" / "completed" / "failed", and each domain in
+ * it "pending" / "completed" / "failed" / "refunded" / "refund-failed". Only a final
+ * answer counts: anything still in progress (or a status we don't know yet) is pending,
+ * so a slow purchase is never mistaken for a failed one.
+ */
+export function readOrderStatus(order: {
+  status?: string;
+  domains?: { status?: string }[];
+}): OrderStatus {
+  const domain = order.domains?.[0]?.status;
+  if (order.status === "failed") return "failed";
+  if (domain && ["failed", "refunded", "refund-failed"].includes(domain)) return "failed";
+  if (order.status === "completed" && (!domain || domain === "completed")) return "completed";
+  return "pending";
+}

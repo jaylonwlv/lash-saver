@@ -1,6 +1,6 @@
 import "server-only";
 import { serverEnv } from "@/lib/env";
-import { registrarPriceCents } from "@/lib/domains";
+import { readOrderStatus, registrarPriceCents, type OrderStatus } from "@/lib/domains";
 
 /*
  * Vercel's Domains Registrar API (domains bought at cost through name.com) and the
@@ -138,16 +138,19 @@ export async function buyDomain(
   return orderId;
 }
 
-export type OrderStatus = "pending" | "completed" | "failed" | "refunded" | "refund-failed";
-
 export async function orderStatus(
   orderId: string,
-): Promise<{ status: OrderStatus; error?: string }> {
-  const order = await call<{ status: OrderStatus; error?: { code?: string } }>(
-    "GET",
-    `/v1/registrar/orders/${enc(orderId)}`,
-  );
-  return { status: order.status, error: order.error?.code };
+): Promise<{ status: OrderStatus; raw: string; error?: string }> {
+  const order = await call<{
+    status?: string;
+    domains?: { status?: string; error?: { code?: string } }[];
+    error?: { code?: string };
+  }>("GET", `/v1/registrar/orders/${enc(orderId)}`);
+  return {
+    status: readOrderStatus(order),
+    raw: `${order.status ?? "?"}/${order.domains?.[0]?.status ?? "?"}`,
+    error: order.error?.code ?? order.domains?.[0]?.error?.code,
+  };
 }
 
 /** One more year, at the price we expect. */
