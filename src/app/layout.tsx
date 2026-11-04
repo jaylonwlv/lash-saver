@@ -43,6 +43,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
     >
+      <head>
+        {/* Links sent while the app URL had a trailing slash read getdibs.pro//pay/…: the
+            server renders them, then Next's router reads "//pay/…" as another site and the
+            page crashes. Fix the address before the app starts. Vercel cleans the path
+            before proxy.ts sees it, so the proxy's redirect can't catch these there. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(location.pathname.indexOf("//")===0)history.replaceState(null,"",location.pathname.replace(/^\\/+/,"/")+location.search+location.hash)`,
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col font-sans">{children}</body>
     </html>
   );
