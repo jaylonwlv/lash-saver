@@ -49,6 +49,8 @@ async function send(
   const pixelId = publicEnv().NEXT_PUBLIC_META_PIXEL_ID;
   const { META_CAPI_TOKEN: token, META_TEST_EVENT_CODE: testCode } = serverEnv();
   if (!pixelId || !token) return;
+  // Test accounts (someone+dibsqa@…) never reach Meta, so test runs stay out of ad data.
+  if (email && /\+dibsqa@/i.test(email)) return;
 
   try {
     const userData: Record<string, unknown> = {
