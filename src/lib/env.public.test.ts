@@ -59,3 +59,10 @@ test("names each bad key as missing or invalid", () => {
     /SUPABASE_URL \(invalid\)/,
   );
 });
+
+test("a trailing slash on the app URL is dropped (links are URL + /path)", () => {
+  assert.equal(
+    parsePublicEnv({ ...base, NEXT_PUBLIC_APP_URL: "https://getdibs.pro/" }).NEXT_PUBLIC_APP_URL,
+    "https://getdibs.pro",
+  );
+});

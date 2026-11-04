@@ -76,7 +76,9 @@ export default async function NewAppointmentPage({
       <BackLink href="/dashboard/appointments" label="Appointments" />
       {paywalled ? (
         // The trial card is the whole page here: no form title competing with it.
-        <h1 className="sr-only">Start your free trial</h1>
+        <h1 className="sr-only">
+          {offer ? "Start your free trial" : "Subscribe to send more pay links"}
+        </h1>
       ) : (
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold">New appointment</h1>

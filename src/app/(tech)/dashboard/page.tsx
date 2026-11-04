@@ -225,6 +225,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       href: starterServices ? "/dashboard/services/confirm" : "/dashboard/services",
       done: servicesDone && !starterServices,
     },
+    // Same order and numbers as the dashboard checklist.
+    {
+      title: "Send your first pay link",
+      detail: "No card needed for your first one",
+      href: "/dashboard/appointments/new",
+      done: firstLinkSent,
+    },
     // The bio card needs a page address (pros who skipped /start set one on Profile).
     ...(menuUrl
       ? [

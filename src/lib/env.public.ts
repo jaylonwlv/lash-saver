@@ -84,7 +84,9 @@ export function parsePublicEnv(raw: Raw): PublicEnv {
     throw new Error(`Invalid or missing public env vars: ${keys}. See .env.example.`);
   }
   return {
-    NEXT_PUBLIC_APP_URL: raw.NEXT_PUBLIC_APP_URL!,
+    // "https://getdibs.pro/" in the env would make every link "getdibs.pro//pay/…",
+    // which crashes the pay page in browsers: links are always built as URL + "/path".
+    NEXT_PUBLIC_APP_URL: raw.NEXT_PUBLIC_APP_URL!.replace(/\/+$/, ""),
     NEXT_PUBLIC_SUPABASE_URL: raw.NEXT_PUBLIC_SUPABASE_URL!,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: raw.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: raw.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,

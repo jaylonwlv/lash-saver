@@ -3,6 +3,14 @@ import { bareHost, isAppHost, servedOnCustomHost, slugForHost } from "@/lib/cust
 import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
+  // "getdibs.pro//pay/…" (links sent while the app URL had a trailing slash) renders,
+  // then crashes in the browser: send it to the single-slash address.
+  const raw = new URL(request.url);
+  if (raw.pathname.startsWith("//")) {
+    const fixed = request.nextUrl.clone();
+    fixed.pathname = raw.pathname.replace(/^\/{2,}/, "/");
+    return NextResponse.redirect(fixed, 308);
+  }
   // A pro's own domain (the "Your own website" add-on): their page at "/", their pay
   // links as-is, and everything else on the app's own address. No sign-in there.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
