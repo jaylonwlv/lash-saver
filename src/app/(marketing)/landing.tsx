@@ -47,6 +47,12 @@ export type LandingNiche = {
   lede: string;
   quip: ReactNode;
   ask: string;
+  /** The deposit in the hero DM ("$60") and the pay page shown under it. */
+  deposit: string;
+  heroImage: StaticImageData;
+  heroAlt: string;
+  /** Under the hero buttons: the doubt that stops sign-ups, answered. */
+  reassure: string;
   costHeading: string;
   costBody: string;
   calculatorPrice: number;
@@ -99,6 +105,7 @@ export function Landing({ niche }: { niche?: LandingNiche }) {
                 Try a demo pay link
               </ButtonLink>
             </div>
+            {niche && <p className="text-foreground/85 -mt-1">{niche.reassure}</p>}
             <p className="text-lg font-semibold">
               {niche?.quip ?? (
                 <>
@@ -109,7 +116,12 @@ export function Landing({ niche }: { niche?: LandingNiche }) {
             </p>
             <p className="text-muted text-sm">{HERO_NOTE}</p>
           </div>
-          <HeroVisual ask={niche?.ask} />
+          <HeroVisual
+            ask={niche?.ask}
+            deposit={niche?.deposit}
+            image={niche?.heroImage}
+            alt={niche?.heroAlt}
+          />
           <ul className="text-muted flex flex-wrap gap-x-4 gap-y-2 text-sm md:col-span-2 md:justify-center">
             <Check>Keep your Cash App, Zelle or Venmo</Check>
             <Check>Cards by Stripe</Check>
@@ -482,7 +494,17 @@ export function Landing({ niche }: { niche?: LandingNiche }) {
 }
 
 /** The DM that sends the link, above the page the client opens. */
-function HeroVisual({ ask = "Can I get Saturday at 2? 🙏" }: { ask?: string }) {
+function HeroVisual({
+  ask = "Can I get Saturday at 2? 🙏",
+  deposit = "$40",
+  image = clientPays,
+  alt = "A client's pay page: appointment details, deposit policy, and a button to pay the $40 deposit",
+}: {
+  ask?: string;
+  deposit?: string;
+  image?: StaticImageData;
+  alt?: string;
+}) {
   return (
     <div className="relative mx-auto w-full max-w-[320px]">
       <div className="mb-4 flex flex-col gap-2 text-[15px]" aria-hidden>
@@ -493,15 +515,11 @@ function HeroVisual({ ask = "Can I get Saturday at 2? 🙏" }: { ask?: string })
           Yes! Lock it in here 👇
         </p>
         <p className="bg-surface border-line max-w-[78%] self-end rounded-2xl rounded-br-md border px-4 py-2.5 shadow-sm">
-          <span className="block font-semibold">Pay your $40 deposit</span>
+          <span className="block font-semibold">Pay your {deposit} deposit</span>
           <span className="text-brand text-sm">getdibs.pro/pay/…</span>
         </p>
       </div>
-      <Phone
-        src={clientPays}
-        alt="A client's pay page: appointment details, deposit policy, and a button to pay the $40 deposit"
-        eager
-      />
+      <Phone src={image} alt={alt} eager />
     </div>
   );
 }

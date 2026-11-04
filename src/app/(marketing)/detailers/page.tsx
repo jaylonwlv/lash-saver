@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { APP_NAME } from "@/lib/config";
 import { publicEnv } from "@/lib/env.public";
-import { Landing, clientPays, type LandingNiche } from "../landing";
+import heroDetailing from "../images/hero-detailing.png";
+import { Landing, type LandingNiche } from "../landing";
 
 /*
  * The homepage for mobile detailers. proxy.ts shows it at "/" to visitors from the
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     title: "Stop driving to empty driveways",
     description:
       "Deposit links for mobile detailers who book in their DMs. No-show? You keep the deposit.",
-    images: [clientPays.src],
+    images: [heroDetailing.src],
   },
 };
 
@@ -38,6 +39,12 @@ const DETAILERS: LandingNiche = {
     </>
   ),
   ask: "Full detail Saturday at 2? 🙏",
+  deposit: "$60",
+  heroImage: heroDetailing,
+  heroAlt:
+    "A client's pay page from Northside Detail: a full detail on Saturday at 2:00 PM, a $60.00 deposit, the deposit policy and an I agree box",
+  reassure:
+    "Serious clients don't mind a deposit that goes toward the detail. The ones who refuse are the ones who'd leave you in an empty driveway.",
   costHeading: "A no-show costs more than the detail.",
   costBody:
     "It's the drive out and back, the gas, the half day you blocked, and the client you turned away for that slot. Most no-shows aren't personal: people forget, or nothing makes them feel committed. A paid deposit and a reminder fix both.",
@@ -49,6 +56,10 @@ const DETAILERS: LandingNiche = {
     {
       q: "What if they're not home, or the car isn't there?",
       a: "That's a no-show under your policy, which they agreed to before paying. Tap No-show and you keep the deposit. Your policy can spell it out, for example that you need access to the vehicle at the appointment time.",
+    },
+    {
+      q: "What about rain days?",
+      a: "Cancel the appointment from your phone and their deposit goes back in full: automatically for card deposits, or you send it back on Cash App, Zelle or Venmo and tap I sent the refund. Then send them a pay link for the new day.",
     },
     {
       q: "Will clients really pay a deposit for a detail?",
