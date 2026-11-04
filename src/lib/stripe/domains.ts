@@ -349,7 +349,9 @@ export async function verifyDomain(row: DomainRow): Promise<boolean> {
   try {
     const res = await fetch(`https://${row.domain}/api/domain-check`, {
       cache: "no-store",
-      redirect: "manual",
+      // Follow redirects (an apex → www redirect still opens the page): the check
+      // answers ok only on a pro's live domain, so a hop to the app itself fails it.
+      redirect: "follow",
       signal: AbortSignal.timeout(8000),
     });
     const body: unknown = res.ok ? await res.json() : null;
@@ -524,7 +526,7 @@ export async function runDomainJobs(now: Date): Promise<Record<string, number>> 
         to: { email: OWNER_ALERT_EMAIL },
         template: "domain_alert",
         data: {
-          summary: `${row.domain} was registered and connected over a day ago but still doesn't open the pro's page. Check Vercel → lash-saver → Domains (and that no redirect points to www).`,
+          summary: `${row.domain} was registered and connected over a day ago but still doesn't open the pro's page. Check Vercel → lash-saver → Domains, and that https://${row.domain}/api/domain-check answers ok: true.`,
         },
       });
     }

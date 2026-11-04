@@ -23,13 +23,16 @@ export function DomainProgressView({
   const router = useRouter();
 
   useEffect(() => {
-    if (p.live) {
+    // Live, or it failed (refunded) or ended: the page shows that state instead.
+    if (p.live || p.status === "failed" || p.status === "cancelled") {
       router.refresh();
       return;
     }
     const timer = setTimeout(async () => {
       const next = await refreshDomain().catch(() => null);
-      if (next) setP(next);
+      // Back from Checkout, the row stays "pending" until Stripe's webhook lands:
+      // don't untick "Payment received" in the meantime.
+      if (next) setP((prev) => ({ ...next, paid: next.paid || prev.paid }));
       else setP((prev) => ({ ...prev })); // keep polling after a hiccup
     }, REFRESH_MS);
     return () => clearTimeout(timer);
