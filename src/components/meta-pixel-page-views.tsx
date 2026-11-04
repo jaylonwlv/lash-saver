@@ -8,7 +8,7 @@ import { useEffect } from "react";
  * snippet in <MetaPixel> tracks the full page load itself, and React doesn't run
  * that snippet again on client navigations, so this sends the rest.
  */
-export function PixelPageViews() {
+export function PixelPageViews({ pixelId }: { pixelId: string }) {
   const pathname = usePathname();
   useEffect(() => {
     // The first page after a full load was tracked by the snippet: skip it once.
@@ -16,7 +16,9 @@ export function PixelPageViews() {
       window.__dibsPixelInitialView = false;
       return;
     }
-    window.fbq?.("track", "PageView");
-  }, [pathname]);
+    // trackSingle, not track: with disablePushState Meta's script sends one "track"
+    // PageView per page load and silently drops the rest (checked against fbevents.js).
+    window.fbq?.("trackSingle", pixelId, "PageView");
+  }, [pathname, pixelId]);
   return null;
 }

@@ -29,7 +29,7 @@ export function MetaPixel({ pixelId }: { pixelId: string | undefined }) {
     <>
       {/* Runs while the HTML is parsed; React never runs it again on the client. */}
       <script id="meta-pixel" dangerouslySetInnerHTML={{ __html: snippet }} />
-      <PixelPageViews />
+      <PixelPageViews pixelId={pixelId} />
     </>
   );
 }

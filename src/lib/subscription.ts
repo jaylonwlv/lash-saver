@@ -44,3 +44,8 @@ export function normalizeEmail(email: string): string {
   if (domain === "gmail.com") local = local.replace(/\./g, "");
   return `${local}@${domain}`;
 }
+
+/** QA test accounts (someone+dibsqa@…, or +run2+dibsqa@…): kept out of ad measurement. */
+export function isTestAccountEmail(email: string | null | undefined): boolean {
+  return Boolean(email && /\+dibsqa@/i.test(email));
+}

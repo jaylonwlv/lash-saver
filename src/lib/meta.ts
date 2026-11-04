@@ -5,6 +5,7 @@ import { META_GRAPH_API_VERSION, SUBSCRIPTION_PRICE_CENTS } from "@/lib/config";
 import { serverEnv } from "@/lib/env";
 import { publicEnv } from "@/lib/env.public";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isTestAccountEmail } from "@/lib/subscription";
 
 /*
  * Meta Conversions API: tells Meta which ad clicks became pros, so ads optimize
@@ -50,7 +51,7 @@ async function send(
   const { META_CAPI_TOKEN: token, META_TEST_EVENT_CODE: testCode } = serverEnv();
   if (!pixelId || !token) return;
   // Test accounts (someone+dibsqa@…) never reach Meta, so test runs stay out of ad data.
-  if (email && /\+dibsqa@/i.test(email)) return;
+  if (isTestAccountEmail(email)) return;
 
   try {
     const userData: Record<string, unknown> = {

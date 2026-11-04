@@ -157,6 +157,7 @@ export function StartFlow({
   const [state, action, pending] = useActionState<StartState, FormData>(createAccount, {});
   const leadSent = useRef(false);
   const businessSent = useRef(false);
+  const invalidFields = useRef(new Set<string>());
   const router = useRouter();
 
   // Pick up where they left off: only a draft from before this visit, applied once on
@@ -506,6 +507,19 @@ export function StartFlow({
 
       <form
         action={action}
+        // The browser's own check (an empty or malformed email) stops the form before
+        // onSubmit runs: report those blocked taps too, once per tap.
+        onInvalidCapture={(e) => {
+          const field = (e.target as HTMLInputElement).name;
+          if (field) invalidFields.current.add(field);
+          if (invalidFields.current.size === 1) {
+            setTimeout(() => {
+              if (!businessName.trim()) invalidFields.current.add("business_name");
+              funnel("StartBusinessBlocked", { fields: [...invalidFields.current].join(",") });
+              invalidFields.current.clear();
+            }, 0);
+          }
+        }}
         onSubmit={(e) => {
           const form = e.currentTarget;
           if (!businessName.trim()) {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { canCreatePayLink, trialEndFor } from "./subscription";
+import { canCreatePayLink, trialEndFor, isTestAccountEmail } from "./subscription";
 
 const day = 86_400_000;
 const signup = new Date("2026-11-02T18:00:00Z");
@@ -30,4 +30,13 @@ describe("canCreatePayLink", () => {
     assert.equal(canCreatePayLink("past_due", 5), true);
     assert.equal(canCreatePayLink("canceled", 5), false);
   });
+});
+
+it("only +dibsqa addresses count as test accounts", () => {
+  assert.equal(isTestAccountEmail("jaylonw.lv+dibsqa@gmail.com"), true);
+  assert.equal(isTestAccountEmail("jaylonw.lv+run2+dibsqa@gmail.com"), true);
+  assert.equal(isTestAccountEmail("pro@studionova.com"), false);
+  assert.equal(isTestAccountEmail("pro+lashes@gmail.com"), false);
+  assert.equal(isTestAccountEmail("dibsqa@gmail.com"), false);
+  assert.equal(isTestAccountEmail(null), false);
 });
