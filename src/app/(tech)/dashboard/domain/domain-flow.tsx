@@ -239,9 +239,9 @@ export function DomainFlow({
             />
             <span>
               I&apos;m buying <strong>{picked}</strong> for {firstCharge}. It&apos;s registered in
-              my name. <strong>No refund once it&apos;s registered.</strong> Cancelling stops the
-              next charge; my page stays on it until the time I paid for ends. Email isn&apos;t
-              included.
+              my name, and takes up to an hour to start working.{" "}
+              <strong>No refund once it&apos;s registered.</strong> Cancelling stops the next
+              charge; my page stays on it until the time I paid for ends. Email isn&apos;t included.
               {e.terms && <span className="text-danger mt-1 block">{e.terms}</span>}
             </span>
           </label>

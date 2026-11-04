@@ -13,6 +13,7 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
 import { registrarConfigured } from "@/lib/vercel/registrar";
 import { DomainFlow, TransferCode } from "./domain-flow";
+import { DomainProgressView } from "./progress";
 
 export const metadata: Metadata = { title: "Your own website" };
 
@@ -49,7 +50,7 @@ export default async function DomainPage({ searchParams }: PageProps<"/dashboard
 
       {!registrarConfigured() ? (
         <p className="card text-muted p-5">Coming soon.</p>
-      ) : row?.status === "active" ? (
+      ) : row?.status === "active" && row.verified_at ? (
         <section className="card flex flex-col gap-3 p-5">
           <p className="text-success text-sm font-bold">✓ Live</p>
           <a
@@ -65,19 +66,31 @@ export default async function DomainPage({ searchParams }: PageProps<"/dashboard
               ? `Your plan ends ${formatDate(row.current_period_end, tz)}. After that your page goes back to your ${profile?.slug ? `getdibs.pro/${profile.slug}` : "Dibs"} link, and the domain stays registered to you until it expires.`
               : `Registered in your name. Renews with your ${row.plan} plan${row.expires_at ? `; the domain is paid through ${formatDate(row.expires_at, tz)}` : ""}.`}
           </p>
+          <p className="text-muted text-xs">
+            Not opening on your phone yet? Phones remember a brand-new address as missing for a
+            little while: turn Wi-Fi off, or try again in a few minutes.
+          </p>
           <ButtonLink href="/dashboard/billing" variant="secondary">
             Manage billing
           </ButtonLink>
           <TransferCode />
         </section>
-      ) : row?.status === "registering" || (checkout === "done" && row?.status === "pending") ? (
-        <section className="card flex flex-col gap-2 p-5">
-          <p className="font-bold">Setting up {row?.domain ?? "your website"}…</p>
-          <p className="text-muted text-sm">
-            This usually takes a few minutes. We&apos;ll email you the moment it&apos;s live.
-            Refresh this page to check.
-          </p>
-        </section>
+      ) : row &&
+        (row.status === "registering" ||
+          row.status === "active" ||
+          (checkout === "done" && row.status === "pending")) ? (
+        <DomainProgressView
+          initial={{
+            domain: row.domain,
+            status: row.status,
+            // Back from checkout before Stripe's confirmation lands: payment is in flight.
+            paid: row.status !== "pending" || checkout === "done",
+            registered: Boolean(row.registered_at),
+            connected: row.status === "active",
+            live: Boolean(row.verified_at),
+          }}
+          pageUrl={profile?.slug ? `getdibs.pro/${profile.slug}` : null}
+        />
       ) : !canBuy ? (
         <section className="card flex flex-col gap-3 p-5">
           <p className="text-muted">

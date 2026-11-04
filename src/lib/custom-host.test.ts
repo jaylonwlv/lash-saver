@@ -19,6 +19,7 @@ test("a pro's domain serves their page and pay links only", () => {
   assert.ok(servedOnCustomHost("/pay/k7m2x9qa4h"));
   assert.ok(servedOnCustomHost("/_next/static/chunks/a.js"));
   assert.ok(servedOnCustomHost("/api/page-visit"));
+  assert.ok(servedOnCustomHost("/api/domain-check"));
   assert.ok(!servedOnCustomHost("/dashboard"));
   assert.ok(!servedOnCustomHost("/login"));
   assert.ok(!servedOnCustomHost("/other-pro"));

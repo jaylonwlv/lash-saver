@@ -112,6 +112,7 @@ export async function startDomainCheckout(
     renewal_order_id: null,
     registered_at: null,
     expires_at: null,
+    verified_at: null,
     error: null,
   };
   const { data: row, error } = await admin
@@ -292,31 +293,125 @@ async function pollRegistration(row: DomainRow): Promise<void> {
   if (order.status === "failed") {
     return failRegistration(row, `order ${order.raw}${order.error ? `: ${order.error}` : ""}`);
   }
+  const admin = createAdminClient();
+  // Registered: theirs from here, even before it's connected (the progress page ticks this).
+  if (!row.registered_at) {
+    const now = new Date();
+    const expires = new Date(now);
+    expires.setFullYear(expires.getFullYear() + 1);
+    await admin
+      .from("custom_domains")
+      .update({
+        registered_at: now.toISOString(),
+        expires_at: expires.toISOString(),
+        // Only needed to buy it; the registrar keeps the record from here.
+        registrant: null,
+      })
+      .eq("id", row.id)
+      .is("registered_at", null);
+  }
   await attachToProject(row.domain);
-  const now = new Date();
-  const expires = new Date(now);
-  expires.setFullYear(expires.getFullYear() + 1);
-  const { data: live } = await createAdminClient()
+  const { data: connected } = await admin
     .from("custom_domains")
-    .update({
-      status: "active",
-      registered_at: now.toISOString(),
-      expires_at: expires.toISOString(),
-      // Only needed to buy it; the registrar keeps the record from here.
-      registrant: null,
-    })
+    .update({ status: "active" })
     .eq("id", row.id)
     .eq("status", "registering")
-    .select("tech_id");
-  if (!live?.length) return;
-  const email = await proEmail(row.tech_id);
-  if (email) {
-    await notify({
-      to: { email },
-      template: "domain_live",
-      data: { domain: row.domain, url: `https://${row.domain}`, dashboardUrl: dashboardUrl() },
+    .select("*");
+  if (!connected?.length) return;
+  const pro = await proContact(row.tech_id);
+  if (pro.email) {
+    // Not "live" yet: the new address takes a while to reach every network. That email
+    // waits for verifyDomain, which checks the domain really opens the page.
+    await notifyOnce(`domain_registered:${row.id}`, {
+      to: { email: pro.email },
+      template: "domain_registered",
+      data: {
+        domain: row.domain,
+        pageUrl: pro.slug
+          ? `${publicEnv().NEXT_PUBLIC_APP_URL.replace(/^https?:\/\//, "")}/${pro.slug}`
+          : null,
+        dashboardUrl: dashboardUrl(),
+      },
     });
   }
+  await verifyDomain(connected[0]);
+}
+
+/**
+ * Does https://<domain> really reach this app yet? Dibs asks it for /api/domain-check,
+ * as a client's phone would (DNS, certificate, routing). The first time it answers,
+ * the domain is marked verified and the pro gets "Your website is live". Never throws.
+ */
+export async function verifyDomain(row: DomainRow): Promise<boolean> {
+  if (row.verified_at) return true;
+  if (row.status !== "active") return false;
+  let ok = false;
+  try {
+    const res = await fetch(`https://${row.domain}/api/domain-check`, {
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(8000),
+    });
+    const body: unknown = res.ok ? await res.json() : null;
+    ok = Boolean(body && typeof body === "object" && "ok" in body && body.ok === true);
+  } catch {
+    ok = false; // Not resolving yet, no certificate yet, or slow: try again later.
+  }
+  if (!ok) return false;
+  const { data: verified } = await createAdminClient()
+    .from("custom_domains")
+    .update({ verified_at: new Date().toISOString() })
+    .eq("id", row.id)
+    .is("verified_at", null)
+    .select("tech_id");
+  if (verified?.length) {
+    const pro = await proContact(row.tech_id);
+    if (pro.email) {
+      await notifyOnce(`domain_live:${row.id}`, {
+        to: { email: pro.email },
+        template: "domain_live",
+        data: { domain: row.domain, url: `https://${row.domain}`, dashboardUrl: dashboardUrl() },
+      });
+    }
+  }
+  return true;
+}
+
+export type DomainProgress = {
+  domain: string;
+  status: DomainRow["status"];
+  paid: boolean;
+  registered: boolean;
+  connected: boolean;
+  live: boolean;
+};
+
+/**
+ * The progress page's refresh: nudges the purchase along (the order check and the live
+ * check the cron would otherwise do hourly) and reports where it stands. Never buys:
+ * only an order that already exists is checked.
+ */
+export async function advanceDomain(techId: string): Promise<DomainProgress | null> {
+  const admin = createAdminClient();
+  const load = async () =>
+    (await admin.from("custom_domains").select("*").eq("tech_id", techId).maybeSingle()).data;
+  let row = await load();
+  if (!row) return null;
+  try {
+    if (row.status === "registering" && row.registrar_order_id) await pollRegistration(row);
+    else if (row.status === "active" && !row.verified_at) await verifyDomain(row);
+  } catch (err) {
+    console.error(`Advancing domain ${row.id} failed`, err);
+  }
+  row = (await load()) ?? row;
+  return {
+    domain: row.domain,
+    status: row.status,
+    paid: row.status === "registering" || row.status === "active",
+    registered: Boolean(row.registered_at),
+    connected: row.status === "active",
+    live: Boolean(row.verified_at),
+  };
 }
 
 /** Couldn't register it: refund the first payment in full, end the plan, tell everyone. */
@@ -412,6 +507,29 @@ export async function runDomainJobs(now: Date): Promise<Record<string, number>> 
     }
   }
 
+  // Connected but not confirmed opening yet: check again, and flag anything stuck a day.
+  const { data: unverified } = await admin
+    .from("custom_domains")
+    .select("*")
+    .eq("status", "active")
+    .is("verified_at", null);
+  for (const row of unverified ?? []) {
+    const ok = await verifyDomain(row);
+    if (
+      !ok &&
+      row.registered_at &&
+      now.getTime() - new Date(row.registered_at).getTime() > 86_400_000
+    ) {
+      await notifyOnce(`domain_unverified:${row.id}`, {
+        to: { email: OWNER_ALERT_EMAIL },
+        template: "domain_alert",
+        data: {
+          summary: `${row.domain} was registered and connected over a day ago but still doesn't open the pro's page. Check Vercel → lash-saver → Domains (and that no redirect points to www).`,
+        },
+      });
+    }
+  }
+
   const renewBy = new Date(now.getTime() + RENEW_DAYS_BEFORE * 86_400_000).toISOString();
   const { data: due } = await admin
     .from("custom_domains")
@@ -475,11 +593,15 @@ export async function runDomainJobs(now: Date): Promise<Record<string, number>> 
   return { domainsFinished: finished, domainsRenewed: renewed };
 }
 
-async function proEmail(techId: string): Promise<string | null> {
+async function proContact(techId: string): Promise<{ email: string | null; slug: string | null }> {
   const { data } = await createAdminClient()
     .from("profiles")
-    .select("email")
+    .select("email, slug")
     .eq("id", techId)
     .maybeSingle();
-  return data?.email ?? null;
+  return { email: data?.email ?? null, slug: data?.slug ?? null };
+}
+
+async function proEmail(techId: string): Promise<string | null> {
+  return (await proContact(techId)).email;
 }

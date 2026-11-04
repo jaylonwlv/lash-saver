@@ -99,7 +99,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       .order("price_cents", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("custom_domains").select("domain, status").eq("tech_id", user!.id).maybeSingle(),
+    supabase
+      .from("custom_domains")
+      .select("domain, status, verified_at")
+      .eq("tech_id", user!.id)
+      .maybeSingle(),
   ]);
   if (error || !profile) throw new Error(`Loading profile failed: ${error?.message}`);
 
@@ -137,7 +141,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const stepsDone = [profileDone, stripeStatus === "done", servicesDone, firstLinkSent].filter(
     Boolean,
   ).length;
-  const ownDomain = customDomain?.status === "active" ? customDomain.domain : null;
+  // Only once it's confirmed opening: a link that doesn't load yet would look broken.
+  const ownDomain =
+    customDomain?.status === "active" && customDomain.verified_at ? customDomain.domain : null;
+  const domainInProgress =
+    customDomain?.status === "registering" || customDomain?.status === "active";
   // Their own website address once they have one; it shows the same page.
   const menuUrl = ownDomain
     ? `https://${ownDomain}`
@@ -145,7 +153,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       ? menuPageUrl(publicEnv().NEXT_PUBLIC_APP_URL, profile.slug)
       : null;
   const domainOffer =
-    !ownDomain && registrarConfigured()
+    !domainInProgress && registrarConfigured()
       ? `${domainLabel(profile.business_name ?? "") ?? "yourbusiness"}.com`
       : null;
   // Their first pay link is out without a card; the next one asks for it. Say so on the

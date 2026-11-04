@@ -297,6 +297,8 @@ type CustomDomainRow = {
   registrar_order_id: string | null;
   renewal_order_id: string | null;
   registered_at: string | null;
+  /** When the domain was confirmed to open the pro's page (20261027000000). */
+  verified_at: string | null;
   expires_at: string | null;
   error: string | null;
   created_at: string;

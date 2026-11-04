@@ -3,7 +3,12 @@
 import { redirect } from "next/navigation";
 import { domainLabel, DOMAIN_TLDS, affordable } from "@/lib/domains";
 import { fieldErrors, formValues, type FormState } from "@/lib/forms";
-import { DomainCheckoutError, startDomainCheckout } from "@/lib/stripe/domains";
+import {
+  advanceDomain,
+  DomainCheckoutError,
+  startDomainCheckout,
+  type DomainProgress,
+} from "@/lib/stripe/domains";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { domainAuthCode, quoteDomain } from "@/lib/vercel/registrar";
 import { domainCheckoutSchema } from "./schema";
@@ -99,4 +104,11 @@ export async function revealTransferCode(): Promise<{ code: string } | { error: 
     // New registrations are locked for 60 days (a domain-industry rule).
     return { error: "Not available yet. New domains can move 60 days after they're registered." };
   }
+}
+
+/** The progress page's 20-second refresh: moves the purchase along and reports the steps. */
+export async function refreshDomain(): Promise<DomainProgress | null> {
+  const user = await getUser();
+  if (!user) redirect("/login");
+  return advanceDomain(user.id);
 }

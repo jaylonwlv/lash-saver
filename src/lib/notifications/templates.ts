@@ -143,6 +143,8 @@ export type TemplateData = {
   };
   /** To the owner of Dibs, for any dispute on the platform account. */
   dispute_alert: { summary: string; amount: string; dueBy: string; disputeUrl: string };
+  /** To the pro: their domain is registered and being connected (not live yet). */
+  domain_registered: { domain: string; pageUrl: string | null; dashboardUrl: string };
   /** To the pro: their own domain is live. */
   domain_live: { domain: string; url: string; dashboardUrl: string };
   /** To the pro: we couldn't register the name they paid for, so they were refunded. */
@@ -398,6 +400,10 @@ ${FOUNDER_NAME}`,
     text: d.won
       ? `The bank ruled in your favor on ${d.clientName}'s ${d.amount} deposit. The money is back in your Stripe balance. ${d.appointmentUrl}`
       : `The bank ruled for ${d.clientName} on their ${d.amount} deposit, so it went back to them. ${d.appointmentUrl}`,
+  }),
+  domain_registered: (d) => ({
+    subject: `${d.domain} is yours`,
+    text: `You own ${d.domain} now (registered in your name). We're connecting it to your page. That usually takes 10 to 60 minutes while the new address spreads across the internet, and we'll email you the moment it opens.${d.pageUrl ? ` Your ${d.pageUrl} link keeps working the whole time.` : ""} Watch it here: ${d.dashboardUrl}`,
   }),
   domain_live: (d) => ({
     subject: `Your website is live: ${d.domain}`,

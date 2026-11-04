@@ -40,6 +40,7 @@ export function servedOnCustomHost(pathname: string): boolean {
     pathname.startsWith("/pay/") ||
     pathname.startsWith("/_next/") ||
     pathname === "/api/page-visit" ||
+    pathname === "/api/domain-check" ||
     pathname === "/favicon.ico" ||
     pathname === "/robots.txt" ||
     /^\/icon-[\w-]+\.png$/.test(pathname)
