@@ -58,7 +58,7 @@ const DETAILERS: LandingNiche = {
       a: "The ones who plan to be there do: it goes toward the detail, and they get it back if they cancel in time. The ones who won't put down a deposit are usually the ones who would have left you in an empty driveway.",
     },
   ],
-  finalHeading: "Your next empty driveway is already on your calendar.",
+  finalHeading: "Lock in your next job before you start the engine.",
 };
 
 export default function DetailersPage() {

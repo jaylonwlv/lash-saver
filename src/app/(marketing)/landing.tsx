@@ -425,7 +425,7 @@ export function Landing({ niche }: { niche?: LandingNiche }) {
         <section className="bg-brand text-brand-foreground">
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-5 px-5 py-16 text-center">
             <h2 className="text-3xl font-bold tracking-tight">
-              {niche?.finalHeading ?? "Your next no-show is already on your calendar."}
+              {niche?.finalHeading ?? "Lock in your next client before they can ghost."}
             </h2>
             <p className="opacity-90">
               Pick what you do and we fill in starter services. Send your first deposit link today.
