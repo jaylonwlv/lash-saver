@@ -126,7 +126,7 @@ export function Landing({ niche }: { niche?: LandingNiche }) {
           </ul>
         </section>
 
-        {/* A no-show, played by scrolling. */}
+        {/* A no-show, by the clock. */}
         <ClockStory
           lead={niche?.clockLead ?? "Your 2:00 is on the way."}
           excuses={niche?.clockExcuses ?? ["omw!!", "something came up", "my car won't start"]}

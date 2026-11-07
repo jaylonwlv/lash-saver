@@ -40,9 +40,8 @@ src/
                                   this page only), who it's for, Start free and the price first, then a sample pay link to
                                   try (hero-stage.tsx: real checkboxes and :has() in landing.css, so it works before JS;
                                   the card route, where Booked is instant; a stamp lands and a line strikes "ghosted").
-                                  Then the 2:00 clock (clock-story.tsx): a plain list that is the whole story, and where
-                                  @supports animation-timeline and motion allow, a pinned stage played by scrolling. All
-                                  motion sits in landing.css and only adds to a complete page. Next the hook, "Plus a page
+                                  Then a no-show as a short timeline (clock-story.tsx), a plain list. All motion sits in
+                                  landing.css and only adds to a complete page. Next the hook, "Plus a page
                                   that sells for you": a sample pro page live in a phone (page-showcase.tsx → LookPicker
                                   mode "demo", iframe of demo/sample: "Studio Nova", outside the marketing layout so no
                                   Pixel/Clarity inside), every style and color one tap; then no-show cost calculator,
