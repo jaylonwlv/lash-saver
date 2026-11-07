@@ -28,7 +28,7 @@ export function ClockStory({
           </li>
         ))}
       </ol>
-      <p className="clock-verdict">Empty slot. $0 today.</p>
+      <p className="clock-verdict">They never showed. You made $0.</p>
       <div className="clock-card" data-theme="light">
         <p className="text-muted text-xs">Same client, deposit first · {business}</p>
         <p className="clock-card-title">{deposit} paid. They&apos;re here.</p>
