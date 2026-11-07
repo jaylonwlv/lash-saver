@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { type ReactNode, useActionState, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import type { FormState } from "@/lib/forms";
@@ -20,6 +20,10 @@ export type ProfileValues = {
   trade: string;
   accent_color: string;
   page_style: string;
+  specialty: string;
+  location: string;
+  about: string;
+  status_line: string;
 };
 
 const COMMON_TIME_ZONES = [
@@ -48,11 +52,14 @@ export function ProfileForm({
   timeZones,
   menuPrefix,
   examplePrices,
+  portrait,
 }: {
   initial: ProfileValues;
   timeZones: string[];
   menuPrefix: string;
   examplePrices: boolean;
+  /** Saves on its own, so it sits among the fields without being one. */
+  portrait: ReactNode;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveProfile, {});
   const v = { ...initial, ...state.values };
@@ -130,6 +137,45 @@ export function ProfileForm({
         {(e.page_style || e.accent_color) && (
           <p className="text-danger text-sm">{e.page_style ?? e.accent_color}</p>
         )}
+      </fieldset>
+      <fieldset className="flex flex-col gap-5">
+        <legend className="mb-1.5 text-sm font-medium">On your page</legend>
+        <Input
+          id="specialty"
+          label="What you do (optional)"
+          defaultValue={v.specialty}
+          error={e.specialty}
+          maxLength={40}
+          hint="Clients see this at the top of your page."
+          placeholder="e.g. Knotless braids"
+        />
+        <Input
+          id="location"
+          label="Where you work (optional)"
+          defaultValue={v.location}
+          error={e.location}
+          maxLength={40}
+          hint="Your city or area, not your address."
+          placeholder="e.g. East Las Vegas"
+        />
+        <Input
+          id="status_line"
+          label="Your availability (optional)"
+          defaultValue={v.status_line}
+          error={e.status_line}
+          maxLength={50}
+          hint="Keep this current. It shows under your name."
+          placeholder="e.g. Booking for December"
+        />
+        <Textarea
+          id="about"
+          label="About you (optional)"
+          defaultValue={v.about}
+          error={e.about}
+          maxLength={160}
+          hint="A sentence or two, in your own voice."
+        />
+        {portrait}
       </fieldset>
       <Input
         id="instagram_handle"

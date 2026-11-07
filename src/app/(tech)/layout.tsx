@@ -4,17 +4,27 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { APP_NAME } from "@/lib/config";
 import { createClient, getUser } from "@/lib/supabase/server";
-import { THEME_COLOR, THEME_COOKIE, parseTheme } from "@/lib/theme";
+import { DEFAULT_ACCENT } from "@/lib/accents";
+import {
+  APP_COLOR_COOKIE,
+  THEME_COOKIE,
+  appColorStyle,
+  parseAppColor,
+  parseTheme,
+  statusBarColor,
+} from "@/lib/theme";
+import { AppColorPicker } from "./app-color-picker";
 import { InstallBanner } from "./install-banner";
 import { TechNav } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
 import { AssistantHelpButton } from "@/components/assistant/assistant";
 import { assistantEnabled } from "@/components/assistant/enabled";
 
-// The phone's status bar matches the header: pink, or near-black in dark mode.
+// The phone's status bar matches the header: the app color, or near-black in dark mode.
 export async function generateViewport(): Promise<Viewport> {
-  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
-  return { themeColor: THEME_COLOR[theme] };
+  const jar = await cookies();
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
+  return { themeColor: statusBarColor(theme, jar.get(APP_COLOR_COOKIE)?.value) };
 }
 
 export default async function TechLayout({ children }: LayoutProps<"/">) {
@@ -23,22 +33,27 @@ export default async function TechLayout({ children }: LayoutProps<"/">) {
   if (!user) redirect("/login");
   // Any pay link yet? The in-app-browser banner waits for the first one.
   const supabase = await createClient();
-  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+  const jar = await cookies();
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
+  const color = parseAppColor(jar.get(APP_COLOR_COOKIE)?.value);
   const { count: payLinks } = await supabase
     .from("appointments")
     .select("id", { count: "exact", head: true })
     .eq("tech_id", user.id);
 
   return (
-    // Buttons in the pro's app are hot pink with black text (white fails contrast on it).
-    // data-app scopes the app's dark palette; data-theme is the pro's light/dark choice.
+    // Buttons in the pro's app are the bright color with black text (white fails contrast on it).
+    // data-app scopes the app's dark palette; data-theme is the pro's light/dark choice;
+    // data-accent is their color, absent for the stock hot pink.
     <div
       data-app
       data-theme={theme}
+      data-accent={color === DEFAULT_ACCENT ? undefined : color}
+      style={color === DEFAULT_ACCENT ? undefined : appColorStyle(color)}
       className="flex flex-1 flex-col [--action-foreground:var(--ink)] [--action:var(--pink)]"
     >
       <header className="bg-pink text-ink dark:bg-ink sticky top-0 z-10 px-5 dark:text-white">
-        <div className="mx-auto flex min-h-14 max-w-2xl items-center justify-between gap-3">
+        <div className="relative mx-auto flex min-h-14 max-w-2xl items-center justify-between gap-3">
           <Link
             href="/dashboard"
             aria-label={`${APP_NAME} home`}
@@ -49,6 +64,7 @@ export default async function TechLayout({ children }: LayoutProps<"/">) {
           </Link>
           <div className="flex items-center gap-2">
             {assistantEnabled() && <AssistantHelpButton />}
+            <AppColorPicker initial={color} />
             <ThemeToggle initial={theme} />
           </div>
         </div>

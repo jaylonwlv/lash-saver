@@ -1,0 +1,475 @@
+/*
+ * The homepage's type, its playable pay link and the 2:00 clock. Imported by
+ * landing.tsx only, so pay links and menu pages don't carry it. Every effect sits on
+ * a page that is complete without it, and nothing hides content from a slow phone.
+ */
+
+.landing h1,
+.landing h2 {
+  font-family: var(--font-landing);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.landing h1 {
+  font-size: clamp(3rem, 13.5vw, 4.5rem);
+  line-height: 0.98;
+}
+
+/* The word struck through when the sample pay link is stamped. */
+.hero-strike {
+  background: linear-gradient(var(--pink), var(--pink)) no-repeat 0 58% / 0% 0.11em;
+  transition: background-size 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s;
+}
+.hero-play:has(#play-agree:checked):has(#play-pay:checked) .hero-strike {
+  background-size: 100% 0.11em;
+}
+
+/* A fixed height, so nothing below shifts while it plays. */
+.stage {
+  position: relative;
+  height: 19rem;
+  max-width: 24rem;
+  width: 100%;
+  margin-inline: auto;
+}
+.stage-dm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.stage-bubble {
+  background: #2c2c30;
+  color: #fff;
+  border-radius: 1.25rem 1.25rem 1.25rem 0.35rem;
+  padding: 0.45rem 0.95rem;
+  font-family: var(--font-landing);
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+.stage-bubble-big {
+  font-size: 3rem;
+  line-height: 1;
+  padding: 0.5rem 1.1rem 0.6rem;
+}
+.stage-link {
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: min(100%, 17rem);
+  min-height: 4.5rem;
+  margin-top: 0.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 1.25rem 1.25rem 0.35rem 1.25rem;
+  background: var(--pink);
+  color: #0d0b0c;
+  cursor: pointer;
+}
+.stage-link-title {
+  font-family: var(--font-landing);
+  font-weight: 800;
+  font-size: 1.3rem;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.stage-link-note {
+  font-size: 0.8rem;
+}
+.stage-link:has(:focus-visible),
+.stage-pay:has(:focus-visible) {
+  outline: 3px solid var(--pink);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stage-dm > * {
+    animation: stage-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+}
+@keyframes stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+}
+
+/* The ticket opens over the conversation once the pink bubble is tapped. */
+.stage-ticket {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1.25rem;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.25s,
+    transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.hero-play:has(#play-open:checked) .stage-dm {
+  visibility: hidden;
+}
+.hero-play:has(#play-open:checked) .stage-ticket {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+}
+.stage-ticket-time {
+  font-family: var(--font-landing);
+  font-weight: 800;
+  font-size: 1.9rem;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.stage-try,
+.stage-done {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+.stage-agree {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 3rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.stage-pay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  border-radius: 0.9rem;
+  background: #d9d3d4;
+  color: #5c5356;
+  font-weight: 700;
+  pointer-events: none;
+}
+.hero-play:has(#play-agree:checked) .stage-pay {
+  background: var(--brand);
+  color: var(--brand-foreground);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.stage-done {
+  display: none;
+}
+.hero-play:has(#play-agree:checked):has(#play-pay:checked) .stage-try {
+  display: none;
+}
+.hero-play:has(#play-agree:checked):has(#play-pay:checked) .stage-done {
+  display: flex;
+}
+.stage-stamp {
+  align-self: flex-start;
+  transform: rotate(-9deg);
+  padding: 0 0.6rem;
+  border: 4px solid var(--brand);
+  border-radius: 0.6rem;
+  color: var(--brand);
+  font-family: var(--font-landing);
+  font-weight: 800;
+  font-size: 2.1rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-play:has(#play-agree:checked):has(#play-pay:checked) .stage-done .stage-stamp {
+    animation: stamp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-9deg) scale(1.9);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-9deg) scale(1);
+  }
+}
+
+/* The 2:00 clock, as a plain list: the design everyone can rely on. */
+.clock-run {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+  padding: 3rem 1.25rem;
+}
+.clock-stage {
+  display: none;
+}
+.clock-bubble {
+  display: inline-block;
+  margin-top: 0.3rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 1.1rem 1.1rem 1.1rem 0.3rem;
+  background: #2c2c30;
+  color: #fff;
+  font-family: var(--font-landing);
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+.clock-verdict {
+  margin-top: 1.5rem;
+  font-family: var(--font-landing);
+  font-weight: 800;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+}
+.clock-card {
+  position: relative;
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1.25rem;
+}
+.clock-card-title {
+  margin-top: 0.2rem;
+  max-width: 11rem;
+  font-family: var(--font-landing);
+  font-weight: 800;
+  font-size: 1.5rem;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.clock-card-stamp {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  font-size: 1.5rem;
+}
+
+/* Where scroll-driven animation works and motion is welcome, the list becomes a stage. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .clock-run {
+      height: 2200px;
+      padding-block: 1rem 0;
+      view-timeline: --clock block;
+    }
+    .clock-static {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    .clock-stage {
+      position: sticky;
+      top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      height: min(36rem, calc(100vh - 6.5rem));
+    }
+    .clock-stage .clock-bubble {
+      font-size: clamp(1.25rem, 3.4vh, 1.75rem);
+      padding: 0.5rem 1rem 0.55rem;
+    }
+    .clock-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .clock-stack {
+      display: grid;
+    }
+    .clock-stack > * {
+      grid-area: 1 / 1;
+    }
+    .clock-head {
+      flex: 1;
+      font-family: var(--font-landing);
+      font-weight: 800;
+      font-size: 2.4rem;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+    .clock-dial {
+      flex: none;
+      width: 6rem;
+      text-align: center;
+    }
+    .clock-hour,
+    .clock-minute {
+      stroke: #0d0b0c;
+      stroke-linecap: round;
+      transform-origin: 48px 48px;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-duration: 1ms;
+      animation-timeline: --clock;
+      animation-range: contain 0% contain 100%;
+    }
+    .clock-hour {
+      stroke-width: 6;
+      animation-name: clock-hour;
+    }
+    .clock-minute {
+      stroke-width: 4;
+      animation-name: clock-minute;
+    }
+    .clock-time {
+      font-family: var(--font-landing);
+      font-weight: 800;
+      font-size: 1.25rem;
+    }
+    .clock-middle {
+      flex: 1;
+      min-height: 0;
+      align-items: start;
+    }
+    .clock-middle > div {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .clock-paid {
+      align-self: stretch;
+      padding: 0.75rem 1rem;
+      border-radius: 1.1rem 1.1rem 0.3rem 1.1rem;
+      background: var(--pink);
+      color: #0d0b0c;
+      font-family: var(--font-landing);
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+    }
+    .clock-slot {
+      position: relative;
+      flex: none;
+      padding: 0.9rem 1.1rem 1.1rem;
+      border-radius: 1.25rem;
+    }
+    .clock-slot-title {
+      margin-top: 0.15rem;
+      font-family: var(--font-landing);
+      font-weight: 800;
+      font-size: 1.5rem;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+    .clock-phase,
+    .clock-in,
+    .clock-stamp {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-duration: 1ms;
+      animation-timeline: --clock;
+      animation-range: contain var(--a) contain var(--b);
+    }
+    .clock-phase {
+      animation-name: clock-phase;
+    }
+    .clock-first {
+      animation-name: clock-first;
+    }
+    .clock-last {
+      animation-name: clock-last;
+    }
+    .clock-in {
+      animation-name: clock-in;
+    }
+    .clock-stamp {
+      animation-name: clock-stamp;
+    }
+    @keyframes clock-phase {
+      0%,
+      100% {
+        opacity: 0;
+      }
+      8%,
+      92% {
+        opacity: 1;
+      }
+    }
+    @keyframes clock-first {
+      0%,
+      92% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes clock-last {
+      0% {
+        opacity: 0;
+      }
+      8%,
+      100% {
+        opacity: 1;
+      }
+    }
+    @keyframes clock-in {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+    }
+    @keyframes clock-stamp {
+      from {
+        opacity: 0;
+        transform: rotate(-9deg) scale(1.9);
+      }
+      to {
+        opacity: 1;
+        transform: rotate(-9deg) scale(1);
+      }
+    }
+    @keyframes clock-minute {
+      0% {
+        transform: rotate(-30deg);
+      }
+      18%,
+      36% {
+        transform: rotate(0deg);
+      }
+      56% {
+        transform: rotate(120deg);
+      }
+      72%,
+      74% {
+        transform: rotate(270deg);
+      }
+      80%,
+      100% {
+        transform: rotate(0deg);
+      }
+    }
+    @keyframes clock-hour {
+      0% {
+        transform: rotate(57.5deg);
+      }
+      18%,
+      36% {
+        transform: rotate(60deg);
+      }
+      56% {
+        transform: rotate(70deg);
+      }
+      72%,
+      74% {
+        transform: rotate(82.5deg);
+      }
+      80%,
+      100% {
+        transform: rotate(60deg);
+      }
+    }
+  }
+}

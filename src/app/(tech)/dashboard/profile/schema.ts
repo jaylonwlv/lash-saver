@@ -34,4 +34,9 @@ export const profileSchema = z.object({
   accent_color: z.enum(ACCENT_IDS, "Pick a color."),
   page_style: z.enum(PAGE_STYLE_IDS, "Pick a style."),
   trade: z.preprocess((v) => (v === "" || v == null ? null : v), z.enum(TRADE_IDS).nullable()),
+  // On their page, in their own words. Limits match 20261028000000_pro_page_details.sql.
+  specialty: optionalText(40),
+  location: optionalText(40),
+  about: optionalText(160),
+  status_line: optionalText(50),
 });

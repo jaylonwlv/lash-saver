@@ -32,7 +32,7 @@ export default async function MenuPage({ params }: PageProps<"/[slug]">) {
   if (raw !== lower && SLUG_PATTERN.test(lower)) permanentRedirect(`/${lower}`);
   const menu = await loadMenu(raw);
   if (!menu) notFound();
-  const { tech, services, name, slug, photos } = menu;
+  const { tech, services, name, slug, photos, portraitUrl } = menu;
   return (
     <>
       <InstagramVisit slug={slug} />
@@ -46,6 +46,11 @@ export default async function MenuPage({ params }: PageProps<"/[slug]">) {
         style={tech.page_style}
         inviteHref={inviteUrl(publicEnv().NEXT_PUBLIC_APP_URL, slug, "menu")}
         photos={photos}
+        specialty={tech.specialty}
+        location={tech.location}
+        about={tech.about}
+        status={tech.status_line}
+        portraitUrl={portraitUrl}
       />
     </>
   );

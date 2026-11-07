@@ -16,7 +16,7 @@
 
 The product's job is preventing no-shows: deposit up front, a policy the client agrees to, reminders, easy cancel instead of ghosting, and one tap to keep the deposit. Judge new features against that. Self-serve time slots are a convenience, not the core.
 
-**Words to use.** In code, the business user is the _tech_ (`tech_id`, `(tech)` routes); in UI text call them a _pro_, or "your provider" when talking to their clients, and never name a trade (no "lash tech", "full set"). The one exception is the pro's own setup: the "What do you do?" picker, the profile's trade field and the starter services (`lib/trades.ts`). Client-facing pages (pay links, menu pages) and marketing pages stay trade-neutral. The end customer is the _client_ (never has an account). Say _deposit_, _no-show_, _pay link_ and _menu page_ (never "booking page": it doesn't book anyone). Don't say "customer", "user" or "stylist" in UI text. The app name comes from `APP_NAME` in `config.ts`; never hard-code it.
+**Words to use.** In code, the business user is the _tech_ (`tech_id`, `(tech)` routes); in UI text call them a _pro_, or "your provider" when talking to their clients, and never name a trade (no "lash tech", "full set"). The one exception is the pro's own setup: the "What do you do?" picker, the profile's trade field and the starter services (`lib/trades.ts`). Client-facing pages (pay links, menu pages) and marketing pages stay trade-neutral; a pro's page names a trade only through `specialty`, in their own words (`profiles.trade` stays private). The end customer is the _client_ (never has an account). Say _deposit_, _no-show_, _pay link_ and _menu page_ (never "booking page": it doesn't book anyone). Don't say "customer", "user" or "stylist" in UI text. The app name comes from `APP_NAME` in `config.ts`; never hard-code it.
 
 **Users are on phones.** Techs run their business from their phone, and clients open links inside Instagram's in-app browser. Design and test at 375px first.
 
@@ -36,12 +36,18 @@ The product's job is preventing no-shows: deposit up front, a policy the client 
 src/
   proxy.ts                        Refreshes the Supabase session; guards /dashboard
   app/
-    (marketing)/page.tsx          Landing page (static): hero with DM + pay page; right under it the hook, "Plus a page
+    (marketing)/page.tsx          Landing page (static). Hero: full headline in Bricolage (a one-weight, preloaded copy for
+                                  this page only), who it's for, Start free and the price first, then a sample pay link to
+                                  try (hero-stage.tsx: real checkboxes and :has() in landing.css, so it works before JS;
+                                  the card route, where Booked is instant; a stamp lands and a line strikes "ghosted").
+                                  Then the 2:00 clock (clock-story.tsx): a plain list that is the whole story, and where
+                                  @supports animation-timeline and motion allow, a pinned stage played by scrolling. All
+                                  motion sits in landing.css and only adds to a complete page. Next the hook, "Plus a page
                                   that sells for you": a sample pro page live in a phone (page-showcase.tsx → LookPicker
                                   mode "demo", iframe of demo/sample: "Studio Nova", outside the marketing layout so no
                                   Pixel/Clarity inside), every style and color one tap; then no-show cost calculator,
                                   4 steps with close-up crops of real app screens (images/zoom-*.png, neutral
-                                  "Studio Nova" example, no trade names), vs Cash App alone, founder note, pricing, FAQ,
+                                  "Studio Nova" example, no trade names), vs Cash App alone, pricing, FAQ,
                                   sticky phone CTA. The price shows under the hero button and in the sticky bar.
                                   Every "Start free" links to /start. Pulls price, trial and fee from
                                   config.ts; keep claims true to the product.
@@ -127,7 +133,7 @@ src/
                                   shrinks each photo on the phone (longest side 1600px, JPEG, no EXIF/location), uploads it
                                   straight to the public "gallery" bucket under <tech id>/ (storage policies: own folder
                                   only), then addGalleryPhoto lists it in gallery_photos (12 max, also a DB trigger).
-                                  On ProPage they glide in one big row under the hero ("The work"), hidden with none. A
+                                  On ProPage the first fills the hero and all swipe under the menu ("The work"), hidden with none. A
                                   tour card ("Show off your work", after the page card) glides blank "Your work here" frames in the pro's
                                   color until they add photos, then their photos, plus "See them on your page →" (jumps back
                                   to the page card with the preview scrolled to "The work": LookPicker startAtWork);
@@ -156,12 +162,18 @@ src/
                                   addons/ (per person or flat), settings/ (pricing rules, deposit, balance due, policy,
                                   availability), dates/ (blocked dates), bookings/ (list, [id] detail: notes, resend,
                                   mark done, cancel, refund a payment). Publishing needs a name + slug, a package and Stripe.
-    [slug]/                       Public menu page at the site root (getdibs.pro/<slug>), editorial and photo-free: full-
-                                  screen hero (name in Instrument Serif rising out of a mask, the pro's color drifting
-                                  behind), service-name marquee, numbered price list, stats, how booking works, policy,
-                                  closing CTA. Sections fade up on scroll (reveal.tsx arms [data-reveal]; everything
-                                  shows without JS or with reduced motion); the sticky "Message to book" bar slides in
-                                  once the hero is gone. opengraph-image.tsx is the link preview. The page itself is
+    [slug]/                       Public menu page at the site root (getdibs.pro/<slug>), built to answer who, how good,
+                                  how much, how to book. A short hero (their first photo, or their color drifting once;
+                                  what they do and where, name rising out of a mask, status line, Message to book) so
+                                  the numbered price list starts on the first screen, and prices never wait on a reveal.
+                                  Tapping a service opens the DM and copies its name (service-link.tsx), since ig.me
+                                  links can't reliably prefill a message. Then swipeable work photos with a full-screen
+                                  view (work-photos.tsx), about + portrait, how booking works, policy, closing CTA. Nothing
+                                  moves for over 5 seconds. Other sections fade up quickly on scroll (reveal.tsx arms
+                                  [data-reveal]; everything shows without JS or with reduced motion); the sticky "Message
+                                  to book" bar slides in once the hero is gone. Profile holds specialty, location, about,
+                                  status_line and a portrait (portrait-picker.tsx, gallery bucket; 20261028000000); all
+                                  optional, in the pro's own words. opengraph-image.tsx is the link preview. The page itself is
                                   components/pro-page (ProPage, shared with the preview). Three page styles
                                   (profiles.page_style, 20261021000000; lib/page-styles.ts, tested): Editorial (serif),
                                   Bold (Anton, caps), Clean (sans), plus fonts from a trade's own world, shown first in
@@ -362,6 +374,7 @@ Put new feature code next to the route that uses it (`app/(tech)/dashboard/servi
 - Use the design tokens, not raw hex colors. Brand colors are black (`ink`) and hot pink (`pink`). Marketing pages and sign-in set `data-theme="dark"` (black, hot-pink buttons with black text); a nested `data-theme="light"` gives a light band. Pay links stay light (deeper rose `brand`, which holds white text) with a black header.
 - The pro's app ("Pink Pop"): pink header with the lowercase wordmark (`APP_NAME.toLowerCase()` + a white dot) in the display face (`font-display`, Bricolage Grotesque; page `h1`s use it too), black tab bar, and primary buttons in hot pink with black text: `(tech)/layout.tsx` sets `--action`/`--action-foreground`, which `bg-action` in `Button` reads (elsewhere it falls back to `brand`). Links stay `text-brand`: hot-pink text on cream is too faint. The dashboard's greeting continues the header as one pink band, so it renders its own `<InstallBanner placement="page" />` below it. Emoji stay neutral for every kind of pro (📅, 👥, 👋).
 - **Dark mode** (pro's app only): a Dark/Light button in the header (`theme-toggle.tsx`) sets the `dibs-theme` cookie; `(tech)/layout.tsx` reads it to set `data-theme` on the app wrapper (marked `data-app`) and the status-bar color (`generateViewport`, `lib/theme.ts`), so there's no flash. Tokens do most of the work; the `dark:` variant follows `data-theme`, not the phone setting, and is for the few places on the pink band or ink panels. Pay links, menu pages and quote pages stay light.
+- **App color** (pro's app only): a color dot in the header (`app-color-picker.tsx`) offers the `lib/accents.ts` presets and sets the `dibs-color` cookie, per device. `(tech)/layout.tsx` sets `data-accent` plus `--app-*` variables on the wrapper, and `globals.css` maps them onto `--pink`, `--brand` and `--brand-soft`, so app code keeps using those tokens ("pink" there means the app's bright color). Hot pink sets no `data-accent`. It's separate from `profiles.accent_color`, which is what clients see.
 - Shared look (`globals.css`): `card` (white, hairline ring, soft warm shadow, 24px radius), `rise` (cards fade up on load, staggered with `--i`), `press` (small squeeze on tap), `pop` (a check or stamp popping in); all motion stops under `prefers-reduced-motion`. Payment-app colors are tokens (`bg-cashapp`, `bg-zelle`, `bg-venmo`), shown as initials, never logos.
 - Dashboard home (`dashboard/home.tsx`, data in `pulse.ts`): pink greeting band with two tappable stats (booked & paid, waiting on a deposit) or the setup ring; then New appointment, Needs you (deposits to check, refunds to send, did they show), Up next as a ticket, results, tiles, menu page; setup steps fold into slim rows once done. The tab bar has icons and a raised pink "+" for New appointment in the middle. First-run tour (`dashboard/tour.tsx`): full screen on phones (a centered card on larger screens), with short cards (how Dibs works, the +, the client paying, what runs on its own, their own page (the live look picker, compact: heading first, one swipeable row each of styles and colors), the home screen, then why it's worth it: a no-show in the pro's own price and deposit, and a Cash App deposit vs Dibs), ending with the setup steps left and a button to the next one; shown once per account (`profiles.tour_seen_at`, `20261018000000`, set by the pro on close; the browser also remembers it, keyed by account so a shared phone still shows it to a new pro; the trade picker sends a new pro back to the dashboard so it opens) to pros with no pay link yet, after the "What do you do?" picker, and again from "Take the 30-second tour" (`TourLauncher`, or `/dashboard?tour=1`).
 - Pay page (`pay/[id]/ui.tsx`, shared with `/demo`): black header with the pro's name, the booking as a ticket (stamp when booked), the refund rule as a dated two-step timeline above the full policy (or a line saying it can no longer be refunded when booked inside the window), a big "I agree" card.

@@ -37,6 +37,9 @@ export default async function DetailingSamplePage({
         "Cancel or reschedule at least 24 hours before your appointment to get your deposit back. Later cancellations and no-shows lose the deposit.\n\nPlease make sure I can get to your vehicle at the appointment time."
       }
       fallbackStyle="performance"
+      location="We come to you"
+      status="Booking for next week"
+      about="Solo and fully mobile. Message me with your car and the day you want."
     />
   );
 }

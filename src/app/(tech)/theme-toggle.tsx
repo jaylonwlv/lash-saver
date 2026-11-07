@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { THEME_COLOR, THEME_COOKIE, type Theme } from "@/lib/theme";
+import { THEME_COOKIE, statusBarColor, type Theme } from "@/lib/theme";
 
 /** Moon/sun switch in the header: flips the whole app and remembers it for a year. */
 export function ThemeToggle({ initial }: { initial: Theme }) {
@@ -10,7 +10,10 @@ export function ThemeToggle({ initial }: { initial: Theme }) {
   // Overscroll and the status bar follow the theme too.
   useEffect(() => {
     document.documentElement.style.backgroundColor = theme === "dark" ? "#0d0b0c" : "";
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLOR[theme]);
+    const accent = document.querySelector<HTMLElement>("[data-app]")?.dataset.accent;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", statusBarColor(theme, accent));
     return () => {
       document.documentElement.style.backgroundColor = "";
     };

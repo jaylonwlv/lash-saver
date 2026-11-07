@@ -18,6 +18,9 @@ export function SamplePro({
   cancellationHours,
   policyText,
   fallbackStyle,
+  location,
+  about,
+  status,
 }: {
   look: { style?: string | string[]; accent?: string | string[] };
   name: string;
@@ -25,6 +28,9 @@ export function SamplePro({
   cancellationHours: number;
   policyText: string;
   fallbackStyle: PageStyleId;
+  location: string;
+  about: string;
+  status: string;
 }) {
   const pick = (value: unknown, allowed: object, fallback: string) =>
     typeof value === "string" && Object.hasOwn(allowed, value) ? value : fallback;
@@ -40,6 +46,9 @@ export function SamplePro({
       accent={pick(look.accent, ACCENTS, "pink")}
       style={pick(look.style, PAGE_STYLES, fallbackStyle)}
       inviteHref={null}
+      location={location}
+      about={about}
+      status={status}
     />
   );
 }

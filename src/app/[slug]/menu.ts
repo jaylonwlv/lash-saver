@@ -18,7 +18,7 @@ export const loadMenu = cache(async (rawSlug: string) => {
   const { data: tech, error: techError } = await supabase
     .from("public_profiles")
     .select(
-      "id, business_name, policy_text, instagram_handle, cancellation_window_hours, accent_color, page_style",
+      "id, business_name, policy_text, instagram_handle, cancellation_window_hours, accent_color, page_style, specialty, location, about, status_line, portrait_path",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -52,5 +52,6 @@ export const loadMenu = cache(async (rawSlug: string) => {
     services: services ?? [],
     name: tech.business_name ?? slug,
     photos: (photos ?? []).map((p) => ({ ...p, url: galleryPhotoUrl(supabaseUrl, p.path) })),
+    portraitUrl: tech.portrait_path ? galleryPhotoUrl(supabaseUrl, tech.portrait_path) : null,
   };
 });

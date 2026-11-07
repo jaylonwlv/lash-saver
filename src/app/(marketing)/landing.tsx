@@ -1,11 +1,10 @@
+import { Bricolage_Grotesque } from "next/font/google";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import {
   APP_NAME,
-  FOUNDER_NAME,
-  LEGAL_CONTACT_EMAIL,
   PROCESSING_FEE_LABEL,
   REMINDER_OFFSETS_HOURS,
   SUBSCRIPTION_PRICE_CENTS,
@@ -22,10 +21,20 @@ import zoomClientPays from "./images/zoom-client-pays.png";
 import zoomNoShow from "./images/zoom-no-show.png";
 import zoomPayLink from "./images/zoom-pay-link.png";
 import type { PageStyleId } from "@/lib/page-styles";
+import { ClockStory } from "./clock-story";
+import { HeroStage } from "./hero-stage";
 import { LandingTag } from "./landing-tag";
 import { NoShowCalculator } from "./no-show-calculator";
 import { PageShowcase } from "./page-showcase";
 import { StickyCta } from "./sticky-cta";
+import "./landing.css";
+
+/** One weight, for this page's headings only: the app's copy has more axes and isn't preloaded. */
+const landingDisplay = Bricolage_Grotesque({
+  weight: "800",
+  subsets: ["latin"],
+  variable: "--font-landing",
+});
 
 /** Every pro gets a menu page at the root of the site, e.g. getdibs.pro/fresh-cuts. */
 const PAGE_HOST = new URL(publicEnv().NEXT_PUBLIC_APP_URL).host;
@@ -33,7 +42,7 @@ const PAGE_HOST = new URL(publicEnv().NEXT_PUBLIC_APP_URL).host;
 const price = formatCents(SUBSCRIPTION_PRICE_CENTS).replace(".00", "");
 const SAMPLE_DEPOSIT = 4000;
 const START = `Start free for ${TRIAL_DAYS} days`;
-const HERO_NOTE = `Then ${price}/month, cancel anytime. No card for your first pay link; you add one for the next, and you're not charged until the trial ends.`;
+const HERO_NOTE = `Then ${price}/month. No card for your first pay link.`;
 const CARD_NOTE = `No card for your first pay link. You add one for the next, and you're not charged until the trial ends.`;
 
 /**
@@ -43,16 +52,18 @@ const CARD_NOTE = `No card for your first pay link. You add one for the next, an
 export type LandingNiche = {
   /** lib/trades.ts id: sign-up skips "What do you do?" and starts with its services. */
   trade: string;
+  /** Wrap the word to strike through in <HeroStrike>. */
   headline: ReactNode;
-  lede: string;
-  quip: ReactNode;
-  ask: string;
-  /** The deposit in the hero DM ("$60") and the pay page shown under it. */
+  /** Who it's for, and that the first pay link is free. */
+  heroLine: string;
+  /** The deposit on the sample pay link ("$60"). */
   deposit: string;
-  heroImage: StaticImageData;
-  heroAlt: string;
-  /** Under the hero buttons: the doubt that stops sign-ups, answered. */
-  reassure: string;
+  /** The business on the sample pay link and in the clock. */
+  sampleName: string;
+  /** The hero's two messages, then the clock's lead and three messages. */
+  flake: [string, string];
+  clockLead: string;
+  clockExcuses: [string, string, string];
   costHeading: string;
   costBody: string;
   calculatorPrice: number;
@@ -66,12 +77,14 @@ export type LandingNiche = {
 
 export function Landing({ niche }: { niche?: LandingNiche }) {
   const SIGN_UP = niche ? `/start?trade=${niche.trade}` : "/start";
+  const deposit = niche?.deposit ?? "$40";
+  const business = niche?.sampleName ?? "Studio Nova";
   return (
-    <div data-theme="dark" className="flex flex-1 flex-col">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-3">
-        <span className="flex items-center gap-2 text-lg font-bold">
-          <span className="bg-brand size-2.5 rounded-full" aria-hidden />
-          {APP_NAME}
+    <div data-theme="dark" className={`landing ${landingDisplay.variable} flex flex-1 flex-col`}>
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-1">
+        <span className="text-2xl font-extrabold tracking-[-0.05em]">
+          {APP_NAME.toLowerCase()}
+          <span className="text-pink">.</span>
         </span>
         <Link
           href="/login"
@@ -82,55 +95,44 @@ export function Landing({ niche }: { niche?: LandingNiche }) {
       </header>
 
       <main className="flex flex-col">
-        {/* Hero */}
-        <section className="mx-auto grid w-full max-w-5xl items-center gap-8 px-5 pt-2 pb-14 md:grid-cols-2 md:gap-10 md:pt-12">
-          <div className="flex flex-col gap-5">
-            <p className="bg-brand-soft text-brand self-start rounded-full px-3 py-1 text-sm font-semibold">
-              {TRIAL_DAYS} days free · No card to sign up
-            </p>
-            <h1 className="text-[2.5rem] leading-[1.05] font-bold tracking-tight md:text-6xl">
+        {/* Hero: the words and the button first, then a pay link to try. Motion only adds to it. */}
+        <section className="hero-play mx-auto grid w-full max-w-5xl items-center gap-7 px-5 pt-3 pb-10 md:grid-cols-2 md:gap-10 md:pt-12">
+          <div className="flex flex-col gap-3">
+            <h1>
               {niche?.headline ?? (
                 <>
-                  No more getting ghosted by <span className="whitespace-nowrap">clients. 👻</span>
+                  No more getting <HeroStrike>ghosted</HeroStrike> by clients.
                 </>
               )}
             </h1>
-            <p className="text-muted text-lg">
-              {niche?.lede ??
-                "Send a deposit link in your DMs or texts. Clients agree to your policy and pay before the slot is theirs. If they don't show, you keep the deposit."}
+            <p className="text-foreground/85 text-lg leading-snug">
+              {niche?.heroLine ??
+                "Deposit pay links for pros who book in their DMs. Your first one is free."}
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row" data-cta="hero">
+            <div className="mt-1 flex flex-col" data-cta="hero">
               <ButtonLink href={SIGN_UP}>{START}</ButtonLink>
-              <ButtonLink href="/demo" variant="secondary">
-                Try a demo pay link
-              </ButtonLink>
             </div>
-            {niche && <p className="text-foreground/85 -mt-1">{niche.reassure}</p>}
-            <p className="text-lg font-semibold">
-              {niche?.quip ?? (
-                <>
-                  no more &ldquo;omw&rdquo; from{" "}
-                  <span className="whitespace-nowrap">the couch 🛋️</span>
-                </>
-              )}
-            </p>
-            <p className="text-muted text-sm">{HERO_NOTE}</p>
+            <p className="text-muted text-center text-sm md:text-left">{HERO_NOTE}</p>
           </div>
-          <HeroVisual
-            ask={niche?.ask}
-            deposit={niche?.deposit}
-            image={niche?.heroImage}
-            alt={niche?.heroAlt}
+          <HeroStage
+            business={business}
+            deposit={deposit}
+            flake={niche?.flake ?? ["omw!!", "something came up"]}
           />
-          <ul className="text-muted flex flex-wrap gap-x-4 gap-y-2 text-sm md:col-span-2 md:justify-center">
+          <ul className="text-muted flex flex-col gap-2 text-sm md:col-span-2 md:flex-row md:justify-center md:gap-6">
             <Check>Keep your Cash App, Zelle or Venmo</Check>
-            <Check>Cards by Stripe</Check>
             <Check>Clients don&apos;t need an app</Check>
             <Check>Ready in 2 minutes</Check>
-            <Check>Your own page: {PAGE_HOST}/yourname</Check>
-            <Check>Cancel anytime</Check>
           </ul>
         </section>
+
+        {/* A no-show, played by scrolling. */}
+        <ClockStory
+          lead={niche?.clockLead ?? "Your 2:00 is on the way."}
+          excuses={niche?.clockExcuses ?? ["omw!!", "something came up", "my car won't start"]}
+          deposit={deposit}
+          business={business}
+        />
 
         {/* Their own page: the interactive hook */}
         <section className="bg-surface border-line overflow-x-clip border-y">
@@ -302,36 +304,6 @@ export function Landing({ niche }: { niche?: LandingNiche }) {
           </div>
         </section>
 
-        {/* Founder note */}
-        <section className="mx-auto w-full max-w-2xl px-5 pb-4">
-          <figure className="border-line bg-surface flex flex-col gap-4 rounded-3xl border p-6">
-            <p className="text-brand text-xs font-semibold tracking-wide uppercase">
-              A note from the founder
-            </p>
-            <blockquote className="flex flex-col gap-3 text-lg">
-              <p>
-                I built {APP_NAME} for pros who run their whole business from their phone and are
-                tired of holding a slot for someone who never shows up.
-              </p>
-              <p>
-                There&apos;s no sales team and no contract. If something doesn&apos;t work the way
-                you need, email me and I&apos;ll answer it myself.
-              </p>
-            </blockquote>
-            <figcaption className="flex flex-col gap-1">
-              <span className="font-semibold">
-                {FOUNDER_NAME}, founder of {APP_NAME}
-              </span>
-              <a
-                href={`mailto:${LEGAL_CONTACT_EMAIL}`}
-                className="text-brand inline-flex min-h-12 items-center self-start underline"
-              >
-                {LEGAL_CONTACT_EMAIL}
-              </a>
-            </figcaption>
-          </figure>
-        </section>
-
         {/* Pricing */}
         <section
           id="pricing"
@@ -493,59 +465,9 @@ export function Landing({ niche }: { niche?: LandingNiche }) {
   );
 }
 
-/** The DM that sends the link, above the page the client opens. */
-function HeroVisual({
-  ask = "Can I get Saturday at 2? 🙏",
-  deposit = "$40",
-  image = clientPays,
-  alt = "A client's pay page: appointment details, deposit policy, and a button to pay the $40 deposit",
-}: {
-  ask?: string;
-  deposit?: string;
-  image?: StaticImageData;
-  alt?: string;
-}) {
-  return (
-    <div className="relative mx-auto w-full max-w-[320px]">
-      <div className="mb-4 flex flex-col gap-2 text-[15px]" aria-hidden>
-        <p className="bg-surface border-line max-w-[78%] self-start rounded-2xl rounded-bl-md border px-4 py-2.5 shadow-sm">
-          {ask}
-        </p>
-        <p className="bg-brand text-brand-foreground max-w-[78%] self-end rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
-          Yes! Lock it in here 👇
-        </p>
-        <p className="bg-surface border-line max-w-[78%] self-end rounded-2xl rounded-br-md border px-4 py-2.5 shadow-sm">
-          <span className="block font-semibold">Pay your {deposit} deposit</span>
-          <span className="text-brand text-sm">getdibs.pro/pay/…</span>
-        </p>
-      </div>
-      <Phone src={image} alt={alt} eager />
-    </div>
-  );
-}
-
-function Phone({
-  src,
-  alt,
-  eager = false,
-}: {
-  src: StaticImageData;
-  alt: string;
-  eager?: boolean;
-}) {
-  return (
-    <div className="border-ink mx-auto w-full max-w-[280px] overflow-hidden rounded-[2.25rem] border-[7px] shadow-xl ring-1 ring-white/15">
-      <Image
-        src={src}
-        alt={alt}
-        sizes="280px"
-        placeholder="blur"
-        loading={eager ? "eager" : "lazy"}
-        fetchPriority={eager ? "high" : undefined}
-        className="h-auto w-full"
-      />
-    </div>
-  );
+/** The headline's struck word: the line draws through it once the sample pay link is stamped. */
+export function HeroStrike({ children }: { children: ReactNode }) {
+  return <span className="hero-strike">{children}</span>;
 }
 
 /** A small mock of something the client receives, with what it is underneath. */

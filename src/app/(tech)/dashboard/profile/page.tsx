@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { publicEnv } from "@/lib/env.public";
+import { TRADES } from "@/lib/trades";
 import { registrarConfigured } from "@/lib/vercel/registrar";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { signOut } from "./actions";
+import { PortraitPicker } from "./portrait-picker";
 import { ProfileForm } from "./profile-form";
 import { BackLink } from "@/components/ui/back-link";
 
@@ -15,7 +17,7 @@ export default async function ProfilePage() {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(
-      "email, business_name, slug, instagram_handle, phone, timezone, cancellation_window_hours, policy_text, trade, accent_color, page_style",
+      "email, business_name, slug, instagram_handle, phone, timezone, cancellation_window_hours, policy_text, trade, accent_color, page_style, specialty, location, about, status_line, portrait_path",
     )
     .eq("id", user!.id)
     .single();
@@ -28,6 +30,9 @@ export default async function ProfilePage() {
     .eq("is_active", true)
     .eq("is_starter", true);
   const menuPrefix = `${new URL(publicEnv().NEXT_PUBLIC_APP_URL).host}/`;
+  // First visit: what they told us they do, for them to keep or change. It only goes
+  // public when they save; profiles.trade itself stays private.
+  const tradeLabel = TRADES.find((t) => t.id === profile.trade)?.label ?? "";
 
   return (
     <div className="flex flex-col gap-6">
@@ -40,6 +45,7 @@ export default async function ProfilePage() {
         menuPrefix={menuPrefix}
         examplePrices={(starters ?? 0) > 0}
         timeZones={Intl.supportedValuesOf("timeZone")}
+        portrait={<PortraitPicker techId={user!.id} initial={profile.portrait_path} />}
         initial={{
           business_name: profile.business_name ?? "",
           slug: profile.slug ?? "",
@@ -51,6 +57,10 @@ export default async function ProfilePage() {
           trade: profile.trade ?? "",
           accent_color: profile.accent_color,
           page_style: profile.page_style,
+          specialty: profile.specialty ?? tradeLabel,
+          location: profile.location ?? "",
+          about: profile.about ?? "",
+          status_line: profile.status_line ?? "",
         }}
       />
       <div className="border-line flex flex-col gap-3 border-t pt-6">

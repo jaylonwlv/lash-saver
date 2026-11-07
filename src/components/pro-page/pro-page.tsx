@@ -3,18 +3,23 @@ import { LegalLinks } from "@/components/ui/legal-links";
 import { ProInvite } from "@/components/ui/pro-invite";
 import { accentStyle } from "@/lib/accents";
 import { policySummary } from "@/lib/appointments";
-import { REMINDER_OFFSETS_HOURS } from "@/lib/config";
 import { formatDuration } from "@/lib/format";
 import { formatCents } from "@/lib/money";
 import { pageStyleFor } from "@/lib/page-styles";
-import { LOOKS, type Look } from "./looks";
+import { proTagline, serviceMessage } from "@/lib/pro-page";
+import { LOOKS } from "./looks";
 import { RevealOnScroll } from "./reveal";
+import { ServiceLink } from "./service-link";
+import { WorkPhotos } from "./work-photos";
 
 /*
  * A pro's own page (getdibs.pro/<slug>), shared by the public route and the live
- * preview in the dashboard. Photo-free: the type (page style), the pro's color
- * and motion carry it. Client-facing: trade-neutral, no trackers. It doesn't
- * book or take deposits; booking starts with a message.
+ * preview in the dashboard. It answers what a client came for, in order: who is
+ * this, is the work good, how much, how do I book. Their first photo fills the
+ * hero, and the prices start on the first screen. The type (page style) and their
+ * color carry it when there are no photos. Client-facing: no trackers, and any
+ * trade named is in the pro's own words. It doesn't book or take deposits; booking
+ * starts with a message.
  */
 
 export type ProPageService = {
@@ -37,10 +42,18 @@ export type ProPageProps = {
   inviteHref: string | null;
   /** In the dashboard preview, links open outside it. */
   preview?: boolean;
-  /** Photos of their work (optional): a moving gallery under the hero. */
+  /** Photos of their work (optional): the first fills the hero, all of them swipe under the menu. */
   photos?: { id: string; url: string; width: number; height: number }[];
   /** The homepage's sample page: where "Message to book" goes instead of a real DM. */
   messageHref?: string;
+  /** What they do, in their words ("Nail tech"). */
+  specialty?: string | null;
+  location?: string | null;
+  /** A short note about them, beside their portrait. */
+  about?: string | null;
+  /** Kept current by the pro: "Booking for December". */
+  status?: string | null;
+  portraitUrl?: string | null;
 };
 
 const dollars = (cents: number) => formatCents(cents).replace(/\.00$/, "");
@@ -58,13 +71,19 @@ export function ProPage({
   preview = false,
   photos = [],
   messageHref,
+  specialty = null,
+  location = null,
+  about = null,
+  status = null,
+  portraitUrl = null,
 }: ProPageProps) {
   const look = LOOKS[pageStyleFor(style)];
   const dm = messageHref ?? (handle ? `https://ig.me/m/${handle}` : null);
   const out = preview ? ({ target: "_blank", rel: "noreferrer" } as const) : {};
   const lines = splitName(name);
   const sorted = [...services].sort((a, b) => a.price_cents - b.price_cents);
-  const lowestDeposit = sorted.length ? Math.min(...sorted.map((s) => s.deposit_cents)) : 0;
+  const tagline = proTagline(specialty, location);
+  const cover = photos[0];
 
   return (
     <div
@@ -73,43 +92,48 @@ export function ProPage({
     >
       <RevealOnScroll />
 
-      {/* Hero: the name, big, with the pro's color drifting behind it. */}
+      {/* Hero: their work and their name, short enough that the prices start below it. */}
       <header
         data-hero
-        className="bg-ink relative isolate flex min-h-[88svh] flex-col overflow-hidden px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-8 text-white"
+        className="bg-ink relative isolate flex min-h-[26rem] flex-col overflow-hidden px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-7 text-white"
       >
-        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <div className="drift bg-pink/45 absolute -top-[20%] -right-[35%] size-[min(120vw,720px)] rounded-full blur-[90px]" />
-          <div
-            className="drift bg-pink/20 absolute -bottom-[25%] -left-[40%] size-[min(110vw,640px)] rounded-full blur-[100px]"
-            style={{ animationDelay: "-9s" }}
-          />
-          <div className="absolute inset-0 bg-[radial-gradient(transparent_0,rgb(0_0_0/0.45)_100%)]" />
-        </div>
+        {cover ? (
+          <div aria-hidden className="absolute inset-0 -z-10">
+            {/* eslint-disable-next-line @next/next/no-img-element -- sized on upload, served from storage */}
+            <img
+              src={cover.url}
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              className="size-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/30" />
+          </div>
+        ) : (
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+            <div className="drift bg-pink/45 absolute -top-[20%] -right-[35%] size-[min(120vw,720px)] rounded-full blur-[90px]" />
+            <div className="drift bg-pink/20 absolute -bottom-[25%] -left-[40%] size-[min(110vw,640px)] rounded-full blur-[100px]" />
+            <div className="absolute inset-0 bg-[radial-gradient(transparent_0,rgb(0_0_0/0.45)_100%)]" />
+          </div>
+        )}
 
-        <div className="mx-auto flex w-full max-w-xl items-center justify-between text-[11px] font-semibold tracking-[0.28em] text-white/60 uppercase">
-          <span className="soft-in" style={delay(100)}>
-            By appointment
-          </span>
+        <div className="mx-auto flex min-h-11 w-full max-w-xl items-center justify-between text-[11px] font-semibold tracking-[0.28em] text-white/70 uppercase">
+          <span>By appointment</span>
           {handle && (
             <a
               href={`https://instagram.com/${handle}`}
               {...out}
-              className="soft-in hover:text-pink inline-flex min-h-11 items-center tracking-[0.08em] normal-case"
-              style={delay(200)}
+              className="hover:text-pink inline-flex min-h-11 items-center tracking-[0.08em] normal-case"
             >
               @{handle}
             </a>
           )}
         </div>
 
-        <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-end gap-7 pt-16">
-          <p
-            className="soft-in text-pink text-xs font-semibold tracking-[0.3em] uppercase"
-            style={delay(250)}
-          >
-            Services &amp; booking
-          </p>
+        <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-end gap-4 pt-8">
+          {tagline && (
+            <p className="text-sm font-semibold tracking-[0.04em] text-white/85">{tagline}</p>
+          )}
           <h1 className={`${look.display} ${look.hero} break-words`}>
             {lines.map((line, i) => (
               <span key={i} className="mask-line">
@@ -117,140 +141,131 @@ export function ProPage({
                   className={
                     i === lines.length - 1 && lines.length > 1 ? look.heroLastLine : undefined
                   }
-                  style={delay(350 + i * 140)}
+                  style={delay(i * 90)}
                 >
                   {line}
                 </span>
               </span>
             ))}
           </h1>
-          <span
-            aria-hidden
-            className="draw-x bg-pink block h-px w-full opacity-70"
-            style={delay(700)}
-          />
-          <div className="soft-in flex flex-col gap-5" style={delay(850)}>
-            <p className="max-w-sm text-lg leading-snug text-white/75">
-              {sorted.length > 0
-                ? `${sorted.length} service${sorted.length === 1 ? "" : "s"}, from ${dollars(sorted[0].price_cents)}. A deposit holds your spot.`
-                : "Booking by message. A deposit holds your spot."}
+          {status && (
+            <p className="inline-flex items-center gap-2 self-start rounded-full bg-white/12 px-3.5 py-1.5 text-sm font-semibold backdrop-blur-sm">
+              <span aria-hidden className="bg-pink size-2 rounded-full" />
+              {status}
             </p>
-            <div className="flex flex-wrap items-center gap-3">
-              {dm && (
-                <a
-                  href={dm}
-                  {...out}
-                  className="press bg-pink text-ink inline-flex min-h-13 items-center rounded-full px-7 text-base font-bold"
-                >
-                  Message to book
-                </a>
-              )}
-              <a
-                href="#menu"
-                className="inline-flex min-h-13 items-center rounded-full px-5 text-base font-semibold text-white ring-1 ring-white/30"
-              >
-                See the menu
-              </a>
-            </div>
-          </div>
+          )}
+          <p className="max-w-sm leading-snug text-white/80">
+            {sorted.length > 0
+              ? `From ${dollars(sorted[0].price_cents)}. A deposit holds your spot.`
+              : "Booking by message. A deposit holds your spot."}
+          </p>
+          {dm && (
+            <a
+              href={dm}
+              {...out}
+              className="press bg-pink text-ink inline-flex min-h-13 items-center justify-center self-start rounded-full px-7 text-base font-bold"
+            >
+              Message to book
+            </a>
+          )}
         </div>
-        <span
-          aria-hidden
-          className="soft-in mx-auto mt-8 flex flex-col items-center gap-1 text-[10px] tracking-[0.3em] text-white/45 uppercase"
-          style={delay(1200)}
-        >
-          Scroll
-          <span className="nudge block h-6 w-px bg-white/50" />
-        </span>
       </header>
 
-      {/* Service names gliding by, in the pro's color. */}
-      {sorted.length > 0 && <Marquee items={sorted.map((s) => s.name)} look={look} />}
-
-      {/* Their work, gliding by in one row. */}
-      {photos.length > 0 && (
-        <section aria-label="Photos of the work" className="pt-14">
-          <div className="mx-auto w-full max-w-xl px-6">
-            <Eyebrow>The work</Eyebrow>
-            <h2 data-reveal className={`${look.display} ${look.h2} mt-3`}>
-              See it <span className={look.em}>for yourself.</span>
-            </h2>
-          </div>
-          <div data-reveal className="mt-8" style={delay(120)}>
-            <PhotoRow photos={photos} />
-          </div>
-        </section>
-      )}
-
       <main className="flex flex-1 flex-col">
-        {/* The menu: numbered, hairline-ruled, like a printed price list. */}
-        <section id="menu" className="mx-auto w-full max-w-xl scroll-mt-4 px-6 pt-16 pb-6">
-          <Eyebrow>The menu</Eyebrow>
-          <h2 data-reveal className={`${look.display} ${look.h2} mt-3`}>
+        {/* The menu: numbered, hairline-ruled, like a printed price list. Prices never wait to appear. */}
+        <section id="menu" className="mx-auto w-full max-w-xl scroll-mt-4 px-6 pt-8 pb-6">
+          <h2 className={`${look.display} ${look.h2}`}>
             Services <span className={look.em}>&amp;</span> prices
           </h2>
           {sorted.length === 0 ? (
-            <p data-reveal className="text-muted mt-8 text-lg">
+            <p data-reveal className="text-muted mt-6 text-lg">
               Services and prices are coming soon. Message to ask about booking.
             </p>
           ) : (
-            <ol className="mt-10 flex flex-col">
-              {sorted.map((s, i) => (
-                <li
-                  key={s.id}
-                  data-reveal
-                  style={delay(Math.min(i, 4) * 90)}
-                  className="border-line flex items-baseline gap-4 border-t py-6 last:border-b"
-                >
-                  <span className="text-brand w-7 shrink-0 text-xs font-semibold tracking-[0.15em] tabular-nums">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <span className={`${look.display} ${look.item} break-words`}>{s.name}</span>
-                    <span className="text-muted text-xs font-medium tracking-[0.14em] uppercase">
-                      {formatDuration(s.duration_minutes)} · {dollars(s.deposit_cents)} deposit
-                    </span>
-                  </div>
-                  <span className={`${look.display} ${look.price} shrink-0`}>
-                    {dollars(s.price_cents)}
-                  </span>
-                </li>
-              ))}
-            </ol>
+            <>
+              {dm && (
+                <p className="text-muted mt-2 text-sm">
+                  Tap a service to message. We copy its name for you to paste.
+                </p>
+              )}
+              <ol className="mt-5 flex flex-col">
+                {sorted.map((s, i) => {
+                  const row = (
+                    <>
+                      <span className="text-brand w-7 shrink-0 text-xs font-semibold tracking-[0.15em] tabular-nums">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <span className={`${look.display} ${look.item} break-words`}>{s.name}</span>
+                        <span className="text-muted text-xs font-medium tracking-[0.14em] uppercase">
+                          {formatDuration(s.duration_minutes)} · {dollars(s.deposit_cents)} deposit
+                        </span>
+                      </span>
+                      <span className={`${look.display} ${look.price} shrink-0`}>
+                        {dollars(s.price_cents)}
+                      </span>
+                    </>
+                  );
+                  return (
+                    <li key={s.id} className="border-line border-t last:border-b">
+                      {dm ? (
+                        <ServiceLink
+                          href={dm}
+                          message={serviceMessage(s.name)}
+                          label={`Message about ${s.name}, ${dollars(s.price_cents)}`}
+                          newTab={preview}
+                          className="press flex items-baseline gap-4 py-5"
+                        >
+                          {row}
+                        </ServiceLink>
+                      ) : (
+                        <div className="flex items-baseline gap-4 py-5">{row}</div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </>
           )}
         </section>
 
-        {/* The numbers that matter, big. */}
-        {sorted.length > 0 && (
-          <section className="mx-auto grid w-full max-w-xl grid-cols-2 gap-x-6 gap-y-10 px-6 py-14">
-            <Stat value={dollars(sorted[0].price_cents)} label="Starting price" look={look} i={0} />
-            <Stat
-              value={dollars(lowestDeposit)}
-              label="Deposit to hold your spot"
-              look={look}
-              i={1}
-            />
-            <Stat
-              value={hours > 0 ? `${hours}h` : "Any time"}
-              label={
-                hours > 0
-                  ? "Notice to cancel with a refund"
-                  : "Cancel before it starts for a refund"
-              }
-              look={look}
-              i={2}
-            />
-            <Stat
-              value={String(REMINDER_OFFSETS_HOURS.length)}
-              label={`Reminders, ${REMINDER_OFFSETS_HOURS.join("h and ")}h before`}
-              look={look}
-              i={3}
-            />
+        {/* Their work, at the client's own pace. */}
+        {photos.length > 0 && (
+          <section aria-label="Photos of the work" className="pt-10">
+            <div className="mx-auto w-full max-w-xl px-6">
+              <Eyebrow>The work</Eyebrow>
+              <h2 data-reveal className={`${look.display} ${look.h2} mt-3`}>
+                See it <span className={look.em}>for yourself.</span>
+              </h2>
+            </div>
+            <div className="mt-6">
+              <WorkPhotos photos={photos} />
+            </div>
+          </section>
+        )}
+
+        {/* Who they'll be seeing. */}
+        {(about || portraitUrl) && (
+          <section
+            aria-label={`About ${name}`}
+            className="mx-auto flex w-full max-w-xl items-center gap-5 px-6 pt-12 pb-4"
+          >
+            {portraitUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- sized on upload, served from storage
+              <img
+                src={portraitUrl}
+                alt={`Portrait of ${name}`}
+                loading="lazy"
+                decoding="async"
+                className="size-24 shrink-0 rounded-full object-cover"
+              />
+            )}
+            {about && <p className="text-lg leading-snug">{about}</p>}
           </section>
         )}
 
         {/* How booking works, as a dark band. */}
-        <section className="bg-ink relative overflow-hidden px-6 py-20 text-white">
+        <section className="bg-ink relative mt-10 overflow-hidden px-6 py-20 text-white">
           <div
             aria-hidden
             className="bg-pink/25 pointer-events-none absolute -right-1/3 -bottom-1/3 size-[min(90vw,560px)] rounded-full blur-[90px]"
@@ -395,82 +410,5 @@ function Eyebrow({ children, light = false }: { children: ReactNode; light?: boo
       <span aria-hidden className={`h-px w-8 ${light ? "bg-pink" : "bg-brand"}`} />
       {children}
     </p>
-  );
-}
-
-function Stat({ value, label, look, i }: { value: string; label: string; look: Look; i: number }) {
-  return (
-    <div
-      data-reveal
-      style={delay(i * 100)}
-      className="border-line flex flex-col gap-2 border-t pt-4"
-    >
-      <span className={`${look.display} ${look.stat}`}>{value}</span>
-      <span className="text-muted text-xs leading-snug font-medium tracking-[0.12em] uppercase">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function Marquee({ items, look }: { items: string[]; look: Look }) {
-  // Enough copies to fill a wide screen; the track is doubled so the loop is seamless.
-  const base = Array.from({ length: Math.max(1, Math.ceil(8 / items.length)) }, () => items).flat();
-  const track = [...base, ...base];
-  return (
-    <div aria-hidden className="bg-brand text-brand-foreground overflow-hidden py-4">
-      <div
-        className="marquee flex w-max items-center gap-6 whitespace-nowrap"
-        style={{ "--marquee": `${Math.max(24, base.length * 5)}s` } as CSSProperties}
-      >
-        {track.map((item, i) => (
-          <span key={i} className="flex items-center gap-6">
-            <span className={`${look.display} ${look.marquee}`}>{item}</span>
-            <span className="text-sm opacity-70">✦</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * One gliding row of photos. Repeated to fill a wide screen and doubled for a
- * seamless loop; it pauses while touched or hovered. With reduced motion it's a
- * plain row you swipe through.
- */
-function PhotoRow({
-  photos,
-}: {
-  photos: { id: string; url: string; width: number; height: number }[];
-}) {
-  const base = Array.from(
-    { length: Math.max(1, Math.ceil(6 / photos.length)) },
-    () => photos,
-  ).flat();
-  return (
-    <div className="group overflow-hidden motion-reduce:overflow-x-auto">
-      <div
-        className="marquee flex w-max gap-3 group-hover:[animation-play-state:paused] group-active:[animation-play-state:paused]"
-        style={{ "--marquee": `${Math.max(30, base.length * 7)}s` } as CSSProperties}
-      >
-        {[...base, ...base].map((photo, i) => (
-          // eslint-disable-next-line @next/next/no-img-element -- sized on upload, served from storage
-          <img
-            key={`${photo.id}-${i}`}
-            src={photo.url}
-            alt={i < photos.length ? "Photo of the work" : ""}
-            aria-hidden={i >= photos.length || undefined}
-            width={photo.width}
-            height={photo.height}
-            loading={i < 4 ? "eager" : "lazy"}
-            decoding="async"
-            className={`aspect-square h-80 w-auto rounded-[22px] object-cover shadow-[0_10px_30px_-18px_rgb(0_0_0/0.45)] sm:h-96 ${
-              i >= base.length ? "motion-reduce:hidden" : ""
-            }`}
-          />
-        ))}
-      </div>
-    </div>
   );
 }

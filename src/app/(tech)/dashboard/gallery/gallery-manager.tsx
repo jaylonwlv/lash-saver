@@ -7,10 +7,10 @@ import {
   GALLERY_BUCKET,
   GALLERY_LIMIT,
   GALLERY_MAX_DIMENSION,
-  fitWithin,
   galleryPhotoUrl,
   type GalleryPhoto,
 } from "@/lib/gallery";
+import { shrinkPhoto } from "@/lib/shrink-photo";
 import { createClient } from "@/lib/supabase/client";
 import { addGalleryPhoto, removeGalleryPhoto } from "./actions";
 
@@ -53,7 +53,7 @@ export function GalleryManager({
     const supabase = createClient();
     for (const file of picked) {
       try {
-        const shrunk = await shrink(file);
+        const shrunk = await shrinkPhoto(file, GALLERY_MAX_DIMENSION);
         const path = `${techId}/${crypto.randomUUID()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from(GALLERY_BUCKET)
@@ -98,7 +98,7 @@ export function GalleryManager({
       />
       {compact && (
         // The tour: a gliding strip first. Blank frames in their page's color until they add
-        // photos, then their photos, moving the way they will on their page.
+        // photos, then their photos.
         <div
           className="-mx-6 overflow-hidden motion-reduce:overflow-x-auto"
           style={accentStyle(accent)}
@@ -210,42 +210,4 @@ export function GalleryManager({
 /** Enough copies to fill the tour's strip with only a photo or two. */
 function fill(photos: GalleryPhoto[]): GalleryPhoto[] {
   return Array.from({ length: Math.ceil(4 / photos.length) }, () => photos).flat();
-}
-
-/** Shrinks a photo to JPEG at most GALLERY_MAX_DIMENSION px (drops EXIF, incl. location). */
-async function shrink(file: File): Promise<{ blob: Blob; width: number; height: number }> {
-  const image = await decode(file);
-  const size = fitWithin(image.width, image.height, GALLERY_MAX_DIMENSION);
-  const canvas = document.createElement("canvas");
-  canvas.width = size.width;
-  canvas.height = size.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("No canvas");
-  ctx.drawImage(image.source, 0, 0, size.width, size.height);
-  if ("close" in image.source) image.source.close();
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/jpeg", 0.82),
-  );
-  if (!blob) throw new Error("Couldn't encode the photo");
-  return { blob, ...size };
-}
-
-/** Decodes with the photo's own rotation; falls back to an <img> where needed. */
-async function decode(
-  file: File,
-): Promise<{ source: ImageBitmap | HTMLImageElement; width: number; height: number }> {
-  try {
-    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-    return { source: bitmap, width: bitmap.width, height: bitmap.height };
-  } catch {
-    const url = URL.createObjectURL(file);
-    try {
-      const img = new Image();
-      img.src = url;
-      await img.decode();
-      return { source: img, width: img.naturalWidth, height: img.naturalHeight };
-    } finally {
-      URL.revokeObjectURL(url);
-    }
-  }
 }

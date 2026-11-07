@@ -45,6 +45,9 @@ export default async function SamplePage({ searchParams }: PageProps<"/demo/samp
         "Cancel or reschedule at least 48 hours before your appointment to get your deposit back. Later cancellations and no-shows lose the deposit.\n\nRunning late? Message me. More than 15 minutes late may need to be rescheduled."
       }
       fallbackStyle="editorial"
+      location="Your city"
+      status="Booking for next month"
+      about="One chair, one client at a time. Message me with the day you want."
     />
   );
 }

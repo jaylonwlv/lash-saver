@@ -60,6 +60,13 @@ type ProfileRow = Timestamps & {
   page_style: string;
   /** First time their page was opened from Instagram (20261025000000). Server-written. */
   instagram_visit_at: string | null;
+  /** On their page, in their own words (20261028000000). */
+  specialty: string | null;
+  location: string | null;
+  about: string | null;
+  status_line: string | null;
+  /** Portrait in the gallery bucket, in their own folder. */
+  portrait_path: string | null;
 };
 
 type ServiceRow = Timestamps & {
@@ -431,6 +438,11 @@ export type Database = {
           | "policy_text"
           | "accent_color"
           | "page_style"
+          | "specialty"
+          | "location"
+          | "about"
+          | "status_line"
+          | "portrait_path"
         >;
         Relationships: [];
       };

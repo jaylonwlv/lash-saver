@@ -25,7 +25,7 @@ export default async function PagePreview({ searchParams }: PageProps<"/dashboar
     supabase
       .from("profiles")
       .select(
-        "business_name, instagram_handle, cancellation_window_hours, policy_text, accent_color, page_style",
+        "business_name, instagram_handle, cancellation_window_hours, policy_text, accent_color, page_style, specialty, location, about, status_line, portrait_path",
       )
       .eq("id", user.id)
       .single(),
@@ -43,6 +43,7 @@ export default async function PagePreview({ searchParams }: PageProps<"/dashboar
   if (!profile) notFound();
   const pick = (value: unknown, allowed: object, saved: string) =>
     typeof value === "string" && Object.hasOwn(allowed, value) ? value : saved;
+  const supabaseUrl = publicEnv().NEXT_PUBLIC_SUPABASE_URL;
 
   return (
     <ProPage
@@ -55,10 +56,14 @@ export default async function PagePreview({ searchParams }: PageProps<"/dashboar
       accent={pick(accent, ACCENTS, profile.accent_color)}
       style={pick(style, PAGE_STYLES, profile.page_style)}
       inviteHref={null}
-      photos={(photos ?? []).map((p) => ({
-        ...p,
-        url: galleryPhotoUrl(publicEnv().NEXT_PUBLIC_SUPABASE_URL, p.path),
-      }))}
+      photos={(photos ?? []).map((p) => ({ ...p, url: galleryPhotoUrl(supabaseUrl, p.path) }))}
+      specialty={profile.specialty}
+      location={profile.location}
+      about={profile.about}
+      status={profile.status_line}
+      portraitUrl={
+        profile.portrait_path ? galleryPhotoUrl(supabaseUrl, profile.portrait_path) : null
+      }
     />
   );
 }
